@@ -13,7 +13,8 @@ export const useWarehouses = (branchId?: string | null) => {
     return useQuery({
         queryKey: ['warehouses', user?.company_id, branchId],
         queryFn: () => user?.company_id ? inventoryService.getWarehouses(user.company_id, branchId) : Promise.resolve([] as any[]),
-        enabled: !!user?.company_id
+        enabled: !!user?.company_id,
+        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -26,6 +27,7 @@ export const useWarehouseProducts = (warehouseId: string | null) => {
             ? inventoryService.getProductsForWarehouse(user.company_id, warehouseId)
             : Promise.resolve([] as any[]),
         enabled: !!user?.company_id && !!warehouseId,
+        staleTime: 5 * 60 * 1000,
     });
 };
 

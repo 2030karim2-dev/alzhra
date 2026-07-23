@@ -17,6 +17,7 @@ export const useProducts = (searchTerm: string = '', options: { limitNum?: numbe
         queryKey: ['products', companyId, options.limitNum],
         queryFn: () => companyId ? inventoryService.getProducts(companyId, 1, options.limitNum || 10000) : Promise.resolve([]),
         enabled: (options.enabled !== undefined ? options.enabled : true) && !!companyId,
+        staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent tab-switching lag
     });
 
     // Realtime channel for product and stock updates
@@ -82,7 +83,11 @@ export const useProducts = (searchTerm: string = '', options: { limitNum?: numbe
         lowStockCount: filteredProducts.filter(p => p.stock_quantity <= p.min_stock_level).length
     }), [filteredProducts]);
 
-    return { ...query, products: filteredProducts, stats };
+    const slicedProducts = useMemo(() => {
+        return filteredProducts.slice(0, options.limitNum || 100);
+    }, [filteredProducts, options.limitNum]);
+
+    return { ...query, products: slicedProducts, stats };
 };
 
 export const useMinimalProducts = () => {
@@ -91,6 +96,7 @@ export const useMinimalProducts = () => {
         queryKey: ['products_minimal', user?.company_id],
         queryFn: () => user?.company_id ? inventoryService.getMinimalProducts(user.company_id) : Promise.resolve([]),
         enabled: !!user?.company_id,
+        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -100,6 +106,7 @@ export const useItemMovement = (productId: string | null) => {
         queryKey: ['item_movement', productId, user?.company_id],
         queryFn: () => (productId && user?.company_id) ? inventoryService.getItemMovement(productId, user.company_id) : Promise.resolve([]),
         enabled: !!productId && !!user?.company_id,
+        staleTime: 60 * 1000,
     });
 };
 
@@ -203,5 +210,6 @@ export const useSearchProducts = (searchTerm: string) => {
             ? inventoryService.searchProducts(companyId, searchTerm)
             : Promise.resolve([]),
         enabled: !!companyId && searchTerm.length > 1,
+        staleTime: 5 * 60 * 1000,
     });
 };

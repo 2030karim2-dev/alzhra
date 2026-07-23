@@ -14,7 +14,14 @@ export const calculateDashboardInsights = (data: {
     lowStockProducts: any[];
     overdueInvoices: any[];
 }) => {
-    const { totalSales, invoicesData, expensesData, lowStockProducts, overdueInvoices, totalDebts } = data;
+    const { 
+        totalSales = 0, 
+        invoicesData = [], 
+        expensesData = [], 
+        lowStockProducts = [], 
+        overdueInvoices = [], 
+        totalDebts = 0 
+    } = data;
 
     // Use unified currency utility directly
 
