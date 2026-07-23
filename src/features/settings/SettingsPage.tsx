@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Settings, Building, Palette, Database, ShieldCheck, Bell, Banknote, Users, FileText, Calculator, Package, Printer, Link, Globe, Search, ChevronLeft, User } from 'lucide-react';
+import { Settings, Building, Palette, Database, ShieldCheck, Bell, Banknote, Users, FileText, Calculator, Package, Printer, Link, Globe, Search, ChevronLeft, User, GitBranch } from 'lucide-react';
 import CompanyProfile from './components/CompanyProfile';
+import BranchManager from './components/branches/BranchManager';
 import PersonalProfile from './components/PersonalProfile';
 import FinancialSettings from './components/financial/FinancialSettings';
 import SecuritySettings from './components/security/SecuritySettings';
@@ -39,9 +40,8 @@ const SettingsPage: React.FC = () => {
       items: [
         { id: 'profile', label: 'الملف الشخصي', icon: User, desc: 'إدارة بياناتك الشخصية وحسابك', color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' },
         { id: 'company', label: t('company_profile'), icon: Building, desc: 'الهوية والمعلومات القانونية', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
-        { id: 'appearance', label: t('appearance_settings'), icon: Palette, desc: 'الألوان والثيمات والخطوط', color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/30' },
-        { id: 'localization', label: t('localization_settings'), icon: Globe, desc: 'اللغة والمنطقة الزمنية', color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-900/30' },
-        { id: 'notifications', label: t('notifications_settings'), icon: Bell, desc: 'التنبيهات والإشعارات', color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' },
+        { id: 'branches', label: 'فروع الشركة', icon: GitBranch, desc: 'إدارة الفروع والمواقع الجغرافية', color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' },
+        { id: 'preferences', label: 'تفضيلات النظام', icon: Settings, desc: 'المظهر واللغة والإشعارات', color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/30' },
       ]
     },
     {
@@ -56,7 +56,6 @@ const SettingsPage: React.FC = () => {
       title: 'المخزون والتكامل',
       items: [
         { id: 'inventory', label: t('inventory_settings'), icon: Package, desc: 'المستودعات والتتبع', color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30' },
-        { id: 'print', label: t('print_settings'), icon: Printer, desc: 'إعدادات الطابعة والورق', color: 'text-slate-600 bg-slate-50 dark:bg-slate-800/50' },
         { id: 'integrations', label: t('integrations_settings'), icon: Link, desc: 'الربط مع أنظمة خارجية', color: 'text-teal-600 bg-teal-50 dark:bg-teal-900/30' },
       ]
     },
@@ -64,8 +63,7 @@ const SettingsPage: React.FC = () => {
       title: 'الأمان والفريق',
       items: [
         { id: 'team', label: t('team_settings'), icon: Users, desc: 'إدارة المستخدمين والأدوار', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
-        { id: 'security', label: t('security_settings'), icon: ShieldCheck, desc: 'كلمات المرور والجلسات', color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30' },
-        { id: 'backup', label: t('backup_settings'), icon: Database, desc: 'النسخ الاحتياطي والاستعادة', color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/30' },
+        { id: 'security', label: t('security_settings'), icon: ShieldCheck, desc: 'الأمان والنسخ الاحتياطي', color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30' },
       ]
     },
   ];
@@ -86,26 +84,40 @@ const SettingsPage: React.FC = () => {
     switch (activeSection) {
       case 'profile': return <PersonalProfile />;
       case 'company': return <CompanyProfile />;
+      case 'branches': return <BranchManager />;
       case 'financial': return <FinancialSettings />;
-      case 'invoice': return <InvoiceSettings />;
+      case 'preferences': 
+        return (
+          <div className="space-y-8">
+            <AppearancePage />
+            <div className="px-4"><LocalizationSettings /></div>
+            <div className="px-4"><NotificationSettings /></div>
+          </div>
+        );
+      case 'invoice': 
+        return (
+          <div className="space-y-8">
+            <InvoiceSettings />
+            <div className="px-4"><PrintSettings /></div>
+          </div>
+        );
       case 'pos': return <POSSettings />;
       case 'inventory': return <InventorySettings />;
-      case 'print': return <PrintSettings />;
       case 'integrations': return <IntegrationsSettings />;
-      case 'localization': return <LocalizationSettings />;
-      case 'appearance': return <AppearancePage />;
-      case 'backup': return <BackupPage />;
-      case 'team': return <TeamManager />;
+      case 'team': 
+        return (
+          <div className="space-y-8">
+            <TeamManager />
+            <div className="px-4"><PermissionsManager /></div>
+          </div>
+        );
       case 'security':
         return (
           <div className="space-y-8">
             <SecuritySettings />
-            <div className="px-4">
-              <PermissionsManager />
-            </div>
+            <div className="px-4"><BackupPage /></div>
           </div>
         );
-      case 'notifications': return <NotificationSettings />;
       default: return <CompanyProfile />;
     }
   };

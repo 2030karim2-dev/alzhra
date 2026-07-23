@@ -15,7 +15,7 @@ export {
 } from './useStockAudit';
 
 // Analytics & Insights
-export { useInventoryAnalytics, useInventorySmartInsights } from './useInventoryAnalytics';
+
 
 // Categories (يبقى محلياً — لم يُنقل بعد)
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

@@ -8,11 +8,11 @@ import { useFeedbackStore } from '../../feedback/store';
 import { inventoryApi } from '../api';
 
 /** جلب قائمة المستودعات */
-export const useWarehouses = () => {
+export const useWarehouses = (branchId?: string | null) => {
     const { user } = useAuthStore();
     return useQuery({
-        queryKey: ['warehouses', user?.company_id],
-        queryFn: () => user?.company_id ? inventoryService.getWarehouses(user.company_id) : Promise.resolve([] as any[]),
+        queryKey: ['warehouses', user?.company_id, branchId],
+        queryFn: () => user?.company_id ? inventoryService.getWarehouses(user.company_id, branchId) : Promise.resolve([] as any[]),
         enabled: !!user?.company_id
     });
 };
@@ -36,7 +36,7 @@ export const useWarehouseMutations = () => {
     const { showToast } = useFeedbackStore();
 
     const save = useMutation({
-        mutationFn: async (data: { id?: string, name_ar: string, location: string }) => {
+        mutationFn: async (data: { id?: string, name_ar: string, location: string, branch_id?: string | null }) => {
             if (!user?.company_id) throw new Error("Auth error");
             return await inventoryApi.saveWarehouse(user.company_id, data);
         },

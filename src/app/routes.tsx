@@ -19,8 +19,7 @@ import DashboardPage from '../features/dashboard/DashboardPage';
 // Lazy Loaded Features — each isolated by FeatureBoundary
 const InventoryPage            = lazy(() => import('../features/inventory/InventoryPage'));
 const AuditSessionPage         = lazy(() => import('../features/inventory/pages/AuditSessionPage'));
-const QuickAuditPage           = lazy(() => import('../features/inventory/pages/QuickAuditPage'));
-const DeadStockPage            = lazy(() => import('../features/inventory/pages/DeadStockPage'));
+
 const POSPage                  = lazy(() => import('../features/pos/pages/POSPage'));
 const SalesPage                = lazy(() => import('../features/sales/pages/SalesPage'));
 const AccountingPage           = lazy(() => import('../features/accounting/AccountingPage'));
@@ -78,12 +77,9 @@ export const AppRoutes: React.FC = () => {
         {/* Inventory cluster */}
         <Route path={ROUTES.DASHBOARD.INVENTORY}
           element={<FeatureBoundary name="inventory"><InventoryPage /></FeatureBoundary>} />
-        <Route path="/inventory/dead-stock"
-          element={<FeatureBoundary name="dead-stock"><DeadStockPage /></FeatureBoundary>} />
         <Route path={ROUTES.DASHBOARD.INVENTORY_AUDIT_SESSION}
           element={<FeatureBoundary name="audit-session"><AuditSessionPage /></FeatureBoundary>} />
-        <Route path="/inventory/quick-audit"
-          element={<FeatureBoundary name="quick-audit"><QuickAuditPage /></FeatureBoundary>} />
+
 
         {/* Transactional */}
         <Route path={ROUTES.DASHBOARD.SALES}

@@ -11,8 +11,8 @@ import { supabase } from '../../lib/supabaseClient';
 export { purchasesApi };
 
 export const purchasesService = {
-  getPurchases: async (companyId: string) => {
-    const { data, error } = await purchasesApi.getPurchases(companyId);
+  getPurchases: async (companyId: string, branchId?: string | null) => {
+    const { data, error } = await purchasesApi.getPurchases(companyId, branchId);
     if (error) throw error;
     return data || [];
   },
@@ -73,9 +73,10 @@ export const purchasesService = {
   },
 
   // ⚡ Server-side stats via RPC — no frontend aggregation
-  getStats: async (companyId: string) => {
+  getStats: async (companyId: string, branchId?: string | null) => {
     const { data, error } = await supabase.rpc('get_purchase_stats', {
-      p_company_id: companyId
+      p_company_id: companyId,
+      p_branch_id: branchId || null
     });
     if (error) {
       logger.error('PurchaseService', 'Error fetching purchase stats', { companyId, error });
@@ -91,9 +92,10 @@ export const purchasesService = {
   },
 
   // ⚡ Server-side analytics via RPC — no frontend aggregation
-  getAnalytics: async (companyId: string) => {
+  getAnalytics: async (companyId: string, branchId?: string | null) => {
     const { data, error } = await supabase.rpc('get_purchase_stats', {
-      p_company_id: companyId
+      p_company_id: companyId,
+      p_branch_id: branchId || null
     });
     if (error) {
       logger.error('PurchaseService', 'Error fetching purchase analytics', { companyId, error });
@@ -106,17 +108,16 @@ export const purchasesService = {
     };
   },
 
-  // Get purchase returns for the returns view
-  getPurchaseReturns: async (companyId: string) => {
-    const { data, error } = await purchasesApi.getPurchases(companyId);
+  getPurchaseReturns: async (companyId: string, branchId?: string | null) => {
+    const { data, error } = await purchasesApi.getPurchases(companyId, branchId);
     if (error) throw error;
     const returns = data?.filter((p: any) => p.type === 'return_purchase') || [];
     return returns;
   },
 
   // Get purchase returns statistics
-  getPurchaseReturnsStats: async (companyId: string) => {
-    const { data, error } = await purchasesApi.getPurchases(companyId);
+  getPurchaseReturnsStats: async (companyId: string, branchId?: string | null) => {
+    const { data, error } = await purchasesApi.getPurchases(companyId, branchId);
     if (error) {
       logger.error('PurchaseService', 'Error in getPurchaseReturnsStats', { error });
       throw error;

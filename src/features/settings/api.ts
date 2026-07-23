@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabaseClient';
-import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData } from './types';
+import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData, BranchFormData } from './types';
 
 export const settingsApi = {
   getCompany: async (companyId: string) => {
@@ -20,26 +20,54 @@ export const settingsApi = {
       .single();
   },
 
+  getBranches: async (companyId: string) => {
+    return await supabase
+      .from('branches')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('name', { ascending: true });
+  },
+
+  createBranch: async (companyId: string, data: BranchFormData) => {
+    return await supabase
+      .from('branches')
+      .insert({ ...data, company_id: companyId })
+      .select()
+      .single();
+  },
+
+  updateBranch: async (id: string, data: BranchFormData) => {
+    return await supabase
+      .from('branches')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+  },
+
+  deleteBranch: async (id: string) => {
+    return await supabase.from('branches').delete().eq('id', id);
+  },
+
   // إدارة الفريق والدعوات (Team Management)
   getInvitations: async (companyId: string) => {
     return await supabase
       .from('invitations')
-      .select('*')
+      .select('*, branches(name)')
       .eq('company_id', companyId)
-      .order('created_at', { ascending: false })
       .order('created_at', { ascending: false });
   },
 
-  inviteUser: async (email: string, role: string, companyId: string, userId: string) => {
+  inviteUser: async (email: string, role: string, companyId: string, userId: string, branchId?: string | null) => {
     return await supabase
       .from('invitations')
       .insert({
         email,
         role,
         company_id: companyId,
-        created_by: userId
+        created_by: userId,
+        ...(branchId ? { branch_id: branchId } : {}),
       })
-      .select()
       .select()
       .single();
   },
@@ -58,14 +86,19 @@ export const settingsApi = {
       .limit(100);
   },
 
-  getWarehouses: async (companyId: string) => {
-    return await supabase
+  getWarehouses: async (companyId: string, branchId?: string | null) => {
+    let query = supabase
       .from('warehouses')
       .select('*')
       .eq('company_id', companyId)
       .is('deleted_at', null)
-      .order('name_ar', { ascending: true })
       .order('name_ar', { ascending: true });
+      
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+    
+    return await query;
   },
 
   createWarehouse: async (companyId: string, data: WarehouseFormData) => {

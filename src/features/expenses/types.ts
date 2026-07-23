@@ -26,6 +26,7 @@ export interface Expense {
   frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   recurring_end_date?: string;
   created_at?: string;
+  branch_id?: string | null;
 }
 
 export interface ExpenseFormData {
@@ -41,6 +42,7 @@ export interface ExpenseFormData {
   is_recurring: boolean;
   frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   recurring_end_date?: string;
+  branch_id?: string | null;
 }
 
 export interface ExpenseCategorySummary {

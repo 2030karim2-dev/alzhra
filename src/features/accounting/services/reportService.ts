@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabaseClient';
 
 export const reportService = {
     // ⚡ Server-side ledger via RPC — no frontend running balance calculation
-    getLedger: async (companyId: string, accountId: string, fromDate?: string, toDate?: string): Promise<LedgerEntry[]> => {
+    getLedger: async (companyId: string, accountId: string, branchId?: string | null, fromDate?: string, toDate?: string): Promise<LedgerEntry[]> => {
         const { data, error } = await supabase.rpc('get_account_ledger', {
             p_company_id: companyId,
             p_account_id: accountId,
@@ -31,8 +31,7 @@ export const reportService = {
         }));
     },
 
-    getTrialBalance: async (companyId: string, fromDate?: string, toDate?: string): Promise<TrialBalanceItem[]> => {
-        // Fix #15: Use server-side RPC which correctly handles account types
+    getTrialBalance: async (companyId: string, branchId?: string | null, fromDate?: string, toDate?: string): Promise<TrialBalanceItem[]> => {
         const now = new Date();
         const from = fromDate || `${now.getFullYear()}-01-01`;
         const to = toDate || now.toISOString().split('T')[0];
@@ -40,7 +39,8 @@ export const reportService = {
         const { data, error } = await supabase.rpc('report_trial_balance', {
             p_company_id: companyId,
             p_from: from,
-            p_to: to
+            p_to: to,
+            p_branch_id: branchId || null
         });
         if (error) throw error;
 
@@ -59,19 +59,19 @@ export const reportService = {
     },
 
     // ⚡ Server-side financials via RPCs
-    getFinancials: async (companyId: string, fromDate?: string, toDate?: string) => {
-        // P&L from server
+    getFinancials: async (companyId: string, branchId?: string | null, fromDate?: string, toDate?: string) => {
         const { data: plData, error: plError } = await supabase.rpc('report_profit_loss', {
             p_company_id: companyId,
+            p_branch_id: branchId || null,
             ...(fromDate ? { p_from: fromDate } : {}),
             ...(toDate ? { p_to: toDate } : {})
         });
         if (plError) throw plError;
         const pl = plData as any;
 
-        // Balance Sheet from server
         const { data: bsData, error: bsError } = await supabase.rpc('report_balance_sheet', {
             p_company_id: companyId,
+            p_branch_id: branchId || null,
             ...(fromDate ? { p_from: fromDate } : {}),
             ...(toDate ? { p_to: toDate } : {})
         });
@@ -109,8 +109,7 @@ export const reportService = {
         };
     },
 
-    getMonthlyPerformance: async (companyId: string, year: number) => {
-        // 1. Define result structure (Jan-Dec)
+    getMonthlyPerformance: async (companyId: string, year: number, branchId?: string | null) => {
         const monthlyData = Array.from({ length: 12 }, (_, i) => ({
             name: new Date(0, i).toLocaleString('ar-SA', { month: 'long' }),
             revenues: 0,
@@ -118,11 +117,10 @@ export const reportService = {
             monthIndex: i
         }));
 
-        // 2. Fetch all posted journal lines for the year
         const startDate = `${year}-01-01`;
         const endDate = `${year}-12-31`;
 
-        const { data: lines, error } = await reportsApi.getJournalLines(companyId, startDate, endDate);
+        const { data: lines, error } = await reportsApi.getJournalLines(companyId, branchId, startDate, endDate);
         if (error) throw error;
 
         // NOTE: journal_entry_lines store base currency (SAR) amounts.

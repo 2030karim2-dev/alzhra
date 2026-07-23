@@ -109,7 +109,7 @@ const MainLayout: React.FC = () => {
       />
 
       <div className={cn(
-        "flex-1 flex flex-col h-full overflow-hidden relative transition-[transform,margin,padding] duration-300 ease-in-out will-change-[transform,margin,padding]",
+        "flex-1 flex flex-col h-full overflow-hidden relative transition-[margin] duration-150 ease-out",
         contentMaxWidth,
         isDesktop && getMainLayoutOffsetClasses({
           breakpoint,
@@ -136,7 +136,7 @@ const MainLayout: React.FC = () => {
         )}
 
         <main className={cn(
-          "flex-1 overflow-y-auto custom-scrollbar relative scroll-smooth",
+          "flex-1 overflow-y-auto custom-scrollbar relative",
           mainPaddingBottom
         )}>
           <ErrorBoundary>

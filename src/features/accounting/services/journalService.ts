@@ -48,8 +48,8 @@ export const journalService = {
   /**
    * تنسيق البيانات القادمة من الـ API لتناسب العرض
    */
-  formatJournalsForUI: async (companyId: string, pageParam: number = 0): Promise<UIJournalEntry[]> => {
-    const { data: rawData, error } = await journalsApi.fetchJournals(companyId, pageParam);
+  formatJournalsForUI: async (companyId: string, branchId?: string | null, pageParam: number = 0): Promise<UIJournalEntry[]> => {
+    const { data: rawData, error } = await journalsApi.fetchJournals(companyId, branchId, pageParam);
     if (error) throw error;
 
     const journals = (rawData || []) as RawJournal[];

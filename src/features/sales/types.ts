@@ -40,6 +40,7 @@ export interface CreateInvoicePayload {
   // Return-specific fields
   referenceInvoiceId?: string | null;
   returnReason?: string | null;
+  branchId?: string | null;
 }
 
 export interface CreateInvoiceDTO {
@@ -57,6 +58,7 @@ export interface CreateInvoiceDTO {
   // Return-specific fields
   referenceInvoiceId?: string | null;
   returnReason?: string | null;
+  branchId?: string | null;
 }
 
 export interface InvoiceResponse {

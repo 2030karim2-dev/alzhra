@@ -50,7 +50,7 @@ const WarehouseManager: React.FC = () => {
             key={wh.id}
             icon={Package}
             iconColorClass="text-blue-500"
-            title={wh.name}
+            title={wh.name_ar || wh.name}
             subtitle={wh.location || "بدون عنوان"}
             tags={[]}
             onClick={() => handleEdit(wh)}

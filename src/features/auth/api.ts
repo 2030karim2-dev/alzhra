@@ -89,6 +89,8 @@ export const authApi = {
             role: firstCompany?.role || 'viewer',
             company_id: firstCompany?.company_id,
             company_name: firstCompany?.company_name,
+            branch_id: firstCompany?.branch_id ?? null,
+            branch_name: firstCompany?.branch_name ?? null,
           };
 
           return { data: flatData, error: null };
@@ -114,7 +116,7 @@ export const authApi = {
 
         const [profileRes, roleRes] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', userId).single(),
-          supabase.from('user_company_roles').select('role, company_id, companies(name_ar)').eq('user_id', userId).single()
+          supabase.from('user_company_roles').select('role, company_id, branch_id, companies(name_ar), branches(name)').eq('user_id', userId).single()
         ]);
 
         if (profileRes.error) {
@@ -134,6 +136,8 @@ export const authApi = {
           role: (roleRes.data as any)?.role || 'viewer',
           company_id: (roleRes.data as any)?.company_id,
           company_name: (roleRes.data as any)?.companies?.name_ar,
+          branch_id: (roleRes.data as any)?.branch_id ?? null,
+          branch_name: (roleRes.data as any)?.branches?.name ?? null,
         };
 
         return { data: fallbackData, error: null };

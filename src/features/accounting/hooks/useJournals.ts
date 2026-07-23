@@ -7,17 +7,19 @@ import { JournalEntryFormData } from '../types/models';
 import { PostTransactionUsecase } from '../../../core/usecases/accounting/PostTransactionUsecase';
 import { AuthorizeActionUsecase } from '../../../core/usecases/auth/AuthorizeActionUsecase';
 import { invalidateByPreset } from '../../../lib/invalidation';
+import { useBranchFilter } from '../../branches/hooks/useBranchFilter';
 
 export const useJournals = () => {
   const { user } = useAuthStore();
   const companyId = user?.company_id;
+  const { branchId } = useBranchFilter();
 
   return useInfiniteQuery({
-    queryKey: ['journals', companyId],
+    queryKey: ['journals', companyId, branchId],
     queryFn: async ({ pageParam = 0 }) => {
       if (!companyId) return [];
       try {
-        const result = await journalService.formatJournalsForUI(companyId, pageParam);
+        const result = await journalService.formatJournalsForUI(companyId, branchId, pageParam);
         return Array.isArray(result) ? result : [];
       } catch {
         return [];

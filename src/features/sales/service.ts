@@ -29,9 +29,9 @@ interface RawInvoice {
 }
 
 export const salesService = {
-  fetchSalesLog: async (companyId: string, page: number = 0) => {
+  fetchSalesLog: async (companyId: string, page: number = 0, branchId?: string | null) => {
     try {
-      const data = await salesApi.getInvoices(companyId, page);
+      const data = await salesApi.getInvoices(companyId, page, 50, branchId);
       return (data || []).map((inv: unknown) => {
         const _inv = inv as RawInvoice;
         return {

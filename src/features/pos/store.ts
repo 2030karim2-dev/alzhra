@@ -2,14 +2,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface SuspendedOrder {
-    id: string;
-    items: any[];
-    customer: any;
-    time: string;
+export interface SuspendedOrder {
+  id: string;
+  items: any[];
+  customer: any;
+  time: string;
 }
 
-interface POSState {
+export interface POSState {
   suspendedOrders: SuspendedOrder[];
   suspendCurrentOrder: (items: any[], customer: any) => void;
   resumeOrder: (id: string) => SuspendedOrder | undefined;
@@ -20,13 +20,13 @@ export const usePOSStore = create<POSState>()(
   persist(
     (set, get) => ({
       suspendedOrders: [],
-      
+
       suspendCurrentOrder: (items, customer) => {
         const newOrder = {
-            id: `SUS-${Date.now()}`,
-            items,
-            customer,
-            time: new Date().toLocaleTimeString('ar-SA')
+          id: `SUS-${Date.now()}`,
+          items,
+          customer,
+          time: new Date().toLocaleTimeString('ar-SA')
         };
         set({ suspendedOrders: [...get().suspendedOrders, newOrder] });
       },
@@ -34,7 +34,7 @@ export const usePOSStore = create<POSState>()(
       resumeOrder: (id) => {
         const order = get().suspendedOrders.find(o => o.id === id);
         if (order) {
-            set({ suspendedOrders: get().suspendedOrders.filter(o => o.id !== id) });
+          set({ suspendedOrders: get().suspendedOrders.filter(o => o.id !== id) });
         }
         return order;
       },

@@ -1,6 +1,6 @@
 
 // Add missing SettingsSection type used in SettingsPage.tsx
-export type SettingsSection = 'profile' | 'company' | 'financial' | 'appearance' | 'backup' | 'security' | 'notifications' | 'team' | 'invoice' | 'pos' | 'inventory' | 'print' | 'integrations' | 'localization';
+export type SettingsSection = 'profile' | 'company' | 'financial' | 'appearance' | 'backup' | 'security' | 'notifications' | 'team' | 'invoice' | 'pos' | 'inventory' | 'print' | 'integrations' | 'localization' | 'branches' | 'preferences';
 
 export interface Company {
   id: string;
@@ -16,6 +16,24 @@ export interface Company {
   is_tax_enabled: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  company_id: string;
+  address?: string | null;
+  phone?: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BranchFormData {
+  name: string;
+  address?: string | null;
+  phone?: string | null;
+  status?: string;
 }
 
 export interface CompanyFormData {
@@ -69,6 +87,7 @@ export interface Warehouse {
 export interface WarehouseFormData {
   name_ar: string;
   location: string;
+  branch_id?: string | null;
 }
 
 export interface FiscalYear {

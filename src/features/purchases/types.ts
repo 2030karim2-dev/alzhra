@@ -19,6 +19,7 @@ export interface PurchaseItem {
 }
 
 export interface CreatePurchaseDTO {
+  branchId?: string | null;
   supplierId: string | null;
   invoiceNumber: string; // رقم فاتورة المورد المرجعي
   items: PurchaseItem[];

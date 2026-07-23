@@ -5,10 +5,12 @@ import { reportService } from '../../services/reportService';
 import { useAuthStore } from '../../../auth/store';
 import { Loader2, TrendingUp } from 'lucide-react';
 import { cn, formatCurrency } from '@/core/utils';
+import { useBranchFilter } from '../../../branches/hooks/useBranchFilter';
 
 const FinancialPerformanceChart: React.FC = () => {
   const { theme } = useThemeStore();
   const { user } = useAuthStore();
+  const { branchId } = useBranchFilter();
   const isDark = theme === 'dark';
 
   const [data, setData] = useState<any[]>([]);
@@ -21,7 +23,7 @@ const FinancialPerformanceChart: React.FC = () => {
       if (!user?.company_id) return;
       try {
         const currentYear = new Date().getFullYear();
-        const result = await reportService.getMonthlyPerformance(user.company_id, currentYear);
+        const result = await reportService.getMonthlyPerformance(user.company_id, currentYear, branchId);
         setData(result);
       } catch (error) {
         console.error('Error fetching chart data:', error);
@@ -31,7 +33,7 @@ const FinancialPerformanceChart: React.FC = () => {
     };
 
     fetchData();
-  }, [user?.company_id]);
+  }, [user?.company_id, branchId]);
 
   if (isLoading) {
     return (

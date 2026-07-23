@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { invalidateByPreset } from '../../lib/invalidation';
 import { useNetworkStatus } from '../../lib/hooks/useNetworkStatus';
 import { syncStore } from '../../core/lib/sync-store';
+import { useBranchFilter } from '../branches/hooks/useBranchFilter';
 
 export const useNextExpenseNumber = () => {
   const { user } = useAuthStore();
@@ -64,10 +65,11 @@ export const useExpenseCategoryMutation = () => {
 export const useExpensesData = (searchTerm: string = '') => {
   const { user } = useAuthStore();
   const companyId = user?.company_id;
+  const { branchId } = useBranchFilter();
 
   const query = useQuery({
-    queryKey: ['expenses', companyId],
-    queryFn: () => companyId ? expensesService.getExpensesList(companyId) : Promise.resolve([]),
+    queryKey: ['expenses', companyId, branchId],
+    queryFn: () => companyId ? expensesService.getExpensesList(companyId, branchId) : Promise.resolve([]),
     enabled: !!companyId,
   });
 
@@ -91,11 +93,14 @@ export const useExpenseActions = () => {
   const { showToast } = useFeedbackStore();
   const { isOnline } = useNetworkStatus();
 
+  const { branchId } = useBranchFilter();
+
   const create = useMutation({
     mutationFn: async (data: ExpenseFormData) => {
       if (!user?.company_id || !user?.id) throw new Error("جلسة العمل منتهية");
       AuthorizeActionUsecase.validateAction(user, 'create_expense');
-      return expensesService.processNewExpense(data, user.company_id, user.id);
+      const finalData = { ...data, branch_id: data.branch_id || branchId };
+      return expensesService.processNewExpense(finalData, user.company_id, user.id);
     },
     onSuccess: () => {
       invalidateByPreset(queryClient, 'expense');

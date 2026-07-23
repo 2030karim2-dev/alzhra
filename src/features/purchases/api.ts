@@ -5,8 +5,8 @@ import { CreatePurchaseDTO, SupplierPaymentData } from './types';
 
 
 export const purchasesApi = {
-  getPurchases: async (companyId: string) => {
-    const result = await supabase
+  getPurchases: async (companyId: string, branchId?: string | null) => {
+    let query = supabase
       .from('invoices')
       .select(`
         id,
@@ -23,10 +23,13 @@ export const purchasesApi = {
       `)
       .eq('company_id', companyId)
       .in('type', ['purchase', 'return_purchase'])
-      .is('deleted_at', null)
-      .order('issue_date', { ascending: false });
+      .is('deleted_at', null);
 
-    return result;
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+
+    return await query.order('issue_date', { ascending: false });
   },
 
   getPurchaseDetails: async (purchaseId: string) => {
@@ -63,7 +66,8 @@ export const purchasesApi = {
       p_currency: data.currency || 'SAR',
       p_exchange_rate: rate,
       p_payment_method: data.paymentMethod || 'credit',
-      ...(data.paymentMethod === 'cash' && data.cashAccountId ? { p_payment_account_id: data.cashAccountId } : data.bankAccountId ? { p_payment_account_id: data.bankAccountId } : {})
+      ...(data.paymentMethod === 'cash' && data.cashAccountId ? { p_payment_account_id: data.cashAccountId } : data.bankAccountId ? { p_payment_account_id: data.bankAccountId } : {}),
+      p_branch_id: data.branchId || null
     };
 
     const { data: result, error } = await supabase.rpc('commit_purchase_invoice', rpcParams);
@@ -84,7 +88,8 @@ export const purchasesApi = {
       })),
       p_currency: data.currency || 'SAR',
       p_exchange_rate: rate,
-      p_notes: data.notes || ''
+      p_notes: data.notes || '',
+      p_branch_id: data.branchId || null
     };
 
     const { data: result, error } = await supabase.rpc('commit_purchase_return', rpcParams);
@@ -117,7 +122,7 @@ export const purchasesApi = {
   },
 
   // Get purchase invoices that can be used for returns
-  getPurchaseInvoicesForReturn: async (companyId: string, supplierId: string | null) => {
+  getPurchaseInvoicesForReturn: async (companyId: string, supplierId: string | null, branchId?: string | null) => {
     let query = supabase
       .from('invoices')
       .select(`
@@ -137,6 +142,10 @@ export const purchasesApi = {
       .eq('type', 'purchase')
       .eq('status', 'posted')
       .is('deleted_at', null);
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
 
     if (supplierId) {
       query = query.eq('party_id', supplierId);

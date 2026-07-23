@@ -43,9 +43,10 @@ export const useRealtimeSync = () => {
         if (!registry.has(channelId)) {
             logger.debug('Realtime', `🔌 Initializing semi-persistent channel for company [${companyId}]`);
 
-            // Local throttle for rapid updates
+            // ⚡ Throttle invalidations to avoid cascading re-renders
+            // 5s is enough since realtime is for collaboration, not millisecond sync
             let lastInvalidated = 0;
-            const THROTTLE_MS = 2000;
+            const THROTTLE_MS = 5000;
 
             const channel = supabase.channel(channelId)
                 .on(

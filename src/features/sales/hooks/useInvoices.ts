@@ -6,12 +6,15 @@ import { invalidateByPreset } from '@/lib/invalidation';
 import { useOfflineQueueStore } from '@/core/services/offlineQueueStore';
 import { CreateInvoiceDTO } from '../types';
 
+import { useBranchFilter } from '@/features/branches/hooks/useBranchFilter';
+
 export const useInvoices = () => {
   const { user } = useAuthStore();
   const companyId = user?.company_id;
+  const { branchId } = useBranchFilter();
   return useQuery({
-    queryKey: ['invoices', companyId],
-    queryFn: () => companyId ? salesService.fetchSalesLog(companyId) : Promise.resolve([] as any[]),
+    queryKey: ['invoices', companyId, branchId],
+    queryFn: () => companyId ? salesService.fetchSalesLog(companyId, 0, branchId) : Promise.resolve([] as any[]),
     enabled: !!companyId,
   });
 };
@@ -31,11 +34,13 @@ export const useCreateInvoice = () => {
   const { user } = useAuthStore();
   const { showToast } = useFeedbackStore();
   const { enqueue } = useOfflineQueueStore();
+  const { branchId } = useBranchFilter();
 
   return useMutation({
     mutationFn: async (data: CreateInvoiceDTO) => {
       if (!user?.company_id || !user?.id) throw new Error("Missing auth context");
-      return await salesService.processNewSale(user.company_id, user.id, data);
+      const finalData = { ...data, branchId: data.branchId || branchId };
+      return await salesService.processNewSale(user.company_id, user.id, finalData);
     },
     onSuccess: () => {
       showToast(`تم اعتماد الفاتورة بنجاح`, 'success');

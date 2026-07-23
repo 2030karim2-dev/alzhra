@@ -61,6 +61,10 @@ const RegisterPage: React.FC = () => {
           <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">{t('register_page_subtitle')}</p>
         </div>
 
+        <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-3 rounded-lg mb-4 text-[11px] text-center border border-blue-100 dark:border-blue-900/30 font-bold">
+            💡 إذا كان لديك دعوة من شركة، قم بالتسجيل ببريدك الإلكتروني، وسيتم ربطك بها تلقائياً (اسم المنشأة سيتم تجاهله).
+        </div>
+
         {error && (
             <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-xs font-bold text-center border border-red-100 dark:border-red-900/30 flex items-center justify-center gap-2">
                 <Info size={14} /> {error}

@@ -6,8 +6,9 @@ import { useProductImport } from './hooks/useProductImport';
 import ProductDetailModal from './components/ProductDetailModal';
 import ProductDetailPane from './components/ProductDetailPane';
 import AddProductModal from './components/AddProductModal';
+import SmartImportView from '../smart-import/components/SmartImportView';
 import MicroHeader from '../../ui/base/MicroHeader';
-import { Database, Plus, List, LayoutGrid, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Database, Plus, List, LayoutGrid, CheckCircle, AlertTriangle, Sparkles, X } from 'lucide-react';
 import { useBreakpoint, useCurrentBreakpoint } from '../../lib/hooks/useBreakpoint';
 import ContentContainer from '../../ui/layout/ContentContainer';
 import { useTranslation } from '../../lib/hooks/useTranslation';
@@ -32,6 +33,7 @@ const InventoryPage: React.FC = () => {
     const [isMaximized, setIsMaximized] = useState(false);
     const [isZenMode, setIsZenMode] = useState(false);
     const [isDetailsMaximized, setIsDetailsMaximized] = useState(false);
+    const [showSmartImport, setShowSmartImport] = useState(false);
 
     const { t } = useTranslation();
     const isDesktop = useBreakpoint('lg');
@@ -60,7 +62,10 @@ const InventoryPage: React.FC = () => {
 
     const handleSmartImportConfirm = async (data: { items: unknown[], currency?: string }) => {
         const success = await runSmartImport(data as { items: Parameters<typeof runSmartImport>[0]['items'], currency?: string });
-        if (success) setActiveView('products');
+        if (success) {
+            setShowSmartImport(false);
+            setActiveView('products');
+        }
     };
 
     // Stats from current page (server delivers totalCount for the badge)
@@ -110,6 +115,13 @@ const InventoryPage: React.FC = () => {
                             )}
                             <div className="flex gap-2">
                                 <button
+                                    onClick={() => setShowSmartImport(true)}
+                                    className="hidden sm:flex items-center gap-1 bg-purple-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95 shadow-md shadow-purple-500/20"
+                                >
+                                    <Sparkles size={14} />
+                                    <span>استيراد ذكي</span>
+                                </button>
+                                <button
                                     onClick={handleAdd}
                                     className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95 shadow-md shadow-blue-500/20"
                                 >
@@ -137,8 +149,19 @@ const InventoryPage: React.FC = () => {
                     isZenMode ? "bg-white dark:bg-slate-900" : ""
                 )}>
                     <ContentContainer>
-                        {/* Wide Desktop: Split View — detail pane + table side by side */}
-                        {showSplitDetail ? (
+                        {showSmartImport ? (
+                            <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+                                <div className="p-3 border-b flex justify-between items-center bg-gray-50 dark:bg-slate-950/50">
+                                    <h3 className="font-bold flex items-center gap-2 text-purple-600"><Sparkles size={16}/> الاستيراد الذكي (AI)</h3>
+                                    <button onClick={() => setShowSmartImport(false)} className="p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-lg">
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-auto">
+                                    <SmartImportView mode="inventory" onConfirm={handleSmartImportConfirm} />
+                                </div>
+                            </div>
+                        ) : showSplitDetail ? (
                             <div className="flex-1 flex overflow-hidden gap-0">
                                 {/* Detail Pane — left side on RTL */}
                                 <div className="w-[480px] 4xl:w-[560px] 5xl:w-[640px] border-l border-[var(--app-border)] overflow-y-auto custom-scrollbar bg-[var(--app-surface)]">

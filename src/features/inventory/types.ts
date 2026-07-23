@@ -108,6 +108,7 @@ export interface Product {
   min_stock_level: number;
   unit: string;
   image_url?: string | null | undefined;
+  warehouse_distribution?: Array<{ warehouse_id: string; warehouse_name: string; quantity: number }>;
 
   // Auto Parts Specific Features
   is_kit?: boolean | undefined;

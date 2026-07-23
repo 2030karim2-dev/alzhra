@@ -4,6 +4,7 @@ import { salesQuotationsApi } from '@/features/sales/api/quotationsApi';
 import { useAuthStore } from '@/features/auth/store';
 import { formatCurrency } from '@/core/utils';
 import type { QuotationStatus } from '@/features/sales/types/quotation';
+import { useBranchFilter } from '@/features/branches/hooks/useBranchFilter';
 import CreateQuotationModal from '@/features/sales/components/quotations/CreateQuotationModal';
 import QuotationDetailsModal from '@/features/sales/components/quotations/QuotationDetailsModal';
 
@@ -38,17 +39,19 @@ export const QuotationsTab: React.FC<Props> = ({ onConvertToInvoice }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
 
+  const { branchId } = useBranchFilter();
+
   const fetchQuotations = async () => {
     if (!user?.company_id) return;
     setLoading(true);
-    const { data } = await salesQuotationsApi.getQuotations(user.company_id);
+    const { data } = await salesQuotationsApi.getQuotations(user.company_id, branchId);
     setQuotations(data || []);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchQuotations();
-  }, [user?.company_id]);
+  }, [user?.company_id, branchId]);
 
   const filtered = useMemo(() => {
     return quotations.filter(q => {

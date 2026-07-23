@@ -5,19 +5,20 @@ import { useFeedbackStore } from '../feedback/store';
 import { CreateInvoiceDTO } from '../sales/types';
 // Fix: Import 'salesService' to resolve the 'Cannot find name' error.
 import { salesService } from '../sales/service';
+import { useBranchFilter } from '../branches/hooks/useBranchFilter';
 
 export const usePOSCheckout = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { showToast } = useFeedbackStore();
+  const { branchId } = useBranchFilter();
 
   const checkout = useMutation({
     mutationFn: async (data: CreateInvoiceDTO) => {
       if (!user?.company_id || !user?.id) throw new Error("جلسة العمل منتهية");
-      // ملاحظة: لا نستخدم ProcessPOSCheckoutUsecase مباشرة هنا لأن salesService.processNewSale
-      // يعالج بالفعل كل شيء بما في ذلك القيود والمخزون
-      // Fix: Updated method name from createInvoice to processNewSale and fixed argument ordering
-      return salesService.processNewSale(user.company_id, user.id, data);
+      // تمرير branchId النشط تلقائياً مع كل عملية بيع من نقطة البيع
+      const finalData = { ...data, branchId: data.branchId || branchId };
+      return salesService.processNewSale(user.company_id, user.id, finalData);
     },
     onSuccess: (invoice) => {
       showToast(`تمت عملية البيع بنجاح (رقم: ${invoice.invoice_number})`, 'success');

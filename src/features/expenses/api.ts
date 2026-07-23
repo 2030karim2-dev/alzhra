@@ -19,8 +19,8 @@ export const expensesApi = {
     return { data: data || [], error: null };
   },
 
-  getExpensesRaw: async (companyId: string) => {
-    const { data, error } = await supabase
+  getExpensesRaw: async (companyId: string, branchId?: string | null) => {
+    let query = supabase
       .from('expenses')
       .select(`
         *,
@@ -32,7 +32,11 @@ export const expensesApi = {
       .order('expense_date', { ascending: false })
       .limit(1000);
 
-    return { data, error };
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+
+    return await query;
   },
 
   // استخدام RPC الموحد v2 الذي يدعم الربط المباشر بالحسابات وتحسين الأداء
@@ -47,7 +51,8 @@ export const expensesApi = {
       p_payment_method: data.payment_method,
       ...(data.voucher_number ? { p_voucher_number: data.voucher_number } : {}),
       p_currency: data.currency_code || 'SAR',
-      p_exchange_rate: data.exchange_rate || 1
+      p_exchange_rate: data.exchange_rate || 1,
+      ...(data.branch_id ? { p_branch_id: data.branch_id } : {})
     });
   },
 

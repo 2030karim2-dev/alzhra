@@ -8,14 +8,16 @@ import { usePartySearch } from '../parties/hooks';
 import { invalidateByPreset } from '../../lib/invalidation';
 import { useNetworkStatus } from '../../lib/hooks/useNetworkStatus';
 import { syncStore } from '../../core/lib/sync-store';
+import { useBranchFilter } from '../branches/hooks/useBranchFilter';
 
 // Fix: Added missing usePurchases hook to fetch purchase history
 export const usePurchases = () => {
   const { user } = useAuthStore();
   const companyId = user?.company_id;
+  const { branchId } = useBranchFilter();
   return useQuery({
-    queryKey: ['purchases', companyId],
-    queryFn: () => companyId ? purchasesService.getPurchases(companyId) : Promise.resolve([] as any[]),
+    queryKey: ['purchases', companyId, branchId],
+    queryFn: () => companyId ? purchasesService.getPurchases(companyId, branchId) : Promise.resolve([] as any[]),
     enabled: !!companyId,
   });
 };
@@ -24,9 +26,10 @@ export const usePurchases = () => {
 export const usePurchaseStats = () => {
   const { user } = useAuthStore();
   const companyId = user?.company_id;
+  const { branchId } = useBranchFilter();
   return useQuery({
-    queryKey: ['purchase_stats', companyId],
-    queryFn: () => companyId ? purchasesService.getStats(companyId) : Promise.resolve(null),
+    queryKey: ['purchase_stats', companyId, branchId],
+    queryFn: () => companyId ? purchasesService.getStats(companyId, branchId) : Promise.resolve(null),
     enabled: !!companyId,
   });
 };
@@ -50,13 +53,14 @@ export const useCreatePurchase = () => {
   const { user } = useAuthStore();
   const { showToast } = useFeedbackStore();
   const { isOnline } = useNetworkStatus();
+  const { branchId } = useBranchFilter();
 
   return useMutation({
     mutationFn: async (data: CreatePurchaseDTO) => {
       if (!user?.company_id || !user?.id) throw new Error("Authentication failed");
 
       // نرسل الفاتورة بحالة 'posted' لتفعيل الـ Trigger المخزني والمحاسبي في SQL
-      return purchasesService.processPurchase(data, user.company_id, user.id);
+      return purchasesService.processPurchase({ ...data, branch_id: branchId }, user.company_id, user.id);
     },
     onSuccess: () => {
       showToast(`تم توريد الفاتورة بنجاح وتحديث الأرصدة المخزنية والمالية`, 'success');
@@ -82,11 +86,12 @@ export const useCreatePayment = () => {
   const { user } = useAuthStore();
   const { showToast } = useFeedbackStore();
   const { isOnline } = useNetworkStatus();
+  const { branchId } = useBranchFilter();
 
   return useMutation({
     mutationFn: async (data: CreatePaymentDTO) => {
       if (!user?.company_id || !user?.id) throw new Error("Authentication failed");
-      return purchasesApi.createSupplierPayment(data, user.company_id, user.id);
+      return purchasesApi.createSupplierPayment({ ...data, branch_id: branchId }, user.company_id, user.id);
     },
     onSuccess: () => {
       showToast('تم تسجيل سند الصرف بنجاح', 'success');

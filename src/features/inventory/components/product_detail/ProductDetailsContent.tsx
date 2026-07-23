@@ -1,17 +1,23 @@
-import { useState } from 'react';
-import { Box, DollarSign, TrendingUp, TrendingDown, Package, ShieldCheck, Activity, Info, Settings2, FileClock, Link2, Sparkles, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Box, DollarSign, TrendingUp, TrendingDown, Package, ShieldCheck, Activity, Info, Settings2, FileClock, Link2, Sparkles, Loader2, Building2, Warehouse } from 'lucide-react';
 import { Product } from '../../types';
 import { formatCurrency, formatNumberDisplay, cn } from '../../../../core/utils';
 import StatCard from './StatCard';
 import FitmentSection from './FitmentSection';
 import AlternativesSection from './AlternativesSection';
 import HistorySection from './HistorySection';
+import BranchStockBreakdown from './BranchStockBreakdown';
+import SupplierInfoCard from './SupplierInfoCard';
+import ProductAnalyticsChart from './ProductAnalyticsChart';
 import { VehicleCompatibilityList } from '../auto_parts/VehicleCompatibilityList';
 import { ProductKitList } from '../auto_parts/ProductKitList';
 import { SupplierPricesList } from '../auto_parts/SupplierPricesList';
 import { CrossReferenceList } from '../auto_parts/CrossReferenceList';
 import { useProductDetails } from '../../hooks/useProductDetails';
 import { useAIPartLookup } from '../../hooks/useAIPartLookup';
+import { useAuthStore } from '../../../auth/store';
+import { useQuery } from '@tanstack/react-query';
+import { settingsApi } from '../../../settings/api';
 
 interface Props {
     product: Product;
@@ -23,6 +29,36 @@ const ProductDetailsContent: React.FC<Props> = ({ product }) => {
     const { stats, margin, supplierName, selling } = useProductDetails(product);
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const { search: aiImageSearch, searchResult: aiResult, isSearching: isAISearching } = useAIPartLookup(product.part_number);
+    const { user } = useAuthStore();
+
+    // جلب الفروع لربطها مع المستودعات
+    const { data: branches = [] } = useQuery({
+        queryKey: ['branches', user?.company_id],
+        queryFn: () => user?.company_id ? settingsApi.getBranches(user.company_id) : Promise.resolve({ data: [] }),
+        enabled: !!user?.company_id,
+        select: (result) => result.data || [],
+    });
+
+    // بناء هيكل الفروع مع المستودعات المرتبطة
+    const branchStockData = useMemo(() => {
+        if (!branches.length || !product.warehouse_distribution?.length) return [];
+
+        return branches.map((branch: any) => ({
+            id: branch.id,
+            name: branch.name,
+            warehouses: (product.warehouse_distribution || [])
+                .filter((wh: any) => {
+                    // ربط المستودعات بالفروع حسب warehouse_id → warehouse.branch_id
+                    return wh.warehouse_id && branch.warehouses?.some?.((bw: any) => bw.id === wh.warehouse_id);
+                })
+                .map((wh: any) => ({
+                    id: wh.warehouse_id,
+                    name: wh.warehouse_name,
+                    quantity: wh.quantity,
+                    location: wh.location || null,
+                }))
+        }));
+    }, [branches, product.warehouse_distribution]);
 
     const tabs: { id: TabType; label: string; icon: any }[] = [
         { id: 'overview', label: 'نظرة عامة', icon: Info },
@@ -43,8 +79,8 @@ const ProductDetailsContent: React.FC<Props> = ({ product }) => {
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-[11px] font-bold border-l border-slate-200 dark:border-slate-800 transition-colors uppercase tracking-tight shrink-0",
-                                activeTab === tab.id 
-                                    ? "bg-white dark:bg-slate-950 text-blue-600 border-b-2 border-b-blue-600 -mb-[1px]" 
+                                activeTab === tab.id
+                                    ? "bg-white dark:bg-slate-950 text-blue-600 border-b-2 border-b-blue-600 -mb-[1px]"
                                     : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800/50"
                             )}
                         >
@@ -95,7 +131,7 @@ const ProductDetailsContent: React.FC<Props> = ({ product }) => {
                                     </div>
 
                                     {/* Details Grid */}
-                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-x divide-x-reverse divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-x divide-x-reverse divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
                                         {[
                                             { label: 'الشركة الصانعة', value: product.brand || '—' },
                                             { label: 'المورد الأساسي', value: supplierName },
@@ -113,34 +149,40 @@ const ProductDetailsContent: React.FC<Props> = ({ product }) => {
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Analytics & Supplier Row */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50/20 dark:bg-slate-900/20 border-t border-slate-200 dark:border-slate-800">
+                                        <ProductAnalyticsChart
+                                            data={{
+                                                totalSales: Number(stats.total_sales) || 0,
+                                                totalPurchases: Number(stats.total_purchases) || 0,
+                                                profit: Number(stats.profit) || 0,
+                                                margin: margin,
+                                            }}
+                                        />
+                                        <SupplierInfoCard
+                                            supplierName={supplierName}
+                                            isLoading={false}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {activeTab === 'inventory' && (
-                            <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
-                                <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2">
-                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2">
-                                        <Package size={12} className="text-blue-500" /> مواقع مخزون القطعة في الفروع
+                            <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Building2 size={16} className="text-indigo-500" />
+                                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        توزيع المخزون حسب الفروع والمستودعات
                                     </h4>
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-x-reverse divide-slate-200 dark:divide-slate-800">
-                                    {product.warehouse_distribution?.length ? product.warehouse_distribution.map((wh, i) => (
-                                        <div key={i} className="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center group bg-white dark:bg-slate-950">
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{wh.warehouse_name}</p>
-                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight">الرف: {wh.location || '-'}</p>
-                                            </div>
-                                            <div className="font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/10 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-900/30 text-xs">
-                                                {formatNumberDisplay(wh.quantity)}
-                                            </div>
-                                        </div>
-                                    )) : (
-                                        <div className="col-span-full py-12 text-center text-slate-300 font-bold text-[11px] uppercase tracking-widest bg-slate-50/20">
-                                            لا توجد توزيعات مسجلة
-                                        </div>
-                                    )}
-                                </div>
+                                <BranchStockBreakdown
+                                    warehouseDistribution={(product.warehouse_distribution || []) as any}
+                                    branches={branchStockData}
+                                    totalStock={product.stock_quantity}
+                                    minStockLevel={product.min_stock_level}
+                                />
                             </div>
                         )}
 

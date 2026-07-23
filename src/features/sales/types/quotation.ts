@@ -43,6 +43,7 @@ export interface SalesQuotation {
 }
 
 export interface CreateQuotationDTO {
+  branchId?: string | null;
   partyId: string | null;
   issueDate: string;
   validUntil?: string | undefined;

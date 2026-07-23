@@ -59,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col fixed inset-y-0 z-20 bg-[var(--app-surface)]/80 backdrop-blur-xl h-screen border-[var(--app-border)] transition-all duration-300 ease-in-out shadow-2xl',
+          'hidden md:flex flex-col fixed inset-y-0 z-20 bg-[var(--app-surface)] h-screen border-[var(--app-border)] transition-[width] duration-150 ease-out shadow-xl',
           dir === 'rtl' ? 'right-0 border-l' : 'left-0 border-r',
           isCollapsed ? dynamicWidth : expandedWidth
         )}

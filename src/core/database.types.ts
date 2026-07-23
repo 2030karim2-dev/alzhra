@@ -3532,6 +3532,7 @@ export type Database = {
           p_reference_invoice_id?: string
           p_return_reason?: string
           p_user_id: string
+          p_branch_id?: string | null
         }
         Returns: Json
       }
@@ -3548,6 +3549,7 @@ export type Database = {
           p_payment_method?: string
           p_treasury_account_id?: string
           p_user_id: string
+          p_branch_id?: string | null
         }
         Returns: Json
       }
@@ -3744,7 +3746,7 @@ export type Database = {
         }[]
       }
       get_warehouses_with_stats: {
-        Args: { p_company_id: string }
+        Args: { p_company_id: string, p_branch_id?: string | null }
         Returns: {
           id: string
           location: string

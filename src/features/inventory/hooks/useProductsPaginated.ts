@@ -22,6 +22,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { useAuthStore } from '../../auth/store';
 import { productService } from '../services/productService';
 import { Product } from '../types';
+import { useBranchFilter } from '../../branches/hooks/useBranchFilter';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,8 +50,9 @@ export const productsPageKey = (
   pageSize: number,
   search: string,
   sortKey: string,
-  sortDir: string
-) => ['products_paginated', companyId, page, pageSize, search, sortKey, sortDir] as const;
+  sortDir: string,
+  branchId?: string | null
+) => ['products_paginated', companyId, page, pageSize, search, sortKey, sortDir, branchId] as const;
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
@@ -66,6 +68,7 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
   const { user } = useAuthStore();
   const companyId = user?.company_id ?? '';
   const queryClient = useQueryClient();
+  const { branchId } = useBranchFilter();
 
   const [page, setPage] = useState(initialPage);
   const [search, setSearch] = useState(initialSearch);
@@ -89,7 +92,7 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
 
   // ── Main paginated query ─────────────────────────────────────────────────
 
-  const queryKey = productsPageKey(companyId, page, pageSize, debouncedSearch, sortKey, sortDir);
+  const queryKey = productsPageKey(companyId, page, pageSize, debouncedSearch, sortKey, sortDir, branchId);
 
   const query = useQuery<ProductsPage>({
     queryKey,
@@ -104,7 +107,8 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
         p_limit: pageSize,
         p_offset: from,
         p_sort_key: sortKey,
-        p_sort_dir: sortDir
+        p_sort_dir: sortDir,
+        p_branch_id: branchId || null
       });
       if (error) throw error;
 
@@ -123,7 +127,7 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
 
   useEffect(() => {
     if (!query.data || page >= (query.data.totalPages ?? 1)) return;
-    const nextKey = productsPageKey(companyId, page + 1, pageSize, debouncedSearch, sortKey, sortDir);
+    const nextKey = productsPageKey(companyId, page + 1, pageSize, debouncedSearch, sortKey, sortDir, branchId);
     void queryClient.prefetchQuery({
       queryKey: nextKey,
       queryFn: async (): Promise<ProductsPage> => {
@@ -135,7 +139,8 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
           p_limit: pageSize,
           p_offset: from,
           p_sort_key: sortKey,
-          p_sort_dir: sortDir
+          p_sort_dir: sortDir,
+          p_branch_id: branchId || null
         });
         if (error) throw error;
 
@@ -145,7 +150,7 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
       },
       staleTime: 1000 * 30,
     });
-  }, [page, query.data, companyId, pageSize, debouncedSearch, sortKey, sortDir, queryClient]);
+  }, [page, query.data, companyId, pageSize, debouncedSearch, sortKey, sortDir, branchId, queryClient]);
 
   // ── Real-time invalidation ───────────────────────────────────────────────
 

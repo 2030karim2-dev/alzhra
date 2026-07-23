@@ -52,8 +52,8 @@ export const salesQuotationsApi = {
   /**
    * Get all sales quotations
    */
-  getQuotations: async (companyId: string) => {
-    const { data, error } = await supabase
+  getQuotations: async (companyId: string, branchId?: string | null) => {
+    let query = supabase
       .from('quotations')
       .select(`
         id,
@@ -73,7 +73,12 @@ export const salesQuotationsApi = {
       .eq('type', 'sales')
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
     
+    const { data, error } = await query;
     return { data: data as QuotationRow[] | null, error };
   },
 
@@ -124,6 +129,7 @@ export const salesQuotationsApi = {
       .from('quotations')
       .insert({
         company_id: companyId,
+        branch_id: dto.branchId || null,
         quotation_number: quotationNumber,
         type: 'sales',
         status: 'draft',

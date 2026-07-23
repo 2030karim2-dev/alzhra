@@ -30,11 +30,11 @@ type InvoiceWithDetails = Invoice & {
 };
 
 export const salesApi = {
-  getInvoices: async (companyId: string, page: number = 0, limit: number = 50) => {
+  getInvoices: async (companyId: string, page: number = 0, limit: number = 50, branchId?: string | null) => {
     const from = page * limit;
     const to = from + limit - 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('invoices')
       .select(`
         id,
@@ -56,7 +56,12 @@ export const salesApi = {
       .is('deleted_at', null)
       .order('issue_date', { ascending: false })
       .range(from, to);
+      
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
 
+    const { data, error } = await query;
     if (error) throw parseError(error);
     return data as unknown as InvoiceWithParty[];
   },
@@ -76,6 +81,7 @@ export const salesApi = {
       ...(payload.treasuryAccountId ? { p_treasury_account_id: payload.treasuryAccountId } : {}),
       ...(payload.currency ? { p_currency: payload.currency } : {}),
       ...(payload.exchangeRate ? { p_exchange_rate: payload.exchangeRate } : {}),
+      ...(payload.branchId ? { p_branch_id: payload.branchId } : {}),
       p_discount_amount: payload.discount || 0
     };
 
@@ -98,7 +104,8 @@ export const salesApi = {
       ...(payload.currency ? { p_currency: payload.currency } : {}),
       ...(payload.exchangeRate ? { p_exchange_rate: Number(payload.exchangeRate) } : {}),
       ...(payload.referenceInvoiceId ? { p_reference_invoice_id: payload.referenceInvoiceId } : {}),
-      ...(payload.returnReason ? { p_return_reason: payload.returnReason } : {})
+      ...(payload.returnReason ? { p_return_reason: payload.returnReason } : {}),
+      ...(payload.branchId ? { p_branch_id: payload.branchId } : {})
     };
 
     const { data: result, error } = await supabase.rpc('commit_sale_return', rpcParams);

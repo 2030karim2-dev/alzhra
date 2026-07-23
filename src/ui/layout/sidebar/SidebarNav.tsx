@@ -6,6 +6,7 @@ import Icon from '../../common/Icon';
 import { IconColor } from '../../../core/types';
 import { cn } from '../../../core/utils';
 import { useAuthStore } from '../../../features/auth/store';
+import { prefetchRoute } from '../../../core/utils/routePrefetcher';
 
 // This map contains all the Tailwind classes so they are not purged
 // Premium Gradients & Shadows for Active States
@@ -57,6 +58,8 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ isCollapsed }) => {
           <button
             key={item.id}
             onClick={() => navigate(item.path)}
+            onMouseEnter={() => prefetchRoute(item.path)}
+            onFocus={() => prefetchRoute(item.path)}
             title={isCollapsed ? t(item.labelKey) : ''}
             aria-label={t(item.labelKey)}
             className={cn(

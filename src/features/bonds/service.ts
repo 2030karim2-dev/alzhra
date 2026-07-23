@@ -21,8 +21,8 @@ interface RawPaymentRow {
 }
 
 export const bondsService = {
-  fetchBonds: async (companyId: string, type: BondType): Promise<Bond[]> => {
-    const { data, error } = await bondsApi.getBonds(companyId, type);
+  fetchBonds: async (companyId: string, branchId?: string | null, type?: BondType): Promise<Bond[]> => {
+    const { data, error } = await bondsApi.getBonds(companyId, branchId, type);
     if (error) throw error;
 
     return (data || []).map((p: RawPaymentRow) => {
@@ -77,8 +77,8 @@ export const bondsService = {
     if (error) throw error;
   },
 
-  getBondsStats: async (companyId: string) => {
-    const { data, error } = await bondsApi.getBondsStats(companyId);
+  getBondsStats: async (companyId: string, branchId?: string | null) => {
+    const { data, error } = await bondsApi.getBondsStats(companyId, branchId);
     if (error) throw error;
     return data;
   }

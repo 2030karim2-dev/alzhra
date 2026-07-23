@@ -5,6 +5,7 @@ import Modal from '../../../../ui/base/Modal';
 import Button from '../../../../ui/base/Button';
 import Input from '../../../../ui/base/Input';
 import { useTranslation } from '../../../../lib/hooks/useTranslation';
+import { useBranches } from '../../hooks';
 
 interface Props {
   isOpen: boolean;
@@ -19,8 +20,10 @@ const WarehouseModal: React.FC<Props> = ({ isOpen, onClose, onSave, isSaving, in
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   useEffect(() => {
-    if (isOpen) reset(initialData || { name: '', location: '', is_primary: false });
+    if (isOpen) reset(initialData || { name_ar: '', location: '', is_primary: false, branch_id: '' });
   }, [isOpen, initialData, reset]);
+
+  const { data: branches } = useBranches();
 
   const entityType = t('warehouse');
   const title = initialData
@@ -56,8 +59,8 @@ const WarehouseModal: React.FC<Props> = ({ isOpen, onClose, onSave, isSaving, in
         <Input
           label={t('warehouse_name_label')}
           placeholder={t('warehouse_name_placeholder')}
-          {...register('name', { required: t('warehouse_name_required') })}
-          error={errors.name?.message as string}
+          {...register('name_ar', { required: t('warehouse_name_required') })}
+          error={errors.name_ar?.message as string}
           icon={<Package />}
         />
         <Input
@@ -66,6 +69,21 @@ const WarehouseModal: React.FC<Props> = ({ isOpen, onClose, onSave, isSaving, in
           {...register('location')}
           icon={<MapPin />}
         />
+
+        <div className="p-3 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-800">
+          <label className="text-[10px] font-bold text-gray-400 uppercase px-1 mb-1 block">
+            الفرع التابع له (اختياري)
+          </label>
+          <select
+            {...register('branch_id')}
+            className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl p-2 text-[11px] font-bold outline-none"
+          >
+            <option value="">-- فرع رئيسي / بدون فرع --</option>
+            {branches?.map((branch: any) => (
+              <option key={branch.id} value={branch.id}>{branch.name}</option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-950 border-b dark:border-slate-800">
           <div className="flex items-center gap-2">

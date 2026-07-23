@@ -4,12 +4,12 @@ import { parseError } from '../../../core/utils/errorUtils';
 
 
 export const journalsApi = {
-  fetchJournals: async (companyId: string, pageParam: number = 0) => {
+  fetchJournals: async (companyId: string, branchId?: string | null, pageParam: number = 0) => {
     const limit = 50;
     const from = pageParam * limit;
     const to = from + limit - 1;
 
-    return await supabase
+    let query = supabase
       .from('journal_entries')
       .select(`
         *,
@@ -30,8 +30,13 @@ export const journalsApi = {
       .eq('company_id', companyId)
       .is('deleted_at', null)
       .order('entry_date', { ascending: false })
-      .order('entry_number', { ascending: false })
-      .range(from, to);
+      .order('entry_number', { ascending: false });
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+    
+    return await query.range(from, to);
   },
 
   postJournalEntryRPC: async (companyId: string, userId: string, data: {
@@ -46,7 +51,8 @@ export const journalsApi = {
       account_id: string;
       party_id?: string | undefined;
       description?: string | undefined;
-    }>
+    }>;
+    branchId?: string | null;
   }) => {
     // 1. Calculate and validate balance
     const totalDebit = data.lines.reduce((sum: number, l) => sum + (Number(l.debit) || 0), 0);
@@ -60,6 +66,7 @@ export const journalsApi = {
     const { data: journalId, error } = await supabase.rpc('post_manual_journal', {
       p_company_id: companyId,
       p_user_id: userId,
+      p_branch_id: data.branchId || null,
       p_date: data.date,
       p_description: data.description,
       p_reference_type: data.reference_type || 'manual',

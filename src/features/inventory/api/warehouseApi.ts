@@ -3,8 +3,8 @@ import { TableInsert } from '@/core/types/supabase-helpers';
 
 /** Warehouse and stock management */
 export const warehouseApi = {
-    getWarehouses: async (companyId: string) => {
-        return await supabase.rpc('get_warehouses_with_stats', { p_company_id: companyId });
+    getWarehouses: async (companyId: string, branchId?: string | null) => {
+        return await supabase.rpc('get_warehouses_with_stats', { p_company_id: companyId, p_branch_id: branchId || null });
     },
 
     createInventoryTransactions: async (transactions: TableInsert<'inventory_transactions'>[]) => {
@@ -78,7 +78,7 @@ export const warehouseApi = {
             });
     },
 
-    saveWarehouse: async (companyId: string, data: { id?: string, name_ar: string, location: string }) => {
+    saveWarehouse: async (companyId: string, data: { id?: string, name_ar: string, location: string, branch_id?: string | null }) => {
         const { id, ...formData } = data;
         if (id) {
             return await supabase.from('warehouses').update(formData as any).eq('id', id);

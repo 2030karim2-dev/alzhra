@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Product } from '@/features/inventory/types';
 import { salesQuotationsApi } from '@/features/sales/api';
+import { useBranchFilter } from '@/features/branches/hooks/useBranchFilter';
 
 export interface ItemRow {
   productId: string;
@@ -15,6 +16,7 @@ export const useQuotationForm = (companyId: string | undefined, userId: string |
   const [selectedParty, setSelectedParty] = useState<{ id: string; name: string; phone?: string } | null>(null);
   const [partyQuery, setPartyQuery] = useState('');
   const [isPartyDropdownOpen, setIsPartyDropdownOpen] = useState(false);
+  const { branchId } = useBranchFilter();
   
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [validDays, setValidDays] = useState(7);
@@ -79,6 +81,7 @@ export const useQuotationForm = (companyId: string | undefined, userId: string |
     setSaving(true);
     try {
       await salesQuotationsApi.createQuotation(companyId, userId, {
+        branchId,
         partyId: selectedParty?.id || null,
         issueDate,
         validUntil,

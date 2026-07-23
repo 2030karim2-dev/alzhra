@@ -4,7 +4,7 @@ import { settingsService } from './service';
 import { settingsApi } from './api';
 import { useAuthStore } from '../auth/store';
 import { useFeedbackStore } from '../feedback/store';
-import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData } from './types';
+import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData, BranchFormData } from './types';
 
 export const useCompany = () => {
   const { user } = useAuthStore();
@@ -211,3 +211,102 @@ export const useBackupActions = () => {
 
   return { exportData, importData };
 };
+
+export const useBranches = () => {
+  const { user } = useAuthStore();
+  return useQuery({
+    queryKey: ['branches', user?.company_id],
+    queryFn: () => user?.company_id ? settingsService.fetchBranches(user.company_id) : Promise.resolve([]),
+    enabled: !!user?.company_id
+  });
+};
+
+export const useBranchMutations = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const { showToast } = useFeedbackStore();
+
+  const addBranch = useMutation({
+    mutationFn: (data: BranchFormData) => {
+      if (!user?.company_id) throw new Error('No Company ID');
+      return settingsService.addBranch(user.company_id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      showToast('تمت إضافة الفرع الجديد بنجاح', 'success');
+    },
+    onError: (err: any) => showToast(err.message || 'خطأ في إضافة الفرع', 'error')
+  });
+
+  const editBranch = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: BranchFormData }) =>
+      settingsService.updateBranch(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      showToast('تم تحديث بيانات الفرع بنجاح', 'success');
+    },
+    onError: (err: any) => showToast(err.message || 'خطأ في تحديث الفرع', 'error')
+  });
+
+  const deleteBranch = useMutation({
+    mutationFn: (id: string) => settingsService.removeBranch(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      showToast('تم حذف الفرع', 'info');
+    },
+    onError: (err: any) => showToast(err.message || 'خطأ في حذف الفرع', 'error')
+  });
+
+  return {
+    addBranch: addBranch.mutate,
+    editBranch: editBranch.mutate,
+    deleteBranch: deleteBranch.mutate,
+    isAdding: addBranch.isPending,
+    isEditing: editBranch.isPending,
+    isDeleting: deleteBranch.isPending,
+  };
+};
+
+export const useInvitations = () => {
+  const { user } = useAuthStore();
+  return useQuery({
+    queryKey: ['invitations', user?.company_id],
+    queryFn: () => user?.company_id ? settingsApi.getInvitations(user.company_id).then(res => res.data || []) : Promise.resolve([]),
+    enabled: !!user?.company_id
+  });
+};
+
+export const useInvitationMutations = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const { showToast } = useFeedbackStore();
+
+  const inviteUser = useMutation({
+    mutationFn: (data: { email: string, role: string, branchId?: string | null }) => {
+      if (!user?.company_id || !user?.id) throw new Error("Missing Auth");
+      return settingsApi.inviteUser(data.email, data.role, user.company_id, user.id, data.branchId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitations'] });
+      showToast("تم إرسال الدعوة بنجاح", 'success');
+    },
+    onError: (err: any) => showToast(err.message || 'فشل إرسال الدعوة', 'error')
+  });
+
+  const revokeInvitation = useMutation({
+    mutationFn: (id: string) => settingsApi.revokeInvitation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitations'] });
+      showToast("تم إلغاء الدعوة", 'info');
+    },
+    onError: (err: any) => showToast(err.message || 'خطأ في إلغاء الدعوة', 'error')
+  });
+
+  return {
+    inviteUser: inviteUser.mutateAsync,
+    revokeInvitation: revokeInvitation.mutate,
+    isInviting: inviteUser.isPending,
+    isRevoking: revokeInvitation.isPending
+  };
+};
+

@@ -1,5 +1,5 @@
 import { settingsApi } from './api';
-import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData, AutoBackupConfig } from './types.ts';
+import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData, AutoBackupConfig, BranchFormData } from './types.ts';
 import { supabase } from '../../lib/supabaseClient';
 
 export const settingsService = {
@@ -11,6 +11,29 @@ export const settingsService = {
 
     updateCompanyProfile: async (companyId: string, data: CompanyFormData) => {
         const { error } = await settingsApi.updateCompany(companyId, data);
+        if (error) throw error;
+    },
+
+    fetchBranches: async (companyId: string) => {
+        const { data, error } = await settingsApi.getBranches(companyId);
+        if (error) throw error;
+        return data || [];
+    },
+
+    addBranch: async (companyId: string, data: BranchFormData) => {
+        const { data: branch, error } = await settingsApi.createBranch(companyId, data);
+        if (error) throw error;
+        return branch;
+    },
+
+    updateBranch: async (id: string, data: BranchFormData) => {
+        const { data: branch, error } = await settingsApi.updateBranch(id, data);
+        if (error) throw error;
+        return branch;
+    },
+
+    removeBranch: async (id: string) => {
+        const { error } = await settingsApi.deleteBranch(id);
         if (error) throw error;
     },
 

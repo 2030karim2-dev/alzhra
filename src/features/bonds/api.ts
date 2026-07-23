@@ -3,11 +3,11 @@ import { supabase } from '../../lib/supabaseClient';
 import { BondFormData, BondType } from './types';
 
 export const bondsApi = {
-  getBonds: async (companyId: string, type?: BondType) => {
+  getBonds: async (companyId: string, branchId?: string | null, type?: BondType) => {
     // Map BondType → payments.type
     const paymentType = type === 'receipt' ? 'receipt' : (type === 'transfer' ? 'transfer' : 'disbursement');
 
-    return await supabase.from('payments')
+    let query = supabase.from('payments')
       .select(`
         id,
         payment_number,
@@ -27,9 +27,15 @@ export const bondsApi = {
       .is('deleted_at', null)
       .neq('status', 'void')
       .order('payment_date', { ascending: false });
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+
+    return await query;
   },
 
-  createPaymentRPC: async (companyId: string, userId: string, data: BondFormData) => {
+  createPaymentRPC: async (companyId: string, userId: string, data: BondFormData & { branchId?: string | null }) => {
     if (!data.cash_account_id || !data.counterparty_id) {
       throw new Error("يجب اختيار الحسابات المطلوبة");
     }
@@ -56,7 +62,8 @@ export const bondsApi = {
       p_reference_number: data.reference_number || '',
       ...(data.currency_code ? { p_currency_code: data.currency_code } : {}),
       ...(data.exchange_rate ? { p_exchange_rate: data.exchange_rate } : {}),
-      ...(data.foreign_amount ? { p_foreign_amount: data.foreign_amount } : {})
+      ...(data.foreign_amount ? { p_foreign_amount: data.foreign_amount } : {}),
+      p_branch_id: data.branchId || null
     });
 
     if (error) {
@@ -82,7 +89,7 @@ export const bondsApi = {
     return { error: null };
   },
 
-  getBondsStats: async (companyId: string) => {
-    return await supabase.rpc('get_bonds_stats', { p_company_id: companyId });
+  getBondsStats: async (companyId: string, branchId?: string | null) => {
+    return await supabase.rpc('get_bonds_stats', { p_company_id: companyId, p_branch_id: branchId || null });
   }
 };

@@ -7,7 +7,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      // Babel transform for faster JSX in dev
+      babel: {
+        plugins: [],
+      },
+    }),
     nodePolyfills({
       include: ['stream', 'buffer', 'process', 'util'],
       globals: {
@@ -38,6 +43,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // ⚡ Don't cache API calls
+        runtimeCaching: [],
       },
       devOptions: {
         enabled: false
@@ -53,36 +60,56 @@ export default defineConfig({
     'process.env': {},
   },
   optimizeDeps: {
-    include: ['stream', 'buffer', 'process'],
+    // ⚡ Pre-bundle all frequently used packages at startup to avoid runtime bundling
+    include: [
+      'stream', 'buffer', 'process',
+      'react', 'react-dom', 'react-router-dom',
+      '@tanstack/react-query',
+      'zustand',
+      'lucide-react',
+      'date-fns',
+    ],
+    // ⚡ Force exclude heavy rarely-used packages from pre-bundling
+    exclude: ['jspdf', 'html2canvas', 'xlsx-js-style'],
   },
   build: {
     target: 'esnext',
     minify: 'esbuild',
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000, // رفع حد التحذير
+    chunkSizeWarningLimit: 1500,
+    // ⚡ No source maps in production = faster build + smaller output
+    sourcemap: false,
     rollupOptions: {
       output: {
+        // ⚡ Improved manual chunking strategy
         manualChunks(id) {
-          // 1. فصل مكتبات React الأساسية
-          if (id.includes('node_modules/react') ||
-            id.includes('node_modules/react-dom') ||
-            id.includes('node_modules/react-router-dom')) {
+          // Core React runtime
+          if (id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/')) {
             return 'vendor-react';
           }
-          // 2. فصل مكتبات البيانات (Supabase, Query, Zustand)
+          // Router
+          if (id.includes('node_modules/react-router-dom') ||
+            id.includes('node_modules/react-router/') ||
+            id.includes('node_modules/@remix-run/')) {
+            return 'vendor-router';
+          }
+          // Data management
           if (id.includes('node_modules/@supabase') ||
             id.includes('node_modules/@tanstack') ||
             id.includes('node_modules/zustand')) {
             return 'vendor-data';
           }
-          // 3. فصل مكتبات الرسوم البيانية والأيقونات
+          // Charts — heavy, load only on chart pages
           if (id.includes('node_modules/recharts')) {
             return 'vendor-charts';
           }
+          // Icons — tree-shaken but still large
           if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';
           }
-          // 4. فصل المكتبات الثقيلة جداً (PDF, Excel) لتتحمل فقط عند الحاجة
+          // Heavy export libs — only needed when user exports
           if (id.includes('node_modules/xlsx-js-style')) {
             return 'vendor-xlsx';
           }
@@ -90,11 +117,17 @@ export default defineConfig({
             id.includes('node_modules/html2canvas')) {
             return 'vendor-export';
           }
+          // Date utilities
+          if (id.includes('node_modules/date-fns')) {
+            return 'vendor-date';
+          }
         },
       },
     },
   },
   server: {
     port: 8081,
+    // ⚡ Use HTTP/1.1 for dev (faster HMR in some setups)
+    hmr: true,
   },
 });

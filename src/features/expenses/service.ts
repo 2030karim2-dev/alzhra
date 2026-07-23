@@ -6,8 +6,8 @@ import { toBaseCurrency } from '../../core/utils/currencyUtils';
 import { supabase } from '../../lib/supabaseClient';
 
 export const expensesService = {
-  getExpensesList: async (companyId: string): Promise<Expense[]> => {
-    const { data, error } = await expensesApi.getExpensesRaw(companyId);
+  getExpensesList: async (companyId: string, branchId?: string | null): Promise<Expense[]> => {
+    const { data, error } = await expensesApi.getExpensesRaw(companyId, branchId);
     if (error) throw error;
 
     return (data || []).map((exp: Record<string, unknown>) => ({

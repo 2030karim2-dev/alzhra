@@ -19,6 +19,7 @@ export interface SalesCartItem {
   price: number;     // Converted price based on current exchange rate
   discount: number;
   costPrice: number;
+  warehouse_distribution?: Array<{ warehouse_id: string; warehouse_name: string; quantity: number }>;
 }
 
 export interface SalesSummary {
@@ -119,7 +120,8 @@ export const useSalesStore = create<SalesState>((set, get) => ({
           basePrice: basePrice,
           price: convertedPrice,
           quantity: 1,
-          costPrice: product.cost_price || 0
+          costPrice: product.cost_price || 0,
+          warehouse_distribution: product.warehouse_distribution
         };
       }
       return { items: newItems };
@@ -154,7 +156,8 @@ export const useSalesStore = create<SalesState>((set, get) => ({
         basePrice: basePrice,
         price: convertedPrice,
         discount: 0,
-        costPrice: product.cost_price || 0
+        costPrice: product.cost_price || 0,
+        warehouse_distribution: product.warehouse_distribution
       };
 
       return { items: [newItem, ...state.items] };

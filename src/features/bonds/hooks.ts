@@ -4,21 +4,24 @@ import { useAuthStore } from '../auth/store';
 import { useFeedbackStore } from '../feedback/store';
 import { BondType, BondFormData } from './types';
 import { AuthorizeActionUsecase } from '../../core/usecases/auth/AuthorizeActionUsecase';
+import { useBranchFilter } from '../branches/hooks/useBranchFilter';
 
-export const useBonds = (type: BondType) => {
+export const useBonds = (type?: BondType) => {
   const { user } = useAuthStore();
+  const { branchId } = useBranchFilter();
   return useQuery({
-    queryKey: ['bonds', user?.company_id, type],
-    queryFn: () => user?.company_id ? bondsService.fetchBonds(user.company_id, type) : Promise.resolve([]),
+    queryKey: ['bonds', user?.company_id, branchId, type],
+    queryFn: () => user?.company_id ? bondsService.fetchBonds(user.company_id, branchId, type) : Promise.resolve([]),
     enabled: !!user?.company_id,
   });
 };
 
 export const useBondsAnalytics = () => {
   const { user } = useAuthStore();
+  const { branchId } = useBranchFilter();
   return useQuery({
-    queryKey: ['bonds_analytics', user?.company_id],
-    queryFn: () => user?.company_id ? bondsService.getBondsStats(user.company_id) : Promise.resolve(null),
+    queryKey: ['bonds_analytics', user?.company_id, branchId],
+    queryFn: () => user?.company_id ? bondsService.getBondsStats(user.company_id, branchId) : Promise.resolve(null),
     enabled: !!user?.company_id,
   });
 };
@@ -27,6 +30,7 @@ export const useBondMutation = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { showToast } = useFeedbackStore();
+  const { branchId } = useBranchFilter();
 
   return useMutation({
     mutationFn: async (data: BondFormData) => {
@@ -35,7 +39,7 @@ export const useBondMutation = () => {
       // فحص الصلاحية لإصدار السندات
       AuthorizeActionUsecase.validateAction(user, 'create_bond');
 
-      return bondsService.createBond(user.company_id, user.id, data);
+      return bondsService.createBond(user.company_id, user.id, { ...data, branch_id: branchId });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bonds', user?.company_id] });

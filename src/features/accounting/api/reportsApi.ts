@@ -2,7 +2,7 @@
 import { supabase } from '../../../lib/supabaseClient';
 
 export const reportsApi = {
-  getJournalLines: async (companyId: string, fromDate?: string, toDate?: string) => {
+  getJournalLines: async (companyId: string, branchId?: string | null, fromDate?: string, toDate?: string) => {
     let query = supabase.from('journal_entry_lines')
       .select(`
         *,
@@ -26,6 +26,10 @@ export const reportsApi = {
       .eq('journal.status', 'posted')
       .is('deleted_at', null);
 
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+
     if (fromDate) {
       query = query.gte('journal.entry_date', fromDate);
     }
@@ -36,8 +40,8 @@ export const reportsApi = {
     return await query;
   },
 
-  getAuditJournals: async (companyId: string) => {
-    return await supabase.from('journal_entries')
+  getAuditJournals: async (companyId: string, branchId?: string | null) => {
+    let query = supabase.from('journal_entries')
       .select(`
         id,
         entry_date,
@@ -52,5 +56,10 @@ export const reportsApi = {
       .neq('status', 'void')
       .is('deleted_at', null)
       .order('entry_date', { ascending: false });
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+    return await query;
   }
 };

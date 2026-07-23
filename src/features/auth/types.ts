@@ -11,6 +11,10 @@ export interface AuthUser {
   company_id?: string;
   company_name?: string;
   permissions?: string[];
+
+  // بيانات الفرع - تُملأ من get_user_profile RPC
+  branch_id?: string | null;
+  branch_name?: string | null;
 }
 
 export interface LoginCredentials {

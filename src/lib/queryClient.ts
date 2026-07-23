@@ -6,8 +6,10 @@ import { persister } from './persister';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60, // ⚡ 1 minute - balanced freshness for financial data
-      gcTime: 1000 * 60 * 60 * 48, // Keep in cache for 48 hours
+      // ⚡ 5 minutes stale time — realtime sync handles live updates
+      staleTime: 1000 * 60 * 5,
+      // Keep in cache for 24 hours (persister handles longer storage)
+      gcTime: 1000 * 60 * 60 * 24,
       retry: (failureCount, error: Error & { code?: number | string; status?: number }) => {
         // ⚡ عدم إعادة المحاولة لأخطاء المصادقة - توجيه فوري للواجهة
         const code = error?.code || error?.status || '';
@@ -23,8 +25,10 @@ export const queryClient = new QueryClient({
         }
         return failureCount < 1; // محاولة واحدة فقط للأخطاء الأخرى
       },
-      refetchOnWindowFocus: true, // ⚡ Enabled to ensure freshness on return
-      refetchOnMount: true, // ⚡ Enabled to ensure freshness on navigation
+      // ⚡ DISABLED — useRealtimeSync handles live updates via Supabase WebSocket
+      // Enabling these causes ALL queries to fire on every page navigation = slow
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
       refetchOnReconnect: true,
     },
     mutations: {
