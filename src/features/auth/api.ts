@@ -77,10 +77,11 @@ export const authApi = {
 
         if (!error && data && Object.keys(data).length > 2) {
           // Fetch email from session as RPC does not return it
-          const { data: { user } } = await supabase.auth.getUser();
-          
+          const { data: authData } = await supabase.auth.getUser();
+          const user = authData?.user ?? null;
+
           const firstCompany = Array.isArray(data.companies) && data.companies.length > 0 ? data.companies[0] : null;
-          
+
           const flatData = {
             id: data.id,
             email: user?.email || '',
@@ -126,7 +127,8 @@ export const authApi = {
         const profileData = profileRes.data as any;
 
         // Get email from session user if missing
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData?.user ?? null;
 
         const fallbackData = {
           id: userId,

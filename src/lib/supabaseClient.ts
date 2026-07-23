@@ -140,6 +140,7 @@ const createMockClient = () => {
     }),
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      getUser: () => Promise.resolve({ data: { user: null }, error: null }),
       signInWithPassword: () => Promise.resolve({ data: null, error: null }),
       signOut: () => Promise.resolve({ error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),

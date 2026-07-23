@@ -99,7 +99,8 @@ export const customerApi = {
     },
 
     async createActivity(activity: CustomerActivityFormData & { customerId: string; companyId: string }): Promise<CustomerActivity> {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: authData } = await supabase.auth.getUser();
+        const userId = authData?.user?.id ?? null;
 
         const { data, error } = await supabase
             .from('customer_activities')
@@ -112,7 +113,7 @@ export const customerApi = {
                 scheduled_at: activity.scheduledAt ?? null,
                 priority: activity.priority ?? 'medium',
                 assigned_to: activity.assignedTo ?? null,
-                created_by: userData.user?.id ?? null,
+                created_by: userId,
                 status: 'pending'
             } as any)
             .select()
@@ -195,7 +196,8 @@ export const customerApi = {
     },
 
     async addNote(note: CustomerNoteFormData & { customerId: string; companyId: string }): Promise<CustomerNote> {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: authData } = await supabase.auth.getUser();
+        const userId = authData?.user?.id ?? null;
 
         const { data, error } = await supabase
             .from('customer_notes')
@@ -205,7 +207,7 @@ export const customerApi = {
                 note_type: note.noteType,
                 content: note.content,
                 is_important: note.isImportant || false,
-                created_by: userData.user?.id ?? null
+                created_by: userId
             } as any)
             .select()
             .single();
