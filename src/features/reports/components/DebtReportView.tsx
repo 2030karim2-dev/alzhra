@@ -20,7 +20,7 @@ const DebtReportView: React.FC = () => {
 
   const receivables = data?.debts.filter(d => d.type === 'customer' && d.remaining_amount > 0) || [];
   const payables = data?.debts.filter(d => d.type === 'supplier' && d.remaining_amount < 0) || [];
-  const netPosition = (data?.summary.receivables || 0) - (data?.summary.payables || 0);
+  const netPosition = (data?.summary?.receivables || 0) - (data?.summary?.payables || 0);
 
   const columns = [
     { header: 'الجهة المالية', accessor: (row: any) => <span className="font-bold text-slate-700 dark:text-slate-100">{row.name}</span> },

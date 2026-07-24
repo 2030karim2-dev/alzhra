@@ -4,7 +4,7 @@
 // ============================================
 
 import * as _XLSX from 'xlsx-js-style';
-const XLSX = _XLSX as any;
+const XLSX = (_XLSX as any).default || _XLSX;
 
 interface QuotationExcelData {
     companyName: string;
