@@ -43,11 +43,19 @@ export const dashboardApi = {
                 p_limit: 3
             }).abortSignal(signal as any),
 
-            // 4. Products with stock levels (for low stock alerts)
-            supabase.from('products').select('id, name_ar, min_stock_level, product_stock(quantity, warehouse_id)').eq('company_id', companyId).eq('status', 'active').limit(1000).abortSignal(signal as any) as any,
+            // 4. ⚡ Low Stock Products via RPC (replaces JS filtering)
+            supabase.rpc('get_low_stock_products', {
+                p_company_id: companyId,
+                p_branch_id: branchId || null
+            }).abortSignal(signal as any),
             
-            // 5. Expense Categories (for category breakdown)
-            supabase.from('expenses').select('amount, expense_categories(name)').eq('company_id', companyId).neq('status', 'void').gte('expense_date', dateFrom).lte('expense_date', dateTo).abortSignal(signal as any) as any,
+            // 5. ⚡ Expense Categories via RPC (replaces JS grouping)
+            supabase.rpc('get_expense_categories_summary', {
+                p_company_id: companyId,
+                p_date_from: dateFrom,
+                p_date_to: dateTo,
+                p_branch_id: branchId || null
+            }).abortSignal(signal as any),
 
             // 6. Trial Balance for accurate Net Profit based on Accounting Trees
             supabase.rpc('report_trial_balance', { p_company_id: companyId, p_from: '2000-01-01', p_to: dateTo, p_branch_id: branchId || null } as any).abortSignal(signal as any)
@@ -56,14 +64,23 @@ export const dashboardApi = {
         const firstError = batch.find((res: any) => res.error)?.error;
         if (firstError) throw firstError;
 
-        const [summaryRes, chartRes, topRes, productsRes, expensesRes, trialBalanceRes] = batch;
+        const [summaryRes, chartRes, topRes, lowStockRes, categoryRes, trialBalanceRes] = batch;
 
         return {
             summary: summaryRes.data || {},
             salesChart: chartRes.data || [],
             topData: topRes.data || { top_products: [], top_customers: [] },
-            productsWithStock: productsRes.data || [],
-            expensesRaw: expensesRes.data || [],
+            lowStockProducts: (lowStockRes.data || []).map((p: any) => ({
+                id: p.id,
+                name: p.name_ar,
+                quantity: Number(p.quantity),
+                min_quantity: Number(p.min_quantity)
+            })),
+            categoryData: (categoryRes.data || []).map((c: any, i: number) => ({
+                name: c.category_name,
+                value: Number(c.total_amount),
+                color: ['#f43f5e','#fb923c','#facc15','#4ade80','#38bdf8','#a78bfa'][i % 6]
+            })),
             trialBalanceRows: (trialBalanceRes.data as any)?.rows || []
         };
     }

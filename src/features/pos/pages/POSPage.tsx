@@ -3,8 +3,6 @@ import { ChevronLeft, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductGrid from '../components/ProductGrid';
 import { POSCart } from '../components/POSCart';
-import PaymentModal from '../components/PaymentModal';
-import type { POSPaymentResult } from '../components/PaymentModal';
 import ScannerOverlay from '../../../ui/base/ScannerOverlay';
 import SmartRecommendations from '../../../ui/pos/SmartRecommendations';
 import ProductDetailModal from '../../inventory/components/ProductDetailModal';
@@ -24,7 +22,7 @@ import { POSHeader } from '../components/layout/POSHeader';
 
 const POSPage: React.FC = () => {
     const navigate = useNavigate();
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [showSuspended, setShowSuspended] = useState(false);
     const [isQuickMode, setIsQuickMode] = useState(false);
@@ -82,7 +80,7 @@ const POSPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [resetCart, items.length]);
 
-    const handlePayConfirm = useCallback((result: POSPaymentResult) => {
+    const handlePayConfirm = useCallback(() => {
         processPayment({
             partyId: selectedCustomer?.id || null,
             type: 'sale',
@@ -93,12 +91,11 @@ const POSPage: React.FC = () => {
                 maxStock: 0,
             })),
             discount: 0,
-            paymentMethod: result.method === 'exchange' ? 'cash' : 'cash',
-            treasuryAccountId: result.treasuryAccountId ?? undefined,
+            paymentMethod: 'cash',
+            treasuryAccountId: undefined,
             status: 'paid'
         }, {
             onSuccess: () => {
-                setIsPaymentModalOpen(false);
                 resetCart();
             }
         });
@@ -141,7 +138,7 @@ const POSPage: React.FC = () => {
                         </div>
                     )}
                     <div className="flex-1 min-h-0 overflow-hidden">
-                        <POSCart onPay={() => setIsPaymentModalOpen(true)} onSuspend={handleSuspend} />
+                        <POSCart onPay={handlePayConfirm} onSuspend={handleSuspend} />
                     </div>
 
                     {!isQuickMode && (
@@ -191,14 +188,6 @@ const POSPage: React.FC = () => {
                 />
             )}
 
-            <PaymentModal
-                isOpen={isPaymentModalOpen}
-                onClose={() => setIsPaymentModalOpen(false)}
-                total={summary.totalAmount}
-                currency={useSalesStore.getState().currency}
-                onConfirm={handlePayConfirm}
-                isProcessing={isProcessing}
-            />
 
             {detailProduct && (
                 <ProductDetailModal

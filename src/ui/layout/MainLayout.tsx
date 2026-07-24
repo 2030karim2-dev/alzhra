@@ -100,7 +100,15 @@ const MainLayout: React.FC = () => {
         ></div>
       )}
 
+      <div className={cn(
+        "no-print",
+        isMobileSidebarOpen ? "block" : "hidden"
+      )}>
+        {/* ... existing sidebar code ... */}
+      </div>
+
       <Sidebar
+        className="no-print"
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         isMobileOpen={isMobileSidebarOpen}
@@ -109,7 +117,7 @@ const MainLayout: React.FC = () => {
       />
 
       <div className={cn(
-        "flex-1 flex flex-col h-full overflow-hidden relative transition-[margin] duration-150 ease-out",
+        "flex-1 flex flex-col h-full overflow-hidden relative transition-[margin] duration-150 ease-out print:!m-0 print:!p-0 print:!w-full print:!overflow-visible print:!block",
         contentMaxWidth,
         isDesktop && getMainLayoutOffsetClasses({
           breakpoint,
@@ -119,24 +127,26 @@ const MainLayout: React.FC = () => {
           isTabletLandscape,
         })
       )}>
-        <Header onMenuClick={() => setIsMobileSidebarOpen(true)} />
+        <div className="no-print">
+          <Header onMenuClick={() => setIsMobileSidebarOpen(true)} />
+        </div>
 
         {isOnline && isUnstable && (
-          <div className="bg-amber-500 text-white text-[9px] font-black py-1.5 flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg animate-in slide-in-from-top duration-500">
+          <div className="no-print bg-amber-500 text-white text-[9px] font-black py-1.5 flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg animate-in slide-in-from-top duration-500">
             <Activity size={11} className="animate-pulse" />
             <span>Connection unstable - Retrying background tasks</span>
           </div>
         )}
 
         {!isOnline && (
-          <div className="bg-rose-500 text-white text-[9px] font-black py-1.5 flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg animate-in slide-in-from-top duration-500">
+          <div className="no-print bg-rose-500 text-white text-[9px] font-black py-1.5 flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg animate-in slide-in-from-top duration-500">
             <WifiOff size={11} className="animate-bounce" />
             <span>Offline Mode Active - Performance optimized via Local Cache</span>
           </div>
         )}
 
         <main className={cn(
-          "flex-1 overflow-y-auto custom-scrollbar relative",
+          "flex-1 overflow-y-auto custom-scrollbar relative print:!m-0 print:!p-0 print:!w-full print:!overflow-visible print:!block",
           mainPaddingBottom
         )}>
           <ErrorBoundary>
@@ -147,7 +157,7 @@ const MainLayout: React.FC = () => {
         </main>
 
         {/* Tactical Mobile Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--app-surface)]/95 backdrop-blur-md border-t-2 border-[var(--app-border)] h-16 flex items-center justify-around z-40 px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <nav className="no-print md:hidden fixed bottom-0 left-0 right-0 bg-[var(--app-surface)]/95 backdrop-blur-md border-t-2 border-[var(--app-border)] h-16 flex items-center justify-around z-40 px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (

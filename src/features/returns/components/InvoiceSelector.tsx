@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { FileText, Search, X, ChevronDown, Calendar, User, Banknote } from 'lucide-react';
 import { Invoice } from '../types';
+import { formatCurrency } from '../../../core/utils';
 
 interface InvoiceSelectorProps {
     invoices: Invoice[];
@@ -40,22 +41,8 @@ const InvoiceSelector: React.FC<InvoiceSelectorProps> = ({
         return invoices.find(inv => inv.id === selectedInvoiceId);
     }, [invoices, selectedInvoiceId]);
 
-    const formatCurrency = (amount: number, currency: string = 'SAR') => {
-        try {
-            return new Intl.NumberFormat('ar-SA', {
-                style: 'currency',
-                currency: currency
-            }).format(amount);
-        } catch (error) {
-            return new Intl.NumberFormat('ar-SA', {
-                style: 'currency',
-                currency: 'SAR'
-            }).format(amount);
-        }
-    };
-
     const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('ar-SA');
+        return new Date(dateStr).toLocaleDateString('en-GB');
     };
 
     return (

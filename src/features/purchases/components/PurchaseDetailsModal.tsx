@@ -1,8 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import { X, FileText, Printer, Loader2, Building2, Maximize2, Minimize2, Expand, Shrink } from 'lucide-react';
-import ShareButton from '../../../ui/common/ShareButton';
-import { formatCurrency as shareFmtCur } from '../../../core/utils';
+import { X, FileText, Printer, Loader2, Building2, Maximize2, Minimize2, Expand, Shrink, Share2 } from 'lucide-react';
 import { usePurchaseDetails } from '../hooks';
 import { cn } from '../../../core/utils';
 import { useReactToPrint } from 'react-to-print';
@@ -56,6 +54,51 @@ const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ invoiceId, 
 
 
 
+    const handleShareWhatsApp = async () => {
+        if (!invoice) return;
+        try {
+            const { generateInvoiceExcelBlob, exportInvoiceToExcel } = await import('../../../core/utils/invoiceExcelExporter');
+            
+            const data = {
+                companyName: 'الزهراء لقطع الغيار', // Ideally from context
+                companyAddress: '',
+                taxNumber: '',
+                invoiceNumber: invoice.invoice_number,
+                issueDate: invoice.issue_date,
+                customerName: invoice.parties?.name || '---',
+                issuedBy: 'النظام',
+                items: (invoice.invoice_items || []).map((it: any) => ({
+                    name: it.product?.name_ar || it.description || '---',
+                    quantity: it.quantity,
+                    unitPrice: it.unit_price,
+                    total: it.total,
+                })),
+                subtotal: invoice.total_amount,
+                totalAmount: invoice.total_amount,
+            };
+
+            const blob = generateInvoiceExcelBlob(data);
+            const file = new File([blob], `فاتورة_شراء_${invoice.invoice_number}.xlsx`, {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `فاتورة شراء ${invoice.invoice_number}`,
+                    text: `مرفق فاتورة شراء رقم ${invoice.invoice_number}`
+                });
+            } else {
+                // Fallback
+                exportInvoiceToExcel(data);
+                const text = encodeURIComponent(`مرفق فاتورة شراء رقم ${invoice.invoice_number}.`);
+                window.open(`https://wa.me/?text=${text}`, '_blank');
+            }
+        } catch (err) {
+            console.error('Share via WhatsApp failed', err);
+        }
+    };
+
     if (!invoiceId) return null;
 
     return (
@@ -93,14 +136,14 @@ const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ invoiceId, 
                         <button onClick={toggleFullscreen} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title={modalSize === 'full' ? 'خروج' : 'ملء الشاشة'}>
                             {modalSize === 'full' ? <Shrink size={18} /> : <Expand size={18} />}
                         </button>
-                        <ShareButton
-                            size="md"
-                            elementRef={printRef as React.RefObject<HTMLElement>}
-                            title={`مشاركة فاتورة شراء #${invoice?.invoice_number}`}
-                            eventType="purchase_invoice"
-                            message={`📦 فاتورة شراء #${invoice?.invoice_number || ''}\n━━━━━━━━━━━━━━\n🏢 المورد: ${invoice?.parties?.name || '-'}\n💰 الإجمالي: ${shareFmtCur(invoice?.total_amount || 0)}\n📅 التاريخ: ${invoice?.issue_date || ''}`}
-                            className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm"
-                        />
+                        <button
+                            onClick={handleShareWhatsApp}
+                            className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-xl transition-colors border border-emerald-100 dark:border-emerald-800/20 shadow-sm"
+                            title="مشاركة إكسل عبر الواتساب"
+                        >
+                            <Share2 size={18} />
+                            <span className="hidden sm:inline font-bold text-sm">مشاركة إكسل</span>
+                        </button>
                         <button
                             onClick={handlePrint}
                             className="p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-all shadow-sm"

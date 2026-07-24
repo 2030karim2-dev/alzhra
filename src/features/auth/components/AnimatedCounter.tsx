@@ -24,7 +24,7 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
     useEffect(() => {
         const unsubscribe = rounded.on('change', (v) => {
             if (ref.current) {
-                ref.current.textContent = v.toLocaleString('ar-SA') + suffix;
+                ref.current.textContent = v.toLocaleString('en-US') + suffix;
             }
         });
         return unsubscribe;

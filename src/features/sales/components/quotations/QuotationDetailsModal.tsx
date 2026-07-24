@@ -5,6 +5,7 @@ import { salesQuotationsApi } from '../../api/quotationsApi';
 import { formatCurrency } from '../../../../core/utils';
 import type { QuotationStatus } from '../../types/quotation';
 import { useSalesStore } from '../../store';
+import { exportQuotationToExcel } from '../../../../core/utils/quotationExcelExporter';
 
 interface Props {
   quotationId: string;
@@ -101,27 +102,48 @@ const QuotationDetailsModal: React.FC<Props> = ({ quotationId, onClose, onRefres
     return Math.ceil((new Date(quotation.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   };
 
-  const shareViaWhatsApp = () => {
+  const shareViaWhatsApp = async () => {
     if (!quotation) return;
-    
-    const items = quotation.quotation_items.map((it: any) => 
-      `- ${it.product?.name_ar || it.description}: ${it.quantity} × ${formatCurrency(it.unit_price)}`
-    ).join('\n');
-    
-    const message = `*عرض سعر من الزهراء لقطع الغيار*\n` +
-      `*رقم العرض:* ${quotation.quotation_number}\n` +
-      `*العميل:* ${quotation.party?.name || 'عميل نقدي'}\n` +
-      `*التاريخ:* ${new Date(quotation.issue_date).toLocaleDateString('ar-SA')}\n\n` +
-      `*البنود:*\n${items}\n\n` +
-      `*الإجمالي:* ${formatCurrency(quotation.total_amount, quotation.currency_code || 'SAR')}\n` +
-      `*صلاحية العرض حتى:* ${new Date(quotation.valid_until).toLocaleDateString('ar-SA')}\n\n` +
-      `شكراً لتعاملكم معنا.`;
+    try {
+      const { generateQuotationExcelBlob, exportQuotationToExcel } = await import('../../../../core/utils/quotationExcelExporter');
       
-    const encodedMessage = encodeURIComponent(message);
-    const phone = quotation.party?.phone ? quotation.party.phone.replace(/\D/g, '') : '';
-    // Use international format if possible, or just raw
-    const waUrl = phone ? `https://wa.me/${phone}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
-    window.open(waUrl, '_blank');
+      const data = {
+        companyName: 'الزهراء لقطع الغيار', // Ideally from context/settings
+        quotationNumber: quotation.quotation_number,
+        issueDate: quotation.issue_date,
+        validUntil: quotation.valid_until,
+        customerName: quotation.party?.name || 'عميل نقدي',
+        issuedBy: 'النظام',
+        items: quotation.quotation_items.map((it: any) => ({
+          name: it.product?.name_ar || it.description,
+          quantity: it.quantity,
+          unitPrice: it.unit_price,
+          total: it.total,
+        })),
+        subtotal: quotation.total_amount,
+        totalAmount: quotation.total_amount,
+      };
+
+      const blob = generateQuotationExcelBlob(data);
+      const file = new File([blob], `عرض_سعر_${quotation.quotation_number}.xlsx`, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `عرض سعر ${quotation.quotation_number}`,
+          text: `مرفق عرض سعر رقم ${quotation.quotation_number}`
+        });
+      } else {
+        // Fallback
+        exportQuotationToExcel(data);
+        const text = encodeURIComponent(`مرفق عرض سعر رقم ${quotation.quotation_number}. يرجى الاطلاع على الملف المرفق.`);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+      }
+    } catch (err) {
+      console.error('Share via WhatsApp failed', err);
+    }
   };
 
   const handlePrint = () => {
@@ -141,11 +163,37 @@ const QuotationDetailsModal: React.FC<Props> = ({ quotationId, onClose, onRefres
       description="تفاصيل عرض السعر"
       size="xl"
       footer={
-        <>
+        <div className="no-print w-full flex items-center gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
             إغلاق
           </button>
           <div className="flex-1"></div>
+          <button 
+            onClick={() => {
+              if (quotation) {
+                exportQuotationToExcel({
+                  companyName: 'الزهراء لقطع الغيار', // Ideally from context/settings
+                  quotationNumber: quotation.quotation_number,
+                  issueDate: quotation.issue_date,
+                  validUntil: quotation.valid_until,
+                  customerName: quotation.party?.name || 'عميل نقدي',
+                  issuedBy: 'النظام',
+                  items: quotation.quotation_items.map((it: any) => ({
+                    name: it.product?.name_ar || it.description,
+                    quantity: it.quantity,
+                    unitPrice: it.unit_price,
+                    total: it.total,
+                  })),
+                  subtotal: quotation.total_amount,
+                  totalAmount: quotation.total_amount,
+                });
+              }
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800/20"
+          >
+            <FileText size={16} />
+            <span className="hidden sm:inline">إكسل</span>
+          </button>
           <button 
             onClick={handlePrint}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-gray-100 dark:border-slate-800"
@@ -171,15 +219,56 @@ const QuotationDetailsModal: React.FC<Props> = ({ quotationId, onClose, onRefres
               {action.label}
             </button>
           ))}
-        </>
+        </div>
       }
     >
+      <style>{`
+        @media print {
+            body * { visibility: hidden; }
+            .print-section, .print-section * { visibility: visible; }
+            .print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                font-family: 'Arial', sans-serif !important;
+                color: #000 !important;
+                background-color: white !important;
+                font-variant-numeric: tabular-nums;
+            }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            table { border-collapse: collapse !important; width: 100% !important; }
+            th, td { border: 1px solid #000 !important; padding: 6px !important; color: #000 !important; }
+            th { background-color: #1F4E78 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        .print-only { display: none; }
+      `}</style>
+      
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
         </div>
       ) : quotation ? (
-        <div className="space-y-6">
+        <div className="space-y-6 print-section">
+          {/* Professional Print Header */}
+          <div className="print-only mb-6 border-b-2 border-[#1F4E78] pb-4">
+              <div className="flex justify-between items-center mb-4">
+                  <div className="text-right flex-1">
+                      <h1 className="text-xl font-bold text-[#1F4E78]">الزهراء لقطع الغيار</h1>
+                      <div className="flex flex-col gap-1 mt-1 text-xs font-bold text-gray-700">
+                          <span>هاتف: 0555555555</span>
+                      </div>
+                  </div>
+                  <div className="flex-1 text-center">
+                      <h2 className="text-xl font-bold text-gray-800 mt-2 bg-gray-100 inline-block px-4 py-1 rounded">عرض سعر</h2>
+                  </div>
+                  <div className="text-left flex-1" dir="ltr">
+                      <h1 className="text-xl font-bold text-[#1F4E78]">Al-Zahra Spare Parts</h1>
+                      <h2 className="text-md font-bold mt-2 text-gray-800">Quotation</h2>
+                  </div>
+              </div>
+          </div>
           {/* Status & Validity Bar */}
           <div className="flex flex-wrap items-center gap-3 bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusConf.color}`}>

@@ -42,8 +42,13 @@ export type { AppError } from './errorUtils';
 
 // PDF & Excel exporters
 export { exportToPDF } from './pdfExporter';
-export { exportInvoiceToExcel } from './invoiceExcelExporter';
+export { exportInvoiceToExcel, generateInvoiceExcelBlob } from './invoiceExcelExporter';
 export { exportReturnsToExcel, exportSingleReturnToExcel } from './returnsExcelExporter';
+export { exportSingleBondToExcel, exportBondsListToExcel, generateSingleBondExcelBlob } from './bondExcelExporter';
+export { exportQuotationToExcel, generateQuotationExcelBlob } from './quotationExcelExporter';
+
+// Sharing utilities
+export { shareExcelFile } from './shareUtils';
 
 // ZATCA compliance
 export { generateZatcaBase64 } from './zatca';

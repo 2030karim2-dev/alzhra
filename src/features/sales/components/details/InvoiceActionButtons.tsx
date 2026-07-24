@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, FileSpreadsheet, RotateCcw, Loader2 } from 'lucide-react';
+import { Download, FileSpreadsheet, RotateCcw, Loader2, Share2 } from 'lucide-react';
 import ShareButton from '@/ui/common/ShareButton';
 import { formatCurrency as shareFmtCur } from '@/core/utils';
 
@@ -8,6 +8,7 @@ interface InvoiceActionButtonsProps {
   onClose: () => void;
   onExportPDF: () => void;
   onExportExcel: () => void;
+  onShareWhatsApp?: () => void;
   onToggleReturn: () => void;
   isExporting: boolean;
   issuedByName: string;
@@ -19,6 +20,7 @@ const InvoiceActionButtons: React.FC<InvoiceActionButtonsProps> = ({
   onClose,
   onExportPDF,
   onExportExcel,
+  onShareWhatsApp,
   onToggleReturn,
   isExporting,
   issuedByName,
@@ -29,14 +31,26 @@ const InvoiceActionButtons: React.FC<InvoiceActionButtonsProps> = ({
   return (
     <div className="flex gap-2 w-full">
       <button onClick={onClose} className="flex-1 py-3 text-sm font-bold bg-gray-100 dark:bg-slate-800 rounded-lg uppercase tracking-widest text-gray-600 dark:text-slate-400">إغلاق</button>
-      <ShareButton
-        size="md"
-        showLabel
-        elementRef={printRef as any}
-        title={`مشاركة فاتورة #${invoice.invoice_number}`}
-        eventType="sale_invoice"
-        message={`🧾 فاتورة بيع #${invoice.invoice_number}\n━━━━━━━━━━━━━━\n👤 العميل: ${invoice.parties?.name || 'عميل نقدي'}\n💰 الإجمالي: ${shareFmtCur(invoice.total_amount || 0, invoice.currency_code || 'SAR')}\n📅 التاريخ: ${invoice.issue_date}\n📦 عدد الأصناف: ${invoice.invoice_items?.length || 0}\n👨‍💼 صدرت بواسطة: ${issuedByName}`}
-      />
+      
+      {onShareWhatsApp ? (
+        <button
+          onClick={onShareWhatsApp}
+          disabled={isExporting}
+          className="flex-1 py-3 text-sm font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-400 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm transition-colors border border-emerald-200 dark:border-emerald-800/50"
+        >
+          {isExporting ? <Loader2 className="animate-spin" size={18} /> : <Share2 size={18} />}
+          مشاركة الإكسل
+        </button>
+      ) : (
+        <ShareButton
+          size="md"
+          showLabel
+          elementRef={printRef as any}
+          title={`مشاركة فاتورة #${invoice.invoice_number}`}
+          eventType="sale_invoice"
+          message={`🧾 فاتورة بيع #${invoice.invoice_number}\n━━━━━━━━━━━━━━\n👤 العميل: ${invoice.parties?.name || 'عميل نقدي'}\n💰 الإجمالي: ${shareFmtCur(invoice.total_amount || 0, invoice.currency_code || 'SAR')}\n📅 التاريخ: ${invoice.issue_date}\n📦 عدد الأصناف: ${invoice.invoice_items?.length || 0}\n👨‍💼 صدرت بواسطة: ${issuedByName}`}
+        />
+      )}
       <button
         onClick={onExportExcel}
         className="flex-1 py-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-colors"

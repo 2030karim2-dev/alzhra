@@ -3,6 +3,9 @@ import { ArrowDownCircle, ArrowUpCircle, Printer, Calendar, User, FileText, Wall
 import { Bond } from '../types';
 import { cn, formatCurrency } from '../../../core/utils';
 import { useDeleteBond } from '../hooks';
+import { exportSingleBondToExcel } from '../../../core/utils/bondExcelExporter';
+import { useCompany } from '../../settings/hooks';
+import { useInvoiceSettings } from '../../settings/settingsStore';
 
 interface Props {
     bonds: Bond[];
@@ -13,6 +16,8 @@ interface Props {
 
 const BondsList: React.FC<Props> = ({ bonds, isLoading, searchTerm, displayMode = 'cards' }) => {
     const { mutate: deleteBond } = useDeleteBond();
+    const { data: settingsCompany } = useCompany();
+    const invoiceSettings = useInvoiceSettings();
 
     const filteredBonds = bonds?.filter(b =>
         b.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -27,19 +32,46 @@ const BondsList: React.FC<Props> = ({ bonds, isLoading, searchTerm, displayMode 
         }
     };
 
-    const handleWhatsAppShare = (bond: Bond) => {
-        const text = `*تفاصيل سند ${bond.type === 'receipt' ? 'قبض' : 'صرف'}*\n` +
-            `--------------------------\n` +
-            `*الرقم:* ${bond.payment_number}\n` +
-            `*التاريخ:* ${bond.date}\n` +
-            `*الجهة:* ${bond.party_name || bond.account_name}\n` +
-            `*المبلغ:* ${formatCurrency(bond.amount, bond.currency_code)}\n` +
-            `*البيان:* ${bond.description || 'لا يوجد'}\n` +
-            `--------------------------\n` +
-            `تم الإرسال من تطبيق الزهراء`;
+    const handleWhatsAppShare = async (bond: Bond) => {
+        try {
+            const company = {
+                name_ar: invoiceSettings?.company_name_ar || settingsCompany?.name || 'اسم الشركة',
+                address: invoiceSettings?.company_address || settingsCompany?.address || '',
+                phone: invoiceSettings?.company_phone || settingsCompany?.phone || '',
+                tax_number: settingsCompany?.tax_number || '---',
+            };
+            const { generateSingleBondExcelBlob, exportSingleBondToExcel } = await import('../../../core/utils/bondExcelExporter');
+            
+            const blob = generateSingleBondExcelBlob(company, bond);
+            const bondTitle = bond.type === 'receipt' ? 'سند_قبض' : bond.type === 'payment' ? 'سند_صرف' : 'سند_تحويل';
+            const file = new File([blob], `${bondTitle}_${bond.payment_number}.xlsx`, {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
 
-        const encodedText = encodeURIComponent(text);
-        window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `${bondTitle.replace('_', ' ')} ${bond.payment_number}`,
+                    text: `مرفق ${bondTitle.replace('_', ' ')} رقم ${bond.payment_number}`
+                });
+            } else {
+                exportSingleBondToExcel(company, bond);
+                const text = encodeURIComponent(`مرفق ${bondTitle.replace('_', ' ')} رقم ${bond.payment_number}.`);
+                window.open(`https://wa.me/?text=${text}`, '_blank');
+            }
+        } catch (err) {
+            console.error('WhatsApp share failed', err);
+        }
+    };
+
+    const handleExport = (bond: Bond) => {
+        const company = {
+            name_ar: invoiceSettings?.company_name_ar || settingsCompany?.name || 'اسم الشركة',
+            address: invoiceSettings?.company_address || settingsCompany?.address || '',
+            phone: invoiceSettings?.company_phone || settingsCompany?.phone || '',
+            tax_number: settingsCompany?.tax_number || '---',
+        };
+        exportSingleBondToExcel(company, bond);
     };
 
     if (isLoading) {
@@ -126,7 +158,7 @@ const BondsList: React.FC<Props> = ({ bonds, isLoading, searchTerm, displayMode 
                                         <button onClick={() => handleWhatsAppShare(bond)} className="p-1.5 rounded-lg text-gray-300 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" title="إرسال عبر واتساب">
                                             <MessageCircle size={14} />
                                         </button>
-                                        <button className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="طباعة">
+                                        <button onClick={() => handleExport(bond)} className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="تصدير إكسل / طباعة">
                                             <Printer size={14} />
                                         </button>
                                         <button onClick={() => handleDelete(bond.id, bond.payment_number)} className="p-1.5 rounded-lg text-gray-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20" title="حذف">
@@ -192,6 +224,9 @@ const BondsList: React.FC<Props> = ({ bonds, isLoading, searchTerm, displayMode 
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                 <button onClick={() => handleWhatsAppShare(bond)} className="p-1.5 rounded-lg text-gray-300 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" title="واتساب">
                                     <MessageCircle size={14} />
+                                </button>
+                                <button onClick={() => handleExport(bond)} className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="تصدير إكسل / طباعة">
+                                    <Printer size={14} />
                                 </button>
                                 <button onClick={() => handleDelete(bond.id, bond.payment_number)} className="p-1.5 rounded-lg text-gray-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20" title="حذف">
                                     <Trash2 size={14} />

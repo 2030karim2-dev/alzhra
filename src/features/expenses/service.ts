@@ -44,7 +44,7 @@ export const expensesService = {
       amount: formData.amount || 0,
       currency: formData.currency_code || 'YER',
       description: formData.description || '',
-      date: new Date().toLocaleDateString('ar-SA'),
+      date: new Date().toLocaleDateString('en-GB'),
     });
 
     return true;

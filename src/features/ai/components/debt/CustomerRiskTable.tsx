@@ -1,18 +1,12 @@
 import React from 'react';
 import { CustomerDebtProfile } from '../../hooks/useDebtManagement';
 import { ShieldAlert, TrendingUp, TrendingDown, Info, ShieldCheck, Flag } from 'lucide-react';
+import { formatCurrency } from '../../../../core/utils';
 
 interface Props {
   customers: CustomerDebtProfile[];
 }
 
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 2
-    }).format(amount);
-};
 
 export const CustomerRiskTable: React.FC<Props> = ({ customers }) => {
     if (!customers || customers.length === 0) {

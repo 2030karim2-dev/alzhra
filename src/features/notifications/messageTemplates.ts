@@ -57,7 +57,7 @@ export interface LowStockData {
 }
 
 const formatCurrency = (amount: number, currency: string): string => {
-    return `${amount.toLocaleString('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
+    return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
 };
 
 const paymentMethodAr: Record<string, string> = {

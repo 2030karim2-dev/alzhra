@@ -46,7 +46,7 @@ const AuditLogTable: React.FC<AuditLogTableProps> = ({ log }) => {
                                 {log.length - i}
                             </td>
                             <td className="border border-gray-50 dark:border-slate-800/60 p-4 text-gray-600 dark:text-gray-400 text-[11px] whitespace-nowrap">
-                                {new Date(entry.date).toLocaleString('ar-EG', {
+                                {new Date(entry.date).toLocaleString('en-GB', {
                                     year: 'numeric', month: '2-digit', day: '2-digit',
                                     hour: '2-digit', minute: '2-digit', hour12: true
                                 })}

@@ -42,7 +42,7 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
             nameAr: invoiceSettings.company_name_ar || c.name || c.name_ar || prev.nameAr || 'اسم المنشأة',
             nameEn: invoiceSettings.company_name_en || c.english_name || c.name_en || prev.nameEn || 'Company Name',
             address: invoiceSettings.company_address || c.address || prev.address || 'المملكة العربية السعودية',
-            taxNumber: c.tax_number || prev.taxNumber || '300000000000003',
+            taxNumber: c.tax_number || prev.taxNumber || '---',
             specialization: invoiceSettings.company_specialization || prev.specialization,
             phone: invoiceSettings.company_phone || prev.phone,
             email: invoiceSettings.company_email || prev.email,
@@ -50,7 +50,7 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
         }));
     }, [settingsCompany, invoiceCompany, invoiceSettings]);
 
-    const displayItems = padItems(items.filter((i: any) => i.name), 8);
+    const displayItems = padItems(items.filter((i: any) => i.name), 10); // increased padding for better look
 
     return (
         <div id="invoice-printable-content" className="printable-area bg-white text-black font-sans">
@@ -64,33 +64,83 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                 top: 0; left: 0; width: 100%; height: 100%;
                 padding: 0; margin: 0; box-shadow: none; border: none;
             }
-            @page { margin: 0; size: auto; }
+            @page { margin: 10mm; size: A4 portrait; }
         }
         .invoice-box {
             max-width: 210mm;
             margin: auto;
             padding: 10mm;
             background: white;
-            font-family: 'Cairo', sans-serif;
+            font-family: 'Arial', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #000;
             line-height: 1.4;
+            /* Force English numerals implicitly in modern browsers */
+            font-variant-numeric: tabular-nums;
         }
-        .inv-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .inv-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #1F4E78; 
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+        }
         .inv-logo-area { text-align: center; }
-        .inv-title { font-size: 24px; font-weight: 900; margin: 0; line-height: 1.2; }
-        .inv-subtitle { font-size: 14px; font-weight: bold; color: #444; }
-        .inv-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 14px; border: 1px solid #ddd; padding: 10px; }
+        .inv-title { font-size: 22px; font-weight: 900; margin: 0; line-height: 1.2; color: #1F4E78; }
+        .inv-subtitle { font-size: 13px; font-weight: bold; color: #444; }
+        .inv-meta-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            margin-bottom: 20px; 
+            font-size: 13px; 
+            border: 1px solid #1F4E78; 
+            border-radius: 4px;
+            padding: 10px; 
+            background-color: #FAFAFA;
+        }
         .meta-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-        .inv-table th { background: #f3f3f3; border: 1px solid #000; padding: 8px; font-weight: 800; text-align: center; }
-        .inv-table td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
+        .inv-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+            font-size: 13px; 
+        }
+        .inv-table th, .inv-table td {
+            border: 1px solid #D3D3D3;
+        }
+        .inv-table th { 
+            background: #1F4E78; 
+            color: #FFFFFF;
+            padding: 10px; 
+            font-weight: bold; 
+            text-align: center; 
+        }
+        .inv-table td { 
+            padding: 8px; 
+            text-align: center; 
+        }
+        .inv-table tr:nth-child(even) td {
+            background-color: #F9F9F9;
+        }
         .inv-table td.desc { text-align: right; }
         .inv-totals { display: flex; justify-content: flex-end; }
-        .totals-box { width: 40%; border: 1px solid #000; }
-        .totals-row { display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #eee; }
-        .totals-row.final { border-bottom: none; background: #f3f3f3; font-weight: 900; font-size: 16px; border-top: 1px solid #000; }
-        .qr-section { margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .terms { font-size: 10px; color: #666; max-width: 60%; }
+        .totals-box { width: 50%; border: 1px solid #D3D3D3; border-collapse: collapse; }
+        .totals-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 8px 10px; 
+            border-bottom: 1px solid #D3D3D3; 
+        }
+        .totals-row.final { 
+            border-bottom: none; 
+            background: #EBF1DE; 
+            font-weight: bold; 
+            font-size: 15px; 
+            color: #1F4E78;
+        }
+        .qr-section { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .terms { font-size: 11px; color: #555; max-width: 60%; }
         .editable-field:hover { background: #f0f7ff; cursor: text; border-radius: 4px; }
         .edit-hint { 
             background: #eff6ff; 
@@ -98,7 +148,7 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
             padding: 8px 12px; 
             border-radius: 8px; 
             margin-bottom: 15px; 
-            font-size: 11px; 
+            font-size: 12px; 
             color: #1e40af; 
             font-weight: bold;
             display: flex;
@@ -114,8 +164,9 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                     نصيحة: يمكنك النقر على أي نص في الترويسة (الاسم، العنوان، الرقم الضريبي، مسمى الفاتورة) لتعديله مباشرة قبل الطباعة.
                 </div>
 
+                {/* Header with Company Info */}
                 <div className="inv-header">
-                    <div className="text-right">
+                    <div className="text-right flex-1">
                         <h1
                             className="inv-title editable-field outline-none"
                             contentEditable
@@ -125,7 +176,7 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                             {header.nameAr || 'اسم الشركة'}
                         </h1>
                         <p
-                            className="text-xs font-bold editable-field outline-none text-blue-600 dark:text-blue-400"
+                            className="text-xs font-bold editable-field outline-none text-blue-800"
                             contentEditable
                             suppressContentEditableWarning
                             onBlur={(e) => setHeader(prev => ({ ...prev, specialization: e.currentTarget.textContent || '' }))}
@@ -133,36 +184,37 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                             {header.specialization}
                         </p>
                         <p
-                            className="inv-subtitle editable-field outline-none"
+                            className="inv-subtitle editable-field outline-none mt-1"
                             contentEditable
                             suppressContentEditableWarning
                             onBlur={(e) => setHeader(prev => ({ ...prev, address: e.currentTarget.textContent || '' }))}
                         >
                             {header.address || 'العنوان غير مسجل'}
                         </p>
-                        <div className="flex gap-4 text-[10px] font-bold text-gray-500">
+                        <div className="flex flex-col gap-1 mt-1 text-xs font-bold text-gray-700">
                             <span
                                 className="editable-field outline-none"
                                 contentEditable
                                 suppressContentEditableWarning
                                 onBlur={(e) => setHeader(prev => ({ ...prev, phone: e.currentTarget.textContent || '' }))}
                             >
-                                {header.phone && `هاتف: ${header.phone}`}
+                                {header.phone ? `هاتف: ${header.phone}` : ''}
                             </span>
                             <span
                                 className="editable-field outline-none"
                                 contentEditable
                                 suppressContentEditableWarning
-                                onBlur={(e) => setHeader(prev => ({ ...prev, email: e.currentTarget.textContent || '' }))}
+                                onBlur={(e) => setHeader(prev => ({ ...prev, taxNumber: e.currentTarget.textContent || '' }))}
                             >
-                                {header.email && `إيميل: ${header.email}`}
+                                {header.taxNumber ? `الرقم الضريبي: ${header.taxNumber}` : ''}
                             </span>
                         </div>
                     </div>
-                    <div className="inv-logo-area">
+
+                    <div className="inv-logo-area flex-1">
                         {header.headerText && (
                             <p
-                                className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest editable-field"
+                                className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-widest editable-field"
                                 contentEditable
                                 suppressContentEditableWarning
                                 onBlur={(e) => setHeader(prev => ({ ...prev, headerText: e.currentTarget.textContent || '' }))}
@@ -170,8 +222,13 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                                 {header.headerText}
                             </p>
                         )}
+                        {/* Space for Logo if needed */}
+                        <div className="h-16 w-32 border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center text-gray-300 text-xs rounded no-print">
+                            مساحة الشعار
+                        </div>
                     </div>
-                    <div className="text-left" dir="ltr">
+
+                    <div className="text-left flex-1" dir="ltr">
                         <h1
                             className="inv-title editable-field outline-none"
                             contentEditable
@@ -180,14 +237,23 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                         >
                             {header.nameEn || 'Company Name'}
                         </h1>
-                        <p
-                            className="inv-subtitle editable-field outline-none"
+                        <h2
+                            className="text-lg font-bold mt-2 editable-field outline-none text-gray-800"
                             contentEditable
                             suppressContentEditableWarning
                             onBlur={(e) => setHeader(prev => ({ ...prev, titleEn: e.currentTarget.textContent || '' }))}
                         >
                             {header.titleEn}
-                        </p>
+                        </h2>
+                        <h2
+                            className="text-lg font-bold editable-field outline-none text-gray-800"
+                            dir="rtl"
+                            contentEditable
+                            suppressContentEditableWarning
+                            onBlur={(e) => setHeader(prev => ({ ...prev, titleAr: e.currentTarget.textContent || '' }))}
+                        >
+                            {header.titleAr}
+                        </h2>
                     </div>
                 </div>
 
@@ -207,10 +273,10 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                     <thead>
                         <tr>
                             <th style={{ width: '5%' }}>#</th>
-                            <th>وصف السلعة / الخدمة</th>
-                            <th style={{ width: '10%' }}>الكمية</th>
-                            <th style={{ width: '15%' }}>سعر الوحدة</th>
-                            <th style={{ width: '15%' }}>المجموع</th>
+                            <th style={{ width: '40%' }}>وصف السلعة / الخدمة</th>
+                            <th style={{ width: '15%' }}>الكمية</th>
+                            <th style={{ width: '20%' }}>سعر الوحدة</th>
+                            <th style={{ width: '20%' }}>الإجمالي</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -218,9 +284,9 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                             <tr key={item.id}>
                                 <td>{item.name ? i + 1 : ''}</td>
                                 <td className="desc">{item.name}</td>
-                                <td>{item.quantity}</td>
-                                <td>{item.price ? formatCurrency(item.price, invoice.currency_code || 'SAR') : ''}</td>
-                                <td>{item.price ? formatCurrency(Number(item.price) * Number(item.quantity), invoice.currency_code || 'SAR') : ''}</td>
+                                <td dir="ltr">{item.quantity}</td>
+                                <td dir="ltr">{item.price ? formatCurrency(item.price, invoice.currency_code || 'SAR') : ''}</td>
+                                <td dir="ltr" className="font-bold">{item.price ? formatCurrency(Number(item.price) * Number(item.quantity), invoice.currency_code || 'SAR') : ''}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -228,6 +294,10 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
 
                 <div className="inv-totals">
                     <div className="totals-box">
+                        <div className="totals-row">
+                            <span>المجموع الفرعي</span>
+                            <span dir="ltr">{formatCurrency(total_amount, invoice.currency_code || 'SAR')}</span>
+                        </div>
                         <div className="totals-row final">
                             <span>الإجمالي المستحق</span>
                             <span dir="ltr">{formatCurrency(total_amount, invoice.currency_code || 'SAR')}</span>

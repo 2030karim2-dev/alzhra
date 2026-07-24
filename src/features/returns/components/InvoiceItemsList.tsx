@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Package, RotateCcw, Search, X } from 'lucide-react';
 import { InvoiceItem } from '../types';
+import { formatCurrency } from '../../../core/utils';
 
 interface InvoiceItemsListProps {
     items: InvoiceItem[];
@@ -27,19 +28,6 @@ const InvoiceItemsList: React.FC<InvoiceItemsListProps> = ({
     const [_focusedCol, setFocusedCol] = useState<number>(0);
     const itemRefs = useRef<(HTMLInputElement | null)[][]>([]);
 
-    const formatCurrency = (amount: number) => {
-        try {
-            return new Intl.NumberFormat('ar-SA', {
-                style: 'currency',
-                currency: invoiceCurrency
-            }).format(amount);
-        } catch (e) {
-            return new Intl.NumberFormat('ar-SA', {
-                style: 'currency',
-                currency: 'SAR'
-            }).format(amount);
-        }
-    };
 
     // Filter items based on search term
     const filteredItems = useMemo(() => {

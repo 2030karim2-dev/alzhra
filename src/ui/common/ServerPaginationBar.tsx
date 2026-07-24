@@ -83,13 +83,13 @@ const ServerPaginationBar: React.FC<ServerPaginationBarProps> = ({
         )}
         <span className="hidden sm:inline">
           عرض{' '}
-          <span className="text-gray-800 dark:text-slate-200 font-black">{from.toLocaleString('ar-SA')}–{to.toLocaleString('ar-SA')}</span>
+          <span className="text-gray-800 dark:text-slate-200 font-black">{from.toLocaleString('en-US')}–{to.toLocaleString('en-US')}</span>
           {' '}من{' '}
-          <span className="text-blue-600 dark:text-blue-400 font-black">{totalCount.toLocaleString('ar-SA')}</span>
+          <span className="text-blue-600 dark:text-blue-400 font-black">{totalCount.toLocaleString('en-US')}</span>
           {' '}سجل
         </span>
         <span className="sm:hidden text-blue-600 dark:text-blue-400 font-black">
-          {totalCount.toLocaleString('ar-SA')}
+          {totalCount.toLocaleString('en-US')}
         </span>
       </div>
 

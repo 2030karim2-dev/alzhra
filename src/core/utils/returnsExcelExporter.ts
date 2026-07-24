@@ -61,26 +61,17 @@ export const exportReturnsToExcel = (data: ReturnExcelData) => {
     const title = isSales ? 'مرتجعات المبيعات' : 'مرتجعات المشتريات';
     const partyTitle = isSales ? 'العميل' : 'المورد';
 
-    // Build rows manually for full control
     const rows: any[][] = [];
 
-    // Row 1: Company Name (centered header)
+    // Header section
     rows.push([data.companyName]);
-    // Row 2: Report title
     rows.push([title]);
-    // Row 3: Empty spacer
     rows.push([]);
-    // Row 4: Date generated
-    rows.push(['تاريخ التقرير:', new Date().toLocaleDateString('ar-SA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    })]);
-    // Row 5: Empty spacer
+    rows.push(['تاريخ التقرير:', new Date().toLocaleDateString('en-GB')]);
     rows.push([]);
 
     // Table headers
-    rows.push([
+    const tableHeader = [
         '#',
         'رقم المرتجع',
         'التاريخ',
@@ -91,7 +82,8 @@ export const exportReturnsToExcel = (data: ReturnExcelData) => {
         'المبلغ',
         'الحالة',
         'ملاحظات'
-    ]);
+    ];
+    rows.push(tableHeader);
 
     // Data rows
     data.returns.forEach((item, i) => {
@@ -102,48 +94,112 @@ export const exportReturnsToExcel = (data: ReturnExcelData) => {
             item.customerName || item.supplierName || '-',
             item.referenceInvoice || '-',
             getReturnReasonText(item.returnReason || ''),
-            item.items,
-            item.totalAmount,
+            Number(item.items) || 0,
+            Number(item.totalAmount) || 0,
             getStatusText(item.status),
             item.notes || '-'
         ]);
     });
 
-    // Empty spacer
     rows.push([]);
 
     // Summary section
+    const summaryStartRow = rows.length;
     rows.push(['ملخص الإحصائيات']);
-    rows.push(['إجمالي عدد المرتجعات:', data.summary.count]);
-    rows.push(['إجمالي المبالغ المرتجعة:', data.summary.totalAmount.toFixed(2)]);
-    rows.push(['متوسط قيمة المرتجع:', data.summary.averageAmount.toFixed(2)]);
+    rows.push(['إجمالي عدد المرتجعات:', Number(data.summary.count) || 0]);
+    rows.push(['إجمالي المبالغ المرتجعة:', Number(data.summary.totalAmount) || 0]);
+    rows.push(['متوسط قيمة المرتجع:', Number(data.summary.averageAmount) || 0]);
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
 
     // Set column widths
     ws['!cols'] = [
-        { wch: 5 },   // #
+        { wch: 6 },   // #
         { wch: 18 },  // Invoice Number
-        { wch: 12 },  // Date
-        { wch: 25 },  // Customer/Supplier
+        { wch: 15 },  // Date
+        { wch: 30 },  // Customer/Supplier
         { wch: 18 },  // Reference Invoice
-        { wch: 18 },  // Reason
-        { wch: 10 },  // Items count
-        { wch: 15 },  // Amount
-        { wch: 12 },  // Status
-        { wch: 30 },  // Notes
+        { wch: 20 },  // Reason
+        { wch: 12 },  // Items count
+        { wch: 18 },  // Amount
+        { wch: 15 },  // Status
+        { wch: 35 },  // Notes
     ];
 
-    // Merge cells for headers
     ws['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Company name
         { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, // Title
+        { s: { r: summaryStartRow, c: 0 }, e: { r: summaryStartRow, c: 9 } } // Summary title
     ];
 
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:J1');
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellRef]) continue;
+
+            // Default border and alignment
+            ws[cellRef].s = {
+                border: {
+                    top: { style: 'thin', color: { rgb: 'D3D3D3' } },
+                    bottom: { style: 'thin', color: { rgb: 'D3D3D3' } },
+                    left: { style: 'thin', color: { rgb: 'D3D3D3' } },
+                    right: { style: 'thin', color: { rgb: 'D3D3D3' } }
+                },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                font: { name: 'Arial', sz: 11, color: { rgb: '000000' } }
+            };
+
+            // English numerals
+            if (typeof ws[cellRef].v === 'number') {
+                if (C === 0 || C === 6 || R >= summaryStartRow + 1) {
+                    ws[cellRef].z = '#,##0'; // Integers
+                } else if (C === 7) {
+                    ws[cellRef].z = '#,##0.00'; // Decimals for amounts
+                }
+            }
+
+            // Headers
+            if (R === 0) ws[cellRef].s.font = { name: 'Arial', sz: 16, bold: true, color: { rgb: '1F4E78' } };
+            if (R === 1) ws[cellRef].s.font = { name: 'Arial', sz: 14, bold: true };
+            
+            // Meta info
+            if (R === 3 && C === 0) {
+                ws[cellRef].s.font = { name: 'Arial', sz: 11, bold: true };
+                ws[cellRef].s.fill = { fgColor: { rgb: 'F2F2F2' } };
+            }
+
+            // Table Header styling
+            if (R === 5) {
+                ws[cellRef].s.fill = { fgColor: { rgb: '1F4E78' } };
+                ws[cellRef].s.font = { name: 'Arial', sz: 12, bold: true, color: { rgb: 'FFFFFF' } };
+            }
+
+            // Alternating row colors for table data
+            if (R > 5 && R < summaryStartRow - 1) {
+                if (R % 2 === 0) {
+                    ws[cellRef].s.fill = { fgColor: { rgb: 'FAFAFA' } };
+                }
+            }
+
+            // Summary Title
+            if (R === summaryStartRow) {
+                ws[cellRef].s.fill = { fgColor: { rgb: 'EBF1DE' } };
+                ws[cellRef].s.font = { name: 'Arial', sz: 12, bold: true, color: { rgb: '1F4E78' } };
+            }
+            // Summary keys
+            if (R > summaryStartRow && C === 0) {
+                ws[cellRef].s.font = { name: 'Arial', sz: 11, bold: true };
+                ws[cellRef].s.fill = { fgColor: { rgb: 'F2F2F2' } };
+            }
+        }
+    }
+
     const sheetName = isSales ? 'مرتجعات المبيعات' : 'مرتجعات المشتريات';
+    if (!ws['!props']) ws['!props'] = {};
+    ws['!view'] = [{ RTL: true }];
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-    // Download
     const fileName = `${title}_${new Date().toISOString().split('T')[0]}`;
     XLSX.writeFile(wb, `${fileName}.xlsx`);
 };
@@ -177,7 +233,6 @@ export const exportSingleReturnToExcel = (data: {
     const partyTitle = isSales ? 'العميل' : 'المورد';
     const partyName = isSales ? data.customerName : data.supplierName || '';
 
-    // Build rows
     const rows: any[][] = [];
 
     // Header section
@@ -206,16 +261,17 @@ export const exportSingleReturnToExcel = (data: {
         rows.push([
             i + 1,
             item.name,
-            item.quantity,
-            item.unitPrice,
-            item.total
+            Number(item.quantity) || 0,
+            Number(item.unitPrice) || 0,
+            Number(item.total) || 0
         ]);
     });
 
     rows.push([]);
 
     // Totals
-    rows.push(['', '', '', 'المجموع:', data.subtotal]);
+    const notesStartRow = rows.length + 1;
+    rows.push(['', '', '', 'المجموع:', Number(data.subtotal) || 0]);
 
     if (data.notes) {
         rows.push(['ملاحظات:', data.notes]);
@@ -225,23 +281,89 @@ export const exportSingleReturnToExcel = (data: {
 
     // Set column widths
     ws['!cols'] = [
-        { wch: 5 },   // #
-        { wch: 40 },  // Description
-        { wch: 12 },  // Quantity
-        { wch: 15 },  // Unit Price
-        { wch: 15 },  // Total
+        { wch: 8 },   // #
+        { wch: 45 },  // Description
+        { wch: 15 },  // Quantity
+        { wch: 20 },  // Unit Price
+        { wch: 20 },  // Total
     ];
 
-    // Merge cells for headers
     ws['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Company name
         { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Address
         { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } }, // Title
     ];
 
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:E1');
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellRef]) continue;
+
+            // Default border and alignment
+            ws[cellRef].s = {
+                border: {
+                    top: { style: 'thin', color: { rgb: 'D3D3D3' } },
+                    bottom: { style: 'thin', color: { rgb: 'D3D3D3' } },
+                    left: { style: 'thin', color: { rgb: 'D3D3D3' } },
+                    right: { style: 'thin', color: { rgb: 'D3D3D3' } }
+                },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                font: { name: 'Arial', sz: 11, color: { rgb: '000000' } }
+            };
+
+            // English numerals
+            if (typeof ws[cellRef].v === 'number') {
+                ws[cellRef].z = '#,##0.00';
+            }
+
+            // Header
+            if (R === 0) ws[cellRef].s.font = { name: 'Arial', sz: 16, bold: true, color: { rgb: '1F4E78' } };
+            // Sub-headers
+            if (R >= 1 && R <= 3) ws[cellRef].s.font = { name: 'Arial', sz: 12, bold: true };
+            
+            // Meta info keys
+            if (R >= 5 && R <= 8 && (C === 0 || C === 3)) {
+                ws[cellRef].s.font = { name: 'Arial', sz: 11, bold: true };
+                ws[cellRef].s.fill = { fgColor: { rgb: 'F2F2F2' } };
+            }
+
+            // Table Header styling
+            if (R === 10) {
+                ws[cellRef].s.fill = { fgColor: { rgb: '1F4E78' } };
+                ws[cellRef].s.font = { name: 'Arial', sz: 12, bold: true, color: { rgb: 'FFFFFF' } };
+            }
+
+            // Alternating rows
+            if (R > 10 && R < rows.length - (data.notes ? 3 : 2)) {
+                if (R % 2 === 1) {
+                    ws[cellRef].s.fill = { fgColor: { rgb: 'FAFAFA' } };
+                }
+            }
+
+            // Totals
+            if (R === notesStartRow - 1) {
+                if (C === 3) {
+                    ws[cellRef].s.font = { name: 'Arial', sz: 12, bold: true };
+                    ws[cellRef].s.fill = { fgColor: { rgb: 'F2F2F2' } };
+                }
+                if (C === 4) {
+                    ws[cellRef].s.font = { name: 'Arial', sz: 12, bold: true, color: { rgb: '1F4E78' } };
+                    ws[cellRef].s.fill = { fgColor: { rgb: 'EBF1DE' } };
+                }
+            }
+
+            // Notes
+            if (data.notes && R === rows.length - 1 && C === 0) {
+                ws[cellRef].s.font = { name: 'Arial', sz: 11, bold: true };
+            }
+        }
+    }
+
     const sheetName = isSales ? 'مرتجع مبيعات' : 'مرتجع مشتريات';
+    if (!ws['!props']) ws['!props'] = {};
+    ws['!view'] = [{ RTL: true }];
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-    // Download
     XLSX.writeFile(wb, `${title}_${data.invoiceNumber}.xlsx`);
 };

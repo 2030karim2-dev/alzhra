@@ -1,18 +1,12 @@
 import React from 'react';
 import { TrendingUp, AlertCircle, Clock, ShieldAlert } from 'lucide-react';
 import { DebtMetrics } from '../../hooks/useDebtManagement';
+import { formatCurrency } from '../../../../core/utils';
 
 interface Props {
   metrics: DebtMetrics;
 }
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('ar-SA', {
-    style: 'currency',
-    currency: 'SAR',
-    minimumFractionDigits: 2
-  }).format(amount);
-};
 
 export const DebtOverviewCards: React.FC<Props> = ({ metrics }) => {
   const { totalReceivables, totalOverdue, overduePercentage, pendingInvoicesCount, atRiskCustomersCount } = metrics;

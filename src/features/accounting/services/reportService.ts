@@ -110,42 +110,20 @@ export const reportService = {
     },
 
     getMonthlyPerformance: async (companyId: string, year: number, branchId?: string | null) => {
-        const monthlyData = Array.from({ length: 12 }, (_, i) => ({
-            name: new Date(0, i).toLocaleString('ar-SA', { month: 'long' }),
-            revenues: 0,
-            expenses: 0,
-            monthIndex: i
-        }));
-
-        const startDate = `${year}-01-01`;
-        const endDate = `${year}-12-31`;
-
-        const { data: lines, error } = await reportsApi.getJournalLines(companyId, branchId, startDate, endDate);
+        const { data, error } = await supabase.rpc('get_monthly_performance', {
+            p_company_id: companyId,
+            p_year: year,
+            p_branch_id: branchId || null
+        });
+        
         if (error) throw error;
 
-        // NOTE: journal_entry_lines store base currency (SAR) amounts.
-        // No currency conversion needed — foreign_amount & exchange_rate are documentary only.
-
-        // 3. Aggregate by month (using base amounts)
-        (lines || []).forEach((line: any) => {
-            const date = new Date(line.journal.entry_date);
-            const month = date.getMonth(); // 0-11
-            const type = line.account?.type;
-
-            // Revenue: Credit is positive
-            if (type === 'revenue') {
-                monthlyData[month].revenues += ((line.credit_amount || 0) - (line.debit_amount || 0));
-            }
-            // Expense: Debit is positive
-            else if (type === 'expense') {
-                monthlyData[month].expenses += ((line.debit_amount || 0) - (line.credit_amount || 0));
-            }
-        });
-
-        return monthlyData.map(d => ({
-            ...d,
-            revenues: Math.max(0, d.revenues),
-            expenses: Math.max(0, d.expenses)
+        // Map RPC results and format month names in Arabic
+        return (data || []).map((d: any) => ({
+            name: new Date(year, d.month_index, 1).toLocaleString('ar-SA', { month: 'long' }),
+            revenues: Number(d.revenues) || 0,
+            expenses: Number(d.expenses) || 0,
+            monthIndex: d.month_index
         }));
     }
 };

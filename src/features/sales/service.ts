@@ -38,7 +38,7 @@ export const salesService = {
           id: _inv.id,
           invoiceNumber: _inv.invoice_number,
           customerName: _inv.party?.name || CASH_CUSTOMER_LABEL,
-          date: new Date(_inv.issue_date).toLocaleDateString('ar-SA'),
+          date: new Date(_inv.issue_date).toLocaleDateString('en-GB'),
           total: Number(_inv.total_amount) || 0,
           baseTotal: toBaseCurrency({
             amount: Number(_inv.total_amount) || 0,
@@ -99,7 +99,7 @@ export const salesService = {
         customerName: CASH_CUSTOMER_LABEL, // Target refactoring to extract party name from DB result later
         amount: itemsTotal,
         currency: payload.currency || 'SAR',
-        date: new Date().toLocaleDateString('ar-SA'),
+        date: new Date().toLocaleDateString('en-GB'),
         paymentMethod: payload.paymentMethod || 'cash',
         itemCount: payload.items?.length || 0,
       }, typedResult.id);

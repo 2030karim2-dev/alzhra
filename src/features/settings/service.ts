@@ -124,7 +124,7 @@ export const settingsService = {
             id: Date.now().toString(),
             action,
             size,
-            time: new Date().toLocaleString('ar-EG'),
+            time: new Date().toLocaleString('en-GB'),
             status,
             icon: action.includes('Google') ? 'CloudSync' : 'HardDrive'
         };

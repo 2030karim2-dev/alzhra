@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { BarChart3, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
+import { formatNumber } from '../../../../core/utils';
 import { useSalesAnalytics } from '../../hooks/useSalesAnalytics';
 import { useAuthStore } from '../../../auth/store';
 
@@ -49,7 +50,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({ period = 'month' }) => 
                         <div>
                             <p className="text-sm text-gray-500">إجمالي المبيعات</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {totalSales.toLocaleString('ar-SA')}
+                                {formatNumber(totalSales)}
                             </p>
                         </div>
                     </div>
@@ -63,7 +64,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({ period = 'month' }) => 
                         <div>
                             <p className="text-sm text-gray-500">المردودات</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {totalReturns.toLocaleString('ar-SA')}
+                                {formatNumber(totalReturns)}
                             </p>
                         </div>
                     </div>
@@ -77,7 +78,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({ period = 'month' }) => 
                         <div>
                             <p className="text-sm text-gray-500">المبيعات الصافية</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {netSales.toLocaleString('ar-SA')}
+                                {formatNumber(netSales)}
                             </p>
                         </div>
                     </div>
@@ -91,7 +92,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({ period = 'month' }) => 
                         <div>
                             <p className="text-sm text-gray-500">متوسط الفاتورة</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {averageInvoiceValue.toLocaleString('ar-SA')}
+                                {formatNumber(averageInvoiceValue)}
                             </p>
                         </div>
                     </div>

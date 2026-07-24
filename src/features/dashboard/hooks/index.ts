@@ -69,8 +69,9 @@ interface RawDashboardData {
   summary: RawSummary;
   salesChart: unknown[];
   topData: RawTopData;
-  productsWithStock: unknown[];
-  expensesRaw: unknown[];
+  // ⚡ These are now pre-computed by Postgres RPCs:
+  lowStockProducts: LowStockProduct[];
+  categoryData: ChartDataPoint[];
   trialBalanceRows: unknown[];
 }
 
@@ -97,44 +98,10 @@ const sumTrialBalance = (rows: RawTrialBalanceRow[], prefix: string): number => 
   }, 0);
 };
 
-const computeLowStockProducts = (products: RawProduct[]): LowStockProduct[] => {
-  return products
-    .filter((p): p is RawProduct & { id: string } => {
-      const stock = p.product_stock ?? [];
-      const totalStock = stock.reduce((sum, s) => sum + toNumber(s.quantity), 0);
-      const minLevel = toNumber(p.min_stock_level) || 5;
-      return totalStock <= minLevel;
-    })
-    .map((p) => {
-      const stock = p.product_stock ?? [];
-      const quantity = stock.reduce((sum, s) => sum + toNumber(s.quantity), 0);
-      const minLevel = toNumber(p.min_stock_level) || 5;
-      return {
-        id: p.id ?? '',
-        name: p.name_ar ?? '',
-        quantity,
-        min_quantity: minLevel,
-      };
-    });
-};
+// Note: computeLowStockProducts() and computeCategoryData() have been moved to
+// Postgres RPC functions (get_low_stock_products, get_expense_categories_summary).
+// The API layer now returns pre-computed results directly.
 
-const computeCategoryData = (expenses: RawExpense[]): ChartDataPoint[] => {
-  const expenseByCategory: Record<string, number> = {};
-  expenses.forEach((exp) => {
-    const categoryName = exp.expense_categories?.name ?? 'غير مصنف';
-    const amount = toNumber(exp.amount);
-    expenseByCategory[categoryName] = (expenseByCategory[categoryName] ?? 0) + amount;
-  });
-
-  const colors = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa'];
-  return Object.entries(expenseByCategory)
-    .map(([name, value], index) => ({
-      name,
-      value,
-      color: colors[index % colors.length],
-    }))
-    .slice(0, 6);
-};
 
 // ------------------------------------------
 // Main Hook
@@ -193,7 +160,7 @@ export const useDashboardData = (): UseDashboardDataResult => {
       return null;
     }
 
-    const { summary, salesChart, topData, productsWithStock, expensesRaw, trialBalanceRows } =
+    const { summary, salesChart, topData, lowStockProducts, categoryData, trialBalanceRows } =
       rawDataQuery.data;
 
     // Guard: if summary is missing (RPC failed or old cache), return null
@@ -212,17 +179,9 @@ export const useDashboardData = (): UseDashboardDataResult => {
 
     const netCashPosition = toNumber(summary.receipt_bonds) - toNumber(summary.payment_bonds);
 
-    // Process low stock products
-    const safeProducts: RawProduct[] = Array.isArray(productsWithStock)
-      ? (productsWithStock as RawProduct[])
-      : [];
-    const lowStockProducts = computeLowStockProducts(safeProducts);
-
-    // Process expense categories
-    const safeExpenses: RawExpense[] = Array.isArray(expensesRaw)
-      ? (expensesRaw as RawExpense[])
-      : [];
-    const categoryData = computeCategoryData(safeExpenses);
+    // lowStockProducts and categoryData are now provided directly by the RPC
+    const safeCategoryData = Array.isArray(categoryData) ? categoryData : [];
+    const safeLowStockProducts = Array.isArray(lowStockProducts) ? lowStockProducts : [];
 
     const safeSalesChart: ChartDataPoint[] = Array.isArray(salesChart)
       ? (salesChart as ChartDataPoint[])
@@ -243,7 +202,7 @@ export const useDashboardData = (): UseDashboardDataResult => {
       totalSupplierDebts: toNumber(summary.total_supplier_debts),
       invoicesData: [],
       expensesData: [],
-      lowStockProducts,
+      lowStockProducts: safeLowStockProducts,
       overdueInvoices: [],
     });
 
@@ -267,8 +226,8 @@ export const useDashboardData = (): UseDashboardDataResult => {
       salesData: safeSalesChart.length
         ? safeSalesChart
         : [{ name: 'اليوم', value: 0 }],
-      categoryData: categoryData.length
-        ? categoryData
+      categoryData: safeCategoryData.length
+        ? safeCategoryData
         : [{ name: 'لا توجد بيانات', value: 0, color: '#94a3b8' }],
       recentActivities: [],
       customers: safeTopData.top_customers ?? [],
@@ -282,7 +241,7 @@ export const useDashboardData = (): UseDashboardDataResult => {
       },
       alerts: insightsResult.alerts as unknown as DashboardAlert[],
       insights: insightsResult.insights as unknown as DashboardInsight[],
-      lowStockProducts,
+      lowStockProducts: safeLowStockProducts,
     };
 
     return payload;

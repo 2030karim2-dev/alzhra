@@ -59,7 +59,7 @@ export const purchasesService = {
         supplierName: 'مورد',
         amount: totalAmount,
         currency: data.currency || 'YER',
-        date: new Date().toLocaleDateString('ar-SA'),
+        date: new Date().toLocaleDateString('en-GB'),
         paymentMethod: data.paymentMethod || 'credit',
         itemCount: data.items?.length || 0,
       }, typedResult.id);

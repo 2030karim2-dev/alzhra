@@ -101,7 +101,7 @@ const InventoryPage: React.FC = () => {
                             {activeView === 'products' && (
                                 <div className="hidden md:flex items-center gap-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[10px] sm:text-xs font-bold shadow-sm" title="إحصائيات المنتجات">
                                     <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400" title="إجمالي المنتجات">
-                                        <Database size={12} /> {totalCount.toLocaleString('ar-SA')}
+                                        <Database size={12} /> {totalCount.toLocaleString('en-US')}
                                     </span>
                                     <span className="w-px h-3 bg-slate-300 dark:bg-slate-600"></span>
                                     <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="منتجات متوفرة">

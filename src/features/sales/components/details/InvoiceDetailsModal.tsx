@@ -90,6 +90,55 @@ const InvoiceDetailsModal: React.FC<Props> = ({ invoiceId, onClose, onReturn }) 
     }
   };
 
+  const handleShareWhatsApp = async () => {
+    if (!invoice) return;
+    setIsExporting(true);
+    try {
+      const { generateInvoiceExcelBlob, exportInvoiceToExcel } = await import('../../../../core/utils/invoiceExcelExporter');
+      const comp = company || { name: 'الزهراء لقطع الغيار' };
+      const data = {
+        companyName: (comp?.name || 'الزهراء لقطع الغيار') as string,
+        companyAddress: (comp?.address || '') as string,
+        taxNumber: (comp?.tax_number || '') as string,
+        invoiceNumber: invoice.invoice_number || '',
+        issueDate: invoice.issue_date,
+        customerName: (invoice.parties as any)?.name || 'عميل نقدي',
+        issuedBy: issuedByName,
+        items: (invoice.invoice_items || []).map((i: any) => ({
+          name: i.description || i.name || '---',
+          quantity: i.quantity,
+          unitPrice: i.unit_price,
+          total: i.total,
+        })),
+        subtotal: (invoice as Record<string, unknown>).subtotal as number || (invoice.total_amount - ((invoice as Record<string, unknown>).tax_amount as number || 0)),
+        totalAmount: invoice.total_amount,
+      };
+
+      const blob = generateInvoiceExcelBlob(data);
+      const file = new File([blob], `فاتورة_${data.invoiceNumber}.xlsx`, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `فاتورة ${data.invoiceNumber}`,
+          text: `مرفق فاتورة رقم ${data.invoiceNumber}`
+        });
+      } else {
+        // Fallback
+        exportInvoiceToExcel(data);
+        const text = encodeURIComponent(`مرفق فاتورة رقم ${data.invoiceNumber}. يرجى الاطلاع على الملف المرفق.`);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+      }
+    } catch (err) {
+      console.error('Share via WhatsApp failed', err);
+      setShowAlert({ type: 'error', message: 'حدث خطأ أثناء المشاركة' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Prepare full data for PrintableInvoice
   const fullInvoiceData = invoice && company ? {
     ...invoice,
@@ -117,6 +166,7 @@ const InvoiceDetailsModal: React.FC<Props> = ({ invoiceId, onClose, onReturn }) 
           onClose={onClose}
           onExportPDF={handleExportPDF}
           onExportExcel={handleExportExcel}
+          onShareWhatsApp={handleShareWhatsApp}
           onToggleReturn={() => setShowReturnSection(!showReturnSection)}
           isExporting={isExporting}
           issuedByName={issuedByName}

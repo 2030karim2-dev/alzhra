@@ -16,6 +16,7 @@ interface SidebarProps {
   isMobileOpen: boolean;
   onCloseMobile: () => void;
   sidebarWidth?: string;
+  className?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -23,7 +24,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   toggleSidebar,
   isMobileOpen,
   onCloseMobile,
-  sidebarWidth = 'w-20'
+  sidebarWidth = 'w-20',
+  className
 }) => {
   const { dir, t } = useTranslation();
   const { isIPad } = useDevice();
@@ -61,7 +63,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         className={cn(
           'hidden md:flex flex-col fixed inset-y-0 z-20 bg-[var(--app-surface)] h-screen border-[var(--app-border)] transition-[width] duration-150 ease-out shadow-xl',
           dir === 'rtl' ? 'right-0 border-l' : 'left-0 border-r',
-          isCollapsed ? dynamicWidth : expandedWidth
+          isCollapsed ? dynamicWidth : expandedWidth,
+          className
         )}
       >
         <SidebarLogo isCollapsed={isCollapsed} />
@@ -87,15 +90,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Sidebar */}
       <aside
         className={cn(
-          `fixed inset-y-0 w-48 bg-[var(--app-surface)] h-screen flex flex-col border-[var(--app-border)] z-[60] 
-          transform transition-transform duration-300 ease-out md:hidden shadow-2xl`,
-          // Fix: In RTL, anchor to Right. In LTR, anchor to Left.
-          dir === 'rtl' ? 'right-0 border-l' : 'left-0 border-r',
+          'md:hidden fixed inset-y-0 w-72 bg-[var(--app-surface)] shadow-[0_0_40px_rgba(0,0,0,0.2)] z-50 transition-transform duration-300 ease-out flex flex-col',
+          dir === 'rtl' ? 'right-0' : 'left-0',
           // Fix: Slide from Right (+100%) in RTL, Slide from Left (-100%) in LTR
-          isMobileOpen ? 'translate-x-0' : (dir === 'rtl' ? 'translate-x-full' : '-translate-x-full')
+          isMobileOpen ? 'translate-x-0' : (dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'),
+          className
         )}
       >
         <div className="p-5 border-b border-[var(--app-border)] flex justify-between items-center bg-[var(--app-surface-hover)]/50">
