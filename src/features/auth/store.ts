@@ -239,7 +239,8 @@ export const useAuthStore = create<AuthState>()(
       name: 'alzhra-auth',
       partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated,
+        // isAuthenticated intentionally NOT persisted — must be derived from Supabase session
+        // to prevent localStorage tampering (security fix: QA-2026-003)
       }),
     }
   )

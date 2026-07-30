@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { Product } from '../inventory/types';
 import { useDiscountStore } from '../settings/taxDiscountStore';
+import { convertCurrency } from '../../core/utils/currencyUtils';
 
 export interface PurchaseInvoiceItem {
   id: string;
@@ -119,8 +120,20 @@ export const usePurchaseStore = create<PurchaseState>((set, get) => ({
   setProductForRow: (index, product) => {
     set(state => {
       const newItems = [...state.items];
-      const rate = state.currency === 'SAR' ? 1 : state.exchangeRate;
-      const convertedCost = (product.cost_price || 0) * rate;
+      const rate = state.exchangeRate;
+
+      // Convert cost price: if foreign currency, convert from foreign to base (SAR)
+      // The cost_price in Product is in SAR (base), so we convert to foreign for display
+      let convertedCost = product.cost_price || 0;
+      if (state.currency !== 'SAR') {
+        try {
+          // Convert from base (SAR) to foreign currency for display in purchase invoice
+          convertedCost = convertCurrency(product.cost_price || 0, rate, 'fromBase');
+        } catch (e) {
+          console.error('PurchaseStore: Invalid exchange rate for setProductForRow', { rate, currency: state.currency });
+          return state; // Don't update if rate is invalid
+        }
+      }
 
       if (newItems[index]) {
         newItems[index] = {
@@ -149,9 +162,8 @@ export const usePurchaseStore = create<PurchaseState>((set, get) => ({
   },
 
   calculateTotals: () => {
+    const { discountEnabled } = useDiscountStore.getState(); // Read outside set() to avoid race condition
     set(state => {
-      const { discountEnabled } = useDiscountStore.getState();
-
       const grandTotal = state.items.reduce((acc, item) => {
         const sub = (Number(item.quantity) * Number(item.costPrice));
         const discount = (discountEnabled && state.showDiscount) ? (Number(item.discount) || 0) : 0;

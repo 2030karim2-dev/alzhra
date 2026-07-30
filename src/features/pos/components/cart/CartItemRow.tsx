@@ -1,11 +1,11 @@
 import React from 'react';
-import { Trash2, Plus, Minus, Edit3, Store } from 'lucide-react';
-import { cn, formatCurrency } from '../../../../core/utils';
+import { Trash2, Plus, Minus, Edit3, Store, AlertTriangle } from 'lucide-react';
+import { cn, formatCurrency, formatNumberDisplay } from '../../../../core/utils';
 import { EditPriceInline } from './EditPriceInline';
-import { SaleItem } from '../../../sales/store';
+import { SalesCartItem } from '../../../sales/store';
 
 interface CartItemRowProps {
-    item: SaleItem;
+    item: SalesCartItem;
     editingPriceId: string | null;
     setEditingPriceId: (id: string | null) => void;
     onUpdateQuantity: (productId: string, quantity: number) => void;
@@ -19,9 +19,16 @@ export const CartItemRow: React.FC<CartItemRowProps> = React.memo(({
     onUpdateQuantity,
     onRemoveClick,
 }) => {
+    const totalAvailable = (item.warehouse_distribution || []).reduce((sum, wd) => sum + wd.quantity, 0);
+    const isOverStock = item.quantity > totalAvailable;
+    const isLowStock = totalAvailable > 0 && item.quantity >= totalAvailable;
+
     return (
         <tr
-            className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/20 transition-colors animate-in slide-in-from-right-2 duration-200"
+            className={cn(
+                "group hover:bg-slate-50/70 dark:hover:bg-slate-800/20 transition-colors animate-in slide-in-from-right-2 duration-200",
+                isOverStock && "bg-rose-50/50 dark:bg-rose-900/10"
+            )}
         >
             {/* Name & Warehouse Column */}
             <td className="p-2 md:p-3 align-top border-l border-slate-100 dark:border-slate-800/50">
@@ -31,12 +38,29 @@ export const CartItemRow: React.FC<CartItemRowProps> = React.memo(({
                 {item.warehouse_distribution && item.warehouse_distribution.length > 0 && (
                     <div className="w-full flex flex-wrap gap-1 mt-1.5">
                         {item.warehouse_distribution.map((wd, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 text-[8px] md:text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                            <span key={i} className={cn(
+                                "inline-flex items-center gap-0.5 text-[8px] md:text-[9px] px-1 py-0.5 rounded border",
+                                wd.quantity > 0
+                                    ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                                    : "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-700"
+                            )}>
                                 <Store size={8} className="md:w-2.5 md:h-2.5" />
                                 <span className="truncate max-w-[50px] md:max-w-[70px]" title={wd.warehouse_name}>{wd.warehouse_name}</span>
-                                <span className="font-bold font-mono">({wd.quantity})</span>
+                                <span className="font-bold font-mono">({formatNumberDisplay(wd.quantity)})</span>
                             </span>
                         ))}
+                    </div>
+                )}
+                {isOverStock && (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-[8px] text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-700">
+                        <AlertTriangle size={10} />
+                        <span>الكمية المطلوبة ({item.quantity}) تتجاوز المتاح ({totalAvailable})</span>
+                    </div>
+                )}
+                {isLowStock && !isOverStock && (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-[8px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-lg border border-amber-200 dark:border-amber-700">
+                        <AlertTriangle size={10} />
+                        <span>تقريباً نفذ المخزون ({totalAvailable} متاح)</span>
                     </div>
                 )}
             </td>

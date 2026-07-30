@@ -8,6 +8,7 @@ export * from './expenses';
 
 // Import reusable schemas
 import { z } from 'zod';
+import { SOX_BALANCE_TOLERANCE } from '../utils/decimalUtils';
 
 // Common validation schemas
 export const uuidSchema = z.string().uuid('معرف غير صالح');
@@ -92,6 +93,8 @@ export const journalLineSchema = z.object({
 );
 
 // Journal entry schema with balance validation
+// SOX_BALANCE_TOLERANCE is a Decimal from decimal.js — convert to number for comparison
+const SOX_TOLERANCE_NUM = Number(SOX_BALANCE_TOLERANCE.toString());
 export const journalEntrySchema = z.object({
     date: dateSchema,
     description: z.string().min(1, 'الوصف مطلوب'),
@@ -102,7 +105,7 @@ export const journalEntrySchema = z.object({
     data => {
         const totalDebit = data.lines.reduce((sum, line) => sum + (line.debit_amount || 0), 0);
         const totalCredit = data.lines.reduce((sum, line) => sum + (line.credit_amount || 0), 0);
-        return Math.abs(totalDebit - totalCredit) < 0.01;
+        return Math.abs(totalDebit - totalCredit) < SOX_TOLERANCE_NUM;
     },
     {
         message: 'القيد المحاسبي غير متوازن: إجمالي المدين يجب أن يساوي إجمالي الدائن',

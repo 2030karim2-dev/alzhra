@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
-import { Store, PauseCircle, Home, Zap, RotateCcw, Layers, ScanBarcode } from 'lucide-react';
+import { Store, PauseCircle, Home, Zap, RotateCcw, Layers, ScanBarcode, Building2, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '../../../../core/utils';
 import MicroHeader from '../../../../ui/base/MicroHeader';
 import SearchInput from '../../../../ui/components/SearchInput';
 import POSSearchDropdown from '../POSSearchDropdown';
@@ -8,7 +9,7 @@ import { useTranslation } from '../../../../lib/hooks/useTranslation';
 import { useBreakpoint } from '../../../../lib/hooks/useBreakpoint';
 
 interface POSHeaderProps {
-    search: any; // Return type of usePOSSearch
+    search: any;
     inStockOnly: boolean;
     setInStockOnly: (value: boolean) => void;
     isQuickMode: boolean;
@@ -20,6 +21,9 @@ interface POSHeaderProps {
     onLaunchScanner: () => void;
     onSearchSelect: (result: any) => void;
     onViewDetails: (result: any) => void;
+    warehouses: any[];
+    selectedWarehouseId: string | null;
+    onWarehouseChange: (warehouseId: string | null) => void;
 }
 
 export const POSHeader: React.FC<POSHeaderProps> = React.memo(({
@@ -35,11 +39,29 @@ export const POSHeader: React.FC<POSHeaderProps> = React.memo(({
     onLaunchScanner,
     onSearchSelect,
     onViewDetails,
+    warehouses,
+    selectedWarehouseId,
+    onWarehouseChange,
 }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const isDesktop = useBreakpoint('md');
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const [showWarehouseDropdown, setShowWarehouseDropdown] = React.useState(false);
+    const warehouseDropdownRef = useRef<HTMLDivElement>(null);
+
+    const selectedWarehouse = warehouses.find(w => w.id === selectedWarehouseId);
+
+    // Close warehouse dropdown on outside click
+    React.useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (warehouseDropdownRef.current && !warehouseDropdownRef.current.contains(e.target as Node)) {
+                setShowWarehouseDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
 
     const actions = (
         <div className="flex gap-1.5">
@@ -88,6 +110,75 @@ export const POSHeader: React.FC<POSHeaderProps> = React.memo(({
             searchWidth="w-full flex-1"
             extraRow={
                 <div className="flex items-center gap-2 w-full max-w-[800px]">
+                    {/* Warehouse Selector */}
+                    <div ref={warehouseDropdownRef} className="relative shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setShowWarehouseDropdown(!showWarehouseDropdown)}
+                            className={`
+                                flex items-center justify-center gap-1.5 px-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-2 h-[34px] md:h-[38px] shrink-0
+                                ${selectedWarehouseId
+                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                }
+                            `}
+                        >
+                            <Building2 size={14} />
+                            <span className="hidden sm:inline max-w-[100px] truncate">
+                                {selectedWarehouse ? selectedWarehouse.name_ar : 'الكل'}
+                            </span>
+                            <ChevronDown size={12} />
+                        </button>
+
+                        {showWarehouseDropdown && (
+                            <div className="absolute top-full mt-1 right-0 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                                <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                                        اختر المستودع
+                                    </h4>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onWarehouseChange(null);
+                                            setShowWarehouseDropdown(false);
+                                        }}
+                                        className={cn(
+                                            "w-full flex items-center justify-between px-3 py-2 text-right text-[11px] font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30",
+                                            !selectedWarehouseId ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-600 dark:text-slate-300'
+                                        )}
+                                    >
+                                        <span>جميع المستودعات</span>
+                                        {!selectedWarehouseId && <Building2 size={14} className="text-indigo-500" />}
+                                    </button>
+                                    {warehouses.map((wh) => (
+                                        <button
+                                            key={wh.id}
+                                            type="button"
+                                            onClick={() => {
+                                                onWarehouseChange(wh.id);
+                                                setShowWarehouseDropdown(false);
+                                            }}
+                                            className={cn(
+                                                "w-full flex items-center justify-between px-3 py-2 text-right text-[11px] font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30",
+                                                selectedWarehouseId === wh.id ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-600 dark:text-slate-300'
+                                            )}
+                                        >
+                                            <div className="flex flex-col">
+                                                <span>{wh.name_ar}</span>
+                                                {wh.branches?.name && (
+                                                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal">{wh.branches.name}</span>
+                                                )}
+                                            </div>
+                                            {selectedWarehouseId === wh.id && <Building2 size={14} className="text-indigo-500" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <div ref={searchContainerRef} className="relative flex-1 w-full min-w-0">
                         <SearchInput
                             value={search.query}

@@ -19,6 +19,7 @@ import { Product } from '../../inventory/types';
 import { buildProductFromSearchResult } from '../utils/buildProductFromResult';
 import { SuspendedOrdersModal } from '../components/SuspendedOrdersModal';
 import { POSHeader } from '../components/layout/POSHeader';
+import { useWarehousesWithBranches } from '../../inventory/hooks/useWarehouseStock';
 
 const POSPage: React.FC = () => {
     const navigate = useNavigate();
@@ -29,8 +30,11 @@ const POSPage: React.FC = () => {
     const [activeMobileTab, setActiveMobileTab] = useState<'products' | 'cart'>('products');
     const [inStockOnly, setInStockOnly] = useState(false);
     const [detailProduct, setDetailProduct] = useState<Product | null>(null);
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(null);
     const isDesktop = useBreakpoint('md');
     const { t } = useTranslation();
+
+    const { warehouses } = useWarehousesWithBranches();
 
     const search = usePOSSearch({
         debounceMs: 200,
@@ -39,7 +43,7 @@ const POSPage: React.FC = () => {
         filters: { in_stock_only: inStockOnly },
     });
 
-    const { items, summary, selectedCustomer, resetCart, addProductToCart } = useSalesStore();
+    const { items, summary, selectedCustomer, currency, resetCart, addProductToCart } = useSalesStore();
     const { suspendedOrders, suspendCurrentOrder, resumeOrder, removeSuspended } = usePOSStore();
     const { processPayment, isProcessing } = usePOSCheckout();
 
@@ -122,6 +126,9 @@ const POSPage: React.FC = () => {
                 onLaunchScanner={() => setIsScannerOpen(true)}
                 onSearchSelect={handleSearchSelect}
                 onViewDetails={handleViewDetails}
+                warehouses={warehouses}
+                selectedWarehouseId={selectedWarehouseId}
+                onWarehouseChange={setSelectedWarehouseId}
             />
 
             <div className="flex-1 flex overflow-hidden flex-row-reverse relative p-2 md:p-4 lg:p-6 md:gap-4 lg:gap-6 bg-gray-50/50 dark:bg-slate-950/50">
@@ -157,6 +164,7 @@ const POSPage: React.FC = () => {
                         onAddToCart={(p) => addProductToCart(p as any)}
                         inStockOnly={inStockOnly}
                         onViewDetails={(p) => setDetailProduct(p as any)}
+                        selectedWarehouseId={selectedWarehouseId}
                     />
                 </main>
             </div>
@@ -169,7 +177,7 @@ const POSPage: React.FC = () => {
                     >
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">إجمالي السلة ({items.length})</span>
-                            <span dir="ltr" className="text-xl font-bold font-mono">{formatCurrency(summary.totalAmount)} YER</span>
+                            <span dir="ltr" className="text-xl font-bold font-mono">{formatCurrency(summary.totalAmount, currency as any)}</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="bg-white/20 p-2.5 rounded-2xl">

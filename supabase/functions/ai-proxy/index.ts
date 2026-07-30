@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { OpenAI } from "https://esm.sh/openai@4.26.0"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,12 +31,41 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Verify Authentication
+    // 1. Verify Authentication using Supabase Auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({
         error: 'Unauthorized: Missing Authorization header',
         code: 'AUTH_MISSING'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return new Response(JSON.stringify({
+        error: 'Server Error: Supabase configuration missing',
+        code: 'CONFIG_ERROR'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({
+        error: 'Unauthorized: Invalid token',
+        code: 'AUTH_INVALID'
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

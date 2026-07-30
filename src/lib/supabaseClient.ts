@@ -145,6 +145,14 @@ const createMockClient = () => {
       signOut: () => Promise.resolve({ error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
     },
+    channel: () => ({
+      on: () => ({
+        subscribe: (cb?: (status: string) => void) => {
+          cb?.('SUBSCRIBED');
+          return { unsubscribe: () => { } };
+        },
+      }),
+    }),
   };
 };
 

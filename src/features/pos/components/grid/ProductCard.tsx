@@ -1,5 +1,5 @@
-import React from 'react';
-import { Package, Hash, Eye, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, Hash, Eye, Layers, Store, Building2 } from 'lucide-react';
 import { cn, formatCurrency, formatNumberDisplay } from '../../../../core/utils';
 import { Product } from '../../../inventory/types';
 
@@ -18,6 +18,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
     onViewDetails,
     playNotificationSound,
 }) => {
+    const [showWarehousePopover, setShowWarehousePopover] = useState(false);
     const hasStock = product.stock_quantity > 0;
     const isSearching = searchTerm.trim().length > 0;
     const isMatchedByAlternative =
@@ -25,6 +26,8 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
         product.alternative_numbers?.toLowerCase().includes(searchTerm.toLowerCase()) &&
         !product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const isLowStock = hasStock && product.stock_quantity <= (product.min_stock_level || 5);
+    const warehouseDist = product.warehouse_distribution || [];
+    const warehouseCount = warehouseDist.filter(w => w.quantity > 0).length;
 
     return (
         <div
@@ -33,6 +36,8 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
                 playNotificationSound();
                 onAddToCart(product);
             }}
+            onMouseEnter={() => setShowWarehousePopover(true)}
+            onMouseLeave={() => setShowWarehousePopover(false)}
             className={cn(
                 'relative bg-white dark:bg-slate-900 p-2 rounded-2xl border transition-all active:scale-95 text-right flex flex-col h-48 md:h-52 group select-none',
                 hasStock
@@ -111,6 +116,13 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
                                 {product.brand}
                             </span>
                         )}
+                        {/* Warehouse count badge */}
+                        {warehouseCount > 1 && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] md:text-[10px] bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full font-bold">
+                                <Store size={8} />
+                                {warehouseCount} مستودع
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -135,6 +147,43 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
                     </span>
                 </div>
             </div>
+
+            {/* Warehouse Distribution Popover */}
+            {showWarehousePopover && warehouseDist.length > 0 && (
+                <div
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-150"
+                    onMouseEnter={() => setShowWarehousePopover(true)}
+                    onMouseLeave={() => setShowWarehousePopover(false)}
+                >
+                    <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                        <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <Building2 size={12} />
+                            توزيع المخزون
+                        </h4>
+                    </div>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50 max-h-40 overflow-y-auto">
+                        {warehouseDist.map((wh, i) => (
+                            <div key={i} className="flex items-center justify-between px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[140px]">
+                                    <Store size={10} className="inline ml-1 text-slate-400" />
+                                    {wh.warehouse_name}
+                                </span>
+                                <span
+                                    dir="ltr"
+                                    className={cn(
+                                        'text-[11px] font-mono font-bold',
+                                        wh.quantity > 0
+                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            : 'text-red-400 dark:text-red-500'
+                                    )}
+                                >
+                                    {formatNumberDisplay(wh.quantity)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {!hasStock && (
                 <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1.5px] rounded-2xl flex items-center justify-center z-10">

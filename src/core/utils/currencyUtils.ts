@@ -122,12 +122,24 @@ export const convertToBaseCurrency = (params: CurrencyConversionParams): number 
 export const convertFromBaseCurrency = (params: CurrencyConversionParams): number => {
     const { amount, exchangeRate, exchangeOperator = 'multiply' } = params;
 
-    if (!exchangeRate || exchangeRate === 1) {
+    // Validate exchange rate — consistent with convertToBaseCurrency
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+        throw new CurrencyError(`Invalid exchange rate: ${exchangeRate}. Must be a positive number.`);
+    }
+
+    // If rate is 1, no conversion needed
+    if (exchangeRate === 1) {
         return amount;
     }
 
+    // Validate amount
     if (!Number.isFinite(amount)) {
-        return 0;
+        throw new CurrencyError(`Invalid amount: ${amount}. Must be a finite number.`);
+    }
+
+    // Prevent division by zero
+    if (exchangeOperator === 'divide' && exchangeRate === 0) {
+        throw new CurrencyError('Cannot divide by zero exchange rate');
     }
 
     // Reverse the conversion
@@ -235,6 +247,31 @@ export const calculateExchangeRate = (
     // Cross rate calculation
     return fromRate / toRate;
 };
+
+/**
+ * Unified currency conversion function
+ * Converts an amount between base currency (SAR) and a foreign currency
+ * 
+ * @param amount - The amount to convert
+ * @param rate - The exchange rate (must be > 0)
+ * @param direction - 'toBase' converts foreign → SAR, 'fromBase' converts SAR → foreign
+ * @returns Converted amount rounded to 2 decimal places
+ * @throws CurrencyError if rate is invalid or amount is not finite
+ * 
+ * @example
+ * convertCurrency(100, 3.75, 'toBase');   // 375 (USD → SAR)
+ * convertCurrency(375, 3.75, 'fromBase'); // 100 (SAR → USD)
+ */
+export function convertCurrency(amount: number, rate: number, direction: 'toBase' | 'fromBase'): number {
+    if (!Number.isFinite(rate) || rate <= 0) {
+        throw new CurrencyError(`Invalid exchange rate: ${rate}. Must be a positive number.`);
+    }
+    if (!Number.isFinite(amount)) {
+        throw new CurrencyError(`Invalid amount: ${amount}. Must be a finite number.`);
+    }
+    const converted = direction === 'toBase' ? amount * rate : amount / rate;
+    return Math.round((converted + Number.EPSILON) * 100) / 100;
+}
 
 /**
  * Helper function to convert invoice/expense amounts to base currency

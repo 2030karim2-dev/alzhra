@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { Product } from '../inventory/types';
 import { useDiscountStore } from '../settings/taxDiscountStore';
+import { convertCurrency } from '../../core/utils/currencyUtils';
 
 /**
  * SalesCartItem - Used for the sales cart/UI state
@@ -106,8 +107,19 @@ export const useSalesStore = create<SalesState>((set, get) => ({
     set(state => {
       const newItems = [...state.items];
       const basePrice = product.selling_price || 0;
-      // Consistent with our multi-currency logic: Base / Rate = Foreign
-      const convertedPrice = basePrice / state.exchangeRate;
+      const rate = state.exchangeRate;
+
+      // Validate exchange rate before conversion
+      let convertedPrice = basePrice;
+      if (state.currency !== 'SAR') {
+        try {
+          // Convert from base (SAR) to foreign currency
+          convertedPrice = convertCurrency(basePrice, rate, 'fromBase');
+        } catch (e) {
+          console.error('SalesStore: Invalid exchange rate for setProductForRow', { rate, currency: state.currency });
+          return state; // Don't update if rate is invalid
+        }
+      }
 
       if (newItems[index]) {
         newItems[index] = {
@@ -143,7 +155,18 @@ export const useSalesStore = create<SalesState>((set, get) => ({
       }
 
       const basePrice = product.selling_price || 0;
-      const convertedPrice = basePrice / state.exchangeRate;
+      const rate = state.exchangeRate;
+
+      // Validate exchange rate before conversion
+      let convertedPrice = basePrice;
+      if (state.currency !== 'SAR') {
+        try {
+          convertedPrice = convertCurrency(basePrice, rate, 'fromBase');
+        } catch (e) {
+          console.error('SalesStore: Invalid exchange rate for addProductToCart', { rate, currency: state.currency });
+          return state;
+        }
+      }
 
       const newItem: SalesCartItem = {
         id: crypto.randomUUID(),
@@ -176,11 +199,10 @@ export const useSalesStore = create<SalesState>((set, get) => ({
   },
 
   calculateTotals: () => {
+    const { discountEnabled } = useDiscountStore.getState(); // Read outside set() to avoid race condition
     set(state => {
       let subtotal = 0;
       let discountAmount = 0;
-
-      const { discountEnabled } = useDiscountStore.getState();
 
       state.items.forEach(item => {
         const qty = Number(item.quantity) || 0;
@@ -207,14 +229,20 @@ export const useSalesStore = create<SalesState>((set, get) => ({
       const newState = { ...state, [field]: value };
 
       if (['currency', 'exchangeRate', 'exchangeOperator'].includes(field as string)) {
-        const rate = (newState.currency === 'SAR') ? 1 : newState.exchangeRate;
+        const rate = newState.exchangeRate;
+        const isForeign = newState.currency !== 'SAR';
 
         newState.items = newState.items.map(item => {
           if (!item.productId) return item;
-          // The exchangeRate in our system is ALWAYS the multiplier to get Base from Foreign.
-          // To get Foreign from Base, we ALWAYS divide by the rate.
-          const newPrice = item.basePrice / rate;
-          return { ...item, price: newPrice };
+          if (!isForeign) return { ...item, price: item.basePrice };
+
+          try {
+            const newPrice = convertCurrency(item.basePrice, rate, 'fromBase');
+            return { ...item, price: newPrice };
+          } catch (e) {
+            console.error('SalesStore: Invalid rate in setMetadata', { rate, currency: newState.currency });
+            return item;
+          }
         });
       }
 

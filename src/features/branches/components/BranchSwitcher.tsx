@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GitBranch, ChevronDown, Globe, Check, Building2 } from 'lucide-react';
 import { useAuthStore } from '../../auth/store';
 import { useBranchFilterStore } from '../store';
-import { useBranches } from '../../settings/hooks';
+import { useBranches } from '../../settings/hooks.ts';
 import { cn } from '../../../core/utils';
 
 /**
@@ -15,7 +15,9 @@ import { cn } from '../../../core/utils';
 const BranchSwitcher: React.FC<{ className?: string }> = ({ className }) => {
   const { user } = useAuthStore();
   const { activeBranchId, activeBranchName, setActiveBranch, resetToAll } = useBranchFilterStore();
-  const { data: branches, isLoading } = useBranches();
+  const branchesQuery = useBranches();
+  const branches = (branchesQuery as any)?.data ?? (branchesQuery as any);
+  const isLoading = branchesQuery?.isLoading ?? false;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -32,7 +34,7 @@ const BranchSwitcher: React.FC<{ className?: string }> = ({ className }) => {
   const isManager = user?.role === 'owner' || user?.role === 'admin';
   if (!isManager) return null;
 
-  const activeBranches = branches?.filter((b: any) => b.status === 'active') ?? [];
+  const activeBranches = (Array.isArray(branches) ? branches : []).filter((b: any) => b.status === 'active');
   const label = activeBranchId ? activeBranchName : 'جميع الفروع';
 
   return (

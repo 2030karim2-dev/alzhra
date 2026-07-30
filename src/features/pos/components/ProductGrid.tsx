@@ -12,6 +12,7 @@ interface ProductGridProps {
     onAddToCart: (product: Product) => void;
     onViewDetails?: (product: Product) => void;
     inStockOnly?: boolean;
+    selectedWarehouseId?: string | null;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({
@@ -19,12 +20,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     onAddToCart,
     onViewDetails,
     inStockOnly = false,
+    selectedWarehouseId = null,
 }) => {
     const { products, isLoading: isProductsLoading } = useProducts(searchTerm);
     const { data: categories = [], isLoading: isCategoriesLoading } = useInventoryCategories();
     const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
     const { playNotificationSound } = useSoundStore();
-    
+
     const isLoading = isProductsLoading || isCategoriesLoading;
     const isSearching = searchTerm.trim().length > 0;
 
@@ -32,6 +34,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         products,
         selectedCategory,
         inStockOnly,
+        selectedWarehouseId,
     });
 
     if (isLoading) {
@@ -75,7 +78,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                         product={product}
                         searchTerm={searchTerm}
                         onAddToCart={onAddToCart}
-                        onViewDetails={onViewDetails}
+                        onViewDetails={onViewDetails ?? undefined}
                         playNotificationSound={playNotificationSound}
                     />
                 ))}
