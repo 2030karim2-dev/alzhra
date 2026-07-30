@@ -10,7 +10,7 @@ interface UseProductFilterProps {
 
 export function useProductFilter({ products, selectedCategory, inStockOnly, selectedWarehouseId }: UseProductFilterProps) {
     return useMemo(() => {
-        let result = products?.filter((p) => (selectedCategory ? p.category_id === selectedCategory : true)) ?? [];
+        let result = Array.isArray(products) ? products.filter((p) => (selectedCategory ? p.category_id === selectedCategory : true)) : [];
         if (inStockOnly) {
             result = result.filter((p) => p.stock_quantity > 0);
         }

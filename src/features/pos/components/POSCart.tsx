@@ -13,7 +13,7 @@ interface POSCartProps {
 
 export const POSCart: React.FC<POSCartProps> = ({ onPay, onSuspend }) => {
     const { items, updateQuantity, removeItem } = useSalesStore();
-    const validItems = items.filter((i) => i.productId);
+    const validItems = Array.isArray(items) ? items.filter((i) => i.productId) : [];
     const { t } = useTranslation();
     const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
 

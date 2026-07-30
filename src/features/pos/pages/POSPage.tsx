@@ -88,7 +88,7 @@ const POSPage: React.FC = () => {
         processPayment({
             partyId: selectedCustomer?.id || null,
             type: 'sale',
-            items: items.filter((i) => i.productId).map((i) => ({
+            items: (Array.isArray(items) ? items.filter((i) => i.productId) : []).map((i) => ({
                 ...i,
                 unitPrice: i.price,
                 costPrice: i.costPrice || 0,
@@ -106,7 +106,7 @@ const POSPage: React.FC = () => {
     }, [processPayment, selectedCustomer, items, resetCart]);
 
     const handleSuspend = () => {
-        if (items.filter((i) => i.productId).length === 0) return;
+        if (!Array.isArray(items) || items.filter((i) => i.productId).length === 0) return;
         suspendCurrentOrder(items, selectedCustomer);
         resetCart();
     };
@@ -150,7 +150,7 @@ const POSPage: React.FC = () => {
 
                     {!isQuickMode && (
                         <div className="shrink-0 p-2 bg-gray-50 dark:bg-slate-950 border-t dark:border-slate-800 hidden md:block">
-                            <SmartRecommendations cartItems={items.filter((i) => i.productId) as any} onAdd={(name) => search.setQuery(name)} />
+                            <SmartRecommendations cartItems={(Array.isArray(items) ? items.filter((i) => i.productId) : []) as any} onAdd={(name) => search.setQuery(name)} />
                         </div>
                     )}
                 </aside>
