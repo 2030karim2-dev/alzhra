@@ -78,7 +78,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                         product={product}
                         searchTerm={searchTerm}
                         onAddToCart={onAddToCart}
-                        onViewDetails={onViewDetails ?? undefined}
+                        {...(onViewDetails ? { onViewDetails } : {})}
                         playNotificationSound={playNotificationSound}
                     />
                 ))}

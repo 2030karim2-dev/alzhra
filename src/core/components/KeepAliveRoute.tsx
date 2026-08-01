@@ -11,13 +11,6 @@
  */
 
 import React, { useRef, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-
-interface KeepAliveEntry {
-  path: string;
-  element: React.ReactNode;
-  lastVisited: number;
-}
 
 interface KeepAliveRouteProps {
   /** The path pattern this cache entry represents (e.g. "/pos", "/sales") */

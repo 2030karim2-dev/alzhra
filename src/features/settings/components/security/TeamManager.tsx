@@ -143,7 +143,7 @@ const TeamManager: React.FC = () => {
                                 actions={
                                     inv.status === 'pending' && (
                                         <button
-                                            onClick={() => handleRemoveInvitation(inv.id)}
+                                            onClick={() => { handleRemoveInvitation(inv.id); }}
                                             className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
                                         >
                                             <Trash2 size={14} />

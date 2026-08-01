@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" translate="no">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="google" content="notranslate" />
@@ -15,9 +16,10 @@
   <title>نظام الزهراء الذكي | ERP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Cairo:wght@200..1000&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap"
-    rel="stylesheet">
+  <!-- ⚡ PERFORMANCE FIX: Reduced from 3 font families + all weights → 1 family (Cairo) with 3 weights only -->
+  <!-- Old: Almarai (300-800) + Cairo (200-1000) + Tajawal (200-900) ≈ several MB of fonts -->
+  <!-- New: Cairo (400, 600, 700, 800) only — much lighter -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script>
     // Theme initialization to prevent flicker
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {

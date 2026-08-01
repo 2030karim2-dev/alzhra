@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, Suspense, lazy } from 'react';
 import { Bell, Moon, Sun, Volume2, VolumeX, LogOut, User as UserIcon, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../../../lib/themeStore';
@@ -7,14 +7,16 @@ import { useAuthStore } from '../../../features/auth/store';
 import { useI18nStore } from '../../../lib/i18nStore';
 import { useTranslation } from '../../../lib/hooks/useTranslation';
 import { useNotificationStore, useSoundStore } from '../../../features/notifications/store';
-import NotificationDropdown from '../../../features/notifications/components/NotificationDropdown';
 import { useNetworkStatus } from '../../../lib/hooks/useNetworkStatus';
 import { cn } from '../../../core/utils';
 import { syncStore } from '../../../core/lib/sync-store';
 import { RefreshCw } from 'lucide-react';
-import SyncStatusModal from '../../components/SyncStatusModal';
-import LogoutConfirmModal from '../../../features/auth/components/LogoutConfirmModal';
 import { useLogout } from '../../../features/auth/hooks';
+
+// ⚡ PERFORMANCE FIX: Lazy-load heavy modals/dropdowns so they don't block initial render
+const NotificationDropdown = lazy(() => import('../../../features/notifications/components/NotificationDropdown'));
+const SyncStatusModal = lazy(() => import('../../components/SyncStatusModal'));
+const LogoutConfirmModal = lazy(() => import('../../../features/auth/components/LogoutConfirmModal'));
 
 const HeaderActions: React.FC = () => {
   const navigate = useNavigate();
@@ -29,13 +31,14 @@ const HeaderActions: React.FC = () => {
   const { logout: performLogout, isLoggingOut } = useLogout();
 
   // Poll for pending sync count
+  // ⚡ PERFORMANCE FIX: Reduced from 5s → 30s polling (less IndexedDB reads)
   useEffect(() => {
     const checkPending = async () => {
       const pending = await syncStore.getPending();
       setPendingCount(pending.length);
     };
     checkPending();
-    const interval = setInterval(checkPending, 5000);
+    const interval = setInterval(checkPending, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -136,10 +139,12 @@ const HeaderActions: React.FC = () => {
       )}
 
       {/* Sync Modal */}
-      <SyncStatusModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <SyncStatusModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+        />
+      </Suspense>
 
       {/* Notifications */}
       <div className="relative" ref={notifRef}>
@@ -161,7 +166,9 @@ const HeaderActions: React.FC = () => {
             </span>
           )}
         </button>
-        <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+        <Suspense fallback={null}>
+          <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+        </Suspense>
       </div>
 
       {/* User Profile Dropdown */}
@@ -229,12 +236,14 @@ const HeaderActions: React.FC = () => {
       </div>
 
       {/* Logout Confirmation Modal */}
-      <LogoutConfirmModal
-        isOpen={isLogoutModalOpen}
-        onClose={() => setIsLogoutModalOpen(false)}
-        onConfirm={performLogout}
-        isLoading={isLoggingOut}
-      />
+      <Suspense fallback={null}>
+        <LogoutConfirmModal
+          isOpen={isLogoutModalOpen}
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={performLogout}
+          isLoading={isLoggingOut}
+        />
+      </Suspense>
     </div>
   );
 };

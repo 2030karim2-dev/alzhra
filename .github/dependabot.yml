@@ -1,0 +1,32 @@
+# GitHub Dependabot Configuration
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "02:00"
+      timezone: "Asia/Aden"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "automated"
+    versioning-strategy: "auto"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "02:30"
+      timezone: "Asia/Aden"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "automated"

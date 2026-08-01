@@ -9,13 +9,13 @@
  */
 
 import { supabase } from '../../../lib/supabaseClient';
-import { ProductKitItem } from '../types';
+import type { ProductKitItem } from '../types';
 
 export interface KitAssemblyResult {
     success: boolean;
     kitProductId: string;
     quantity: number;
-    componentsUsed: { productId: string; name: string; quantity: number }[];
+    componentsUsed: Array<{ productId: string; name: string; quantity: number }>;
     errors: string[];
 }
 
@@ -32,7 +32,7 @@ export const kitService = {
         userId: string
     ): Promise<KitAssemblyResult> => {
         const errors: string[] = [];
-        const componentsUsed: { productId: string; name: string; quantity: number }[] = [];
+        const componentsUsed: Array<{ productId: string; name: string; quantity: number }> = [];
 
         // 1. Get kit components
         const { data: components, error: componentsError } = await supabase
@@ -168,7 +168,7 @@ export const kitService = {
     getKitComponents: async (
         kitProductId: string,
         warehouseId?: string
-    ): Promise<(ProductKitItem & { availableStock: number })[]> => {
+    ): Promise<Array<ProductKitItem & { availableStock: number }>> => {
         const query = supabase
             .from('product_kit_items')
             .select(`

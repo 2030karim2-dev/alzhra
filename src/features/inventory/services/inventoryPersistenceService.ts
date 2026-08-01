@@ -75,9 +75,9 @@ class InventoryPersistenceService {
      * Server-side draft save (throttled)
      */
     async saveToServer(draft: InventorySessionDraft): Promise<boolean> {
-        // Throttle server saves
+        // Throttle server saves — only when dirty and outside throttle window
         const now = Date.now();
-        if (!draft.isDirty || (this.lastServerSave && now - this.lastServerSave < SERVER_SAVE_THROTTLE_MS)) {
+        if (!draft.isDirty || (this.lastServerSave > 0 && now - this.lastServerSave < SERVER_SAVE_THROTTLE_MS)) {
             return false;
         }
 
@@ -166,7 +166,7 @@ class InventoryPersistenceService {
     }
 
     /**
-     * Clear session data
+     * Clear session data from all storage layers
      */
     clearSession() {
         if (this.saveDebounceTimer) {
@@ -176,8 +176,9 @@ class InventoryPersistenceService {
 
         try {
             sessionStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEY);
         } catch (error) {
-            console.error('Failed to clear sessionStorage:', error);
+            console.error('Failed to clear session storage:', error);
         }
 
         this.lastServerSave = 0;
@@ -185,7 +186,8 @@ class InventoryPersistenceService {
     }
 
     /**
-     * Force immediate save (useful for page unload)
+     * Force immediate save (useful for page unload / beforeunload)
+     * Writes to sessionStorage for consistency with restoreSession
      */
     async forceSave(draft: InventorySessionDraft): Promise<void> {
         if (this.saveDebounceTimer) {
@@ -193,12 +195,12 @@ class InventoryPersistenceService {
             this.saveDebounceTimer = null;
         }
 
-        // Save to localStorage synchronously (faster than sessionStorage)
+        // Save to sessionStorage synchronously (consistent with scheduleLocalSave)
         try {
             const serialized = JSON.stringify({ ...draft, lastSavedAt: Date.now() });
-            localStorage.setItem(STORAGE_KEY, serialized);
+            sessionStorage.setItem(STORAGE_KEY, serialized);
         } catch (error) {
-            console.error('Failed to force save to localStorage:', error);
+            console.error('Failed to force save:', error);
         }
 
         // Try server save

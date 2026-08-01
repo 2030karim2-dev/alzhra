@@ -60,7 +60,7 @@ export const useCreatePurchase = () => {
       if (!user?.company_id || !user?.id) throw new Error("Authentication failed");
 
       // نرسل الفاتورة بحالة 'posted' لتفعيل الـ Trigger المخزني والمحاسبي في SQL
-      return purchasesService.processPurchase({ ...data, branch_id: branchId }, user.company_id, user.id);
+      return purchasesService.processPurchase({ ...data, branchId }, user.company_id, user.id);
     },
     onSuccess: () => {
       showToast(`تم توريد الفاتورة بنجاح وتحديث الأرصدة المخزنية والمالية`, 'success');
@@ -91,7 +91,7 @@ export const useCreatePayment = () => {
   return useMutation({
     mutationFn: async (data: CreatePaymentDTO) => {
       if (!user?.company_id || !user?.id) throw new Error("Authentication failed");
-      return purchasesApi.createSupplierPayment({ ...data, branch_id: branchId }, user.company_id, user.id);
+      return purchasesApi.createSupplierPayment({ ...data, branchId }, user.company_id, user.id);
     },
     onSuccess: () => {
       showToast('تم تسجيل سند الصرف بنجاح', 'success');

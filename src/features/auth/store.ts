@@ -1,19 +1,19 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthUser } from './types';
 import { supabase } from '../../lib/supabaseClient';
 import { authApi } from './api';
-import { queryClient } from '../../lib/queryClient';
-import { persister } from '../../lib/persister';
+import { queryClient } from '../../core/lib/react-query';
+import { createIndexedDBPersister } from '../../core/lib/persistence';
 import { logger } from '../../core/utils/logger';
+
+const persister = createIndexedDBPersister();
 
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isReady: boolean;
-  _authSubscription: { unsubscribe: () => void } | null;
   login: (user: AuthUser) => void;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -21,11 +21,13 @@ interface AuthState {
 }
 
 //_TIMEOUT for session check
-const SESSION_CHECK_TIMEOUT = 45000;
-const PROFILE_FETCH_TIMEOUT = 45000;
+// ⚡ PERFORMANCE FIX: Reduced from 45s → 15s (matches customFetch timeout)
+const SESSION_CHECK_TIMEOUT = 15000;
+const PROFILE_FETCH_TIMEOUT = 15000;
 
-// Singleton flag to prevent concurrent initialization
+// Module-level state (not persisted — runtime-only)
 let isInitializingGlobal = false;
+let _authSubscription: { unsubscribe: () => void } | null = null;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -34,7 +36,6 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       isReady: false,
-      _authSubscription: null,
 
       login: (user) => set({ user, isAuthenticated: true, isLoading: false, isReady: true }),
 
@@ -100,7 +101,6 @@ export const useAuthStore = create<AuthState>()(
               logger.warn('Auth', 'Session check timed out on fresh load');
             } else {
               logger.debug('Auth', 'Session check timed out, using persisted session');
-              // We're already set to isReady: true from line 61
               isInitializingGlobal = false;
               return;
             }
@@ -117,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
             Promise.resolve(persister.removeClient()).catch(() => { });
             set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });
           } else if (session?.user) {
-            // 2. جلب ملف المستخدم الكامل مع timeout
+            // 2. Fetch full profile with timeout
             let profile: Record<string, unknown> | null = null;
 
             const profilePromise = authApi.getProfile(session.user.id).catch(() => ({ data: null, error: null, isAborted: false }));
@@ -129,7 +129,6 @@ export const useAuthStore = create<AuthState>()(
 
             if (profileResult && 'timeout' in profileResult) {
               logger.warn('Auth', 'Profile fetch timed out');
-              // If we have persisted user and it's for same ID, keep using it
               if (persistedUser && persistedUser.id === session.user.id) {
                 profile = persistedUser as unknown as Record<string, unknown>;
                 set({ isLoading: false, isReady: true });
@@ -146,10 +145,10 @@ export const useAuthStore = create<AuthState>()(
                 isLoading: false,
                 isReady: true,
               });
-              // Invalidate all queries to refresh data with the valid session
-              queryClient.invalidateQueries();
+              // ⚡ Targeted invalidation — avoid refreshing ALL queries on startup
+              queryClient.invalidateQueries({ queryKey: ['auth'] });
+              queryClient.invalidateQueries({ queryKey: ['companies'] });
             } else if (!persistedUser) {
-              // Fallback if no profile exists yet and no persisted user
               set({
                 user: {
                   id: session.user.id,
@@ -161,23 +160,19 @@ export const useAuthStore = create<AuthState>()(
                 isLoading: false,
                 isReady: true,
               });
-              queryClient.invalidateQueries();
             }
           } else if (!persistedUser) {
             set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });
           } else {
-            // No session but we have persisted user - session might have expired
-            // Clear the persisted user since Supabase says no session
             queryClient.clear();
             Promise.resolve(persister.removeClient()).catch(() => { });
             set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });
           }
 
           // 3. Unsubscribe from previous listener if exists
-          const prev = get()._authSubscription;
-          if (prev) prev.unsubscribe();
+          if (_authSubscription) _authSubscription.unsubscribe();
 
-          // 4. الاستماع لتغييرات الجلسة مع معالجة جميع الأحداث
+          // 4. Listen for auth state changes
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
             try {
               logger.debug('Auth', 'State change event', { event });
@@ -189,7 +184,6 @@ export const useAuthStore = create<AuthState>()(
                 return;
               }
 
-              // Guard to prevent redundant profile fetches if we already have the user
               const currentUser = get().user;
               if (currentUser && currentUser.id === session.user.id && (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
                 return;
@@ -210,7 +204,9 @@ export const useAuthStore = create<AuthState>()(
                       isLoading: false,
                       isReady: true
                     });
-                    queryClient.invalidateQueries();
+                    // ⚡ Targeted invalidation — avoid refreshing ALL queries
+                    queryClient.invalidateQueries({ queryKey: ['auth'] });
+                    queryClient.invalidateQueries({ queryKey: ['companies'] });
                   }
                 } catch (e) {
                   logger.warn('Auth', `Profile fetch after ${event} failed`);
@@ -221,11 +217,10 @@ export const useAuthStore = create<AuthState>()(
             }
           });
 
-          set({ _authSubscription: subscription });
+          _authSubscription = subscription;
 
         } catch (err) {
           logger.error('Auth', 'Initialization error', err as Error);
-          // ⚡ مسح التوكن الفاسد عند أي خطأ غير متوقع
           try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
           queryClient.clear();
           Promise.resolve(persister.removeClient()).catch(() => { });

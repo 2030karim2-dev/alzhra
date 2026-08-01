@@ -147,6 +147,13 @@ export const createQueryClient = (options?: Partial<typeof QUERY_CONFIG>) => {
     });
 };
 
+/**
+ * Global QueryClient singleton — shared across the entire app.
+ * This prevents the dual-cache problem where two separate QueryClients
+ * were both persisted to IndexedDB, causing duplicated reads/writes.
+ */
+export const queryClient = createQueryClient();
+
 // ------------------------------------------
 // React Query Provider Component
 // ------------------------------------------
@@ -206,15 +213,16 @@ export const ReactQueryProvider: React.FC<ReactQueryProviderProps> = ({
     children,
     client
 }) => {
-    const [queryClient] = useState(() => client ?? createQueryClient());
+    // Use the shared global singleton by default, or the passed-in client
+    const [resolvedClient] = useState(() => client ?? queryClient);
     const [persister] = useState(() => createIndexedDBPersister());
 
     // Initialize sync queue
-    useSyncQueue(queryClient);
+    useSyncQueue(resolvedClient);
 
     return (
         <PersistQueryClientProvider
-            client={queryClient}
+            client={resolvedClient}
             persistOptions={{ persister }}
         >
             {children}

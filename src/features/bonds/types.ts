@@ -9,6 +9,7 @@ export interface BondFormData {
   foreign_amount?: number;
   date: string;
   payment_method: string;
+  branch_id?: string | null;
 
   // الطرف الذي يدخل أو يخرج منه المبلغ (الصندوق أو البنك)
   cash_account_id: string;

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Trigger rebuild to resolve stale hooks.ts link
 import { ShoppingBag, Plus, History, RefreshCw, BarChart3, FileText } from 'lucide-react';
 import MicroHeader from '@/ui/base/MicroHeader';
 import CreateInvoiceView from '@/features/sales/components/create/CreateInvoiceView';
@@ -108,16 +107,20 @@ const SalesPage: React.FC = () => {
       case 'create':
         return <CreateInvoiceView onSuccess={() => setActiveTab('list')} />;
       case 'list':
-        return <InvoiceListView
-          viewType="sale"
-          searchTerm={searchTerm}
-          onViewDetails={setViewInvoiceId}
-        />;
+        return (
+          <InvoiceListView
+            viewType="sale"
+            searchTerm={searchTerm}
+            onViewDetails={setViewInvoiceId}
+          />
+        );
       case 'returns':
-        return <SalesReturnsView
-          searchTerm={searchTerm}
-          onViewDetails={setViewInvoiceId}
-        />;
+        return (
+          <SalesReturnsView
+            searchTerm={searchTerm}
+            onViewDetails={setViewInvoiceId}
+          />
+        );
       case 'quotations':
         return <QuotationsTab onConvertToInvoice={() => setActiveTab('create')} />;
       case 'analytics':

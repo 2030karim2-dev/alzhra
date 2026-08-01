@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '../../features/auth/hooks';
 import { useAuthStore } from '../../features/auth/store';
 import { useCommandPalette } from '../../features/command/hooks';
@@ -14,9 +14,8 @@ import { logger } from '../utils/logger';
 import { initAPM } from '../utils/initAPM';
 import { useRealtimeSync } from '../../lib/hooks/useRealtimeSync';
 
-let hasBootstrappedSystem = false;
-
 export const useSystemInitialization = () => {
+  const hasBootstrappedSystem = useRef(false);
   const { initialize } = useAuth();
   const { user } = useAuthStore();
   const { openPalette } = useCommandPalette();
@@ -51,9 +50,9 @@ export const useSystemInitialization = () => {
 
   // 1. Initialize Auth & Language once on mount
   useEffect(() => {
-    if (hasBootstrappedSystem) return;
+    if (hasBootstrappedSystem.current) return;
 
-    hasBootstrappedSystem = true;
+    hasBootstrappedSystem.current = true;
 
     // Boot APM first so all subsequent logs are captured
     initAPM();
@@ -66,8 +65,8 @@ export const useSystemInitialization = () => {
   useEffect(() => {
     if (!user?.id) return;
     initAPM({
-      ...(user.id          && { userId:      user.id }),
-      ...(user.company_id  && { companyId:   user.company_id }),
+      ...(user.id && { userId: user.id }),
+      ...(user.company_id && { companyId: user.company_id }),
       ...(user.company_name && { companyName: user.company_name }),
     });
   }, [user?.id, user?.company_id, user?.company_name]);
@@ -82,15 +81,21 @@ export const useSystemInitialization = () => {
   // 2. Smart Notifications & Health Check
   useEffect(() => {
     if (!user?.company_id) return;
-    // Run checks on mount
-    notificationService.checkSystemHealth(user.company_id);
+    // ⚡ PERFORMANCE FIX: Delay first health check by 60s so it doesn't
+    // compete with dashboard data loading during app startup
+    const initialCheckTimer = setTimeout(() => {
+      notificationService.checkSystemHealth(user.company_id!);
+    }, 60000);
 
     // Run interval checks every 10 minutes
     const interval = setInterval(() => {
       notificationService.checkSystemHealth(user.company_id!);
     }, 1000 * 60 * 10);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialCheckTimer);
+      clearInterval(interval);
+    };
   }, [user?.company_id]);
 
   // 3. Global Keyboard Shortcuts
@@ -133,7 +138,11 @@ export const useSystemInitialization = () => {
         if (success) {
           await offlineService.clearQueue();
           showToast('تمت مزامنة جميع البيانات بنجاح!', 'success');
-          await queryClient.invalidateQueries(); // Refresh all data
+          // Targeted invalidation: only refresh sales-related queries after sync
+          await queryClient.invalidateQueries({ queryKey: ['invoices'] });
+          await queryClient.invalidateQueries({ queryKey: ['sales'] });
+          await queryClient.invalidateQueries({ queryKey: ['sales_stats'] });
+          await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         }
       }
     };

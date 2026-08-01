@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronLeft, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductGrid from '../components/ProductGrid';
@@ -15,7 +15,7 @@ import { posSearchService } from '../services/searchService';
 import { useTranslation } from '../../../lib/hooks/useTranslation';
 import { useBreakpoint } from '../../../lib/hooks/useBreakpoint';
 import { formatCurrency } from '../../../core/utils';
-import { Product } from '../../inventory/types';
+import type { Product } from '../../inventory/types';
 import { buildProductFromSearchResult } from '../utils/buildProductFromResult';
 import { SuspendedOrdersModal } from '../components/SuspendedOrdersModal';
 import { POSHeader } from '../components/layout/POSHeader';
@@ -45,7 +45,7 @@ const POSPage: React.FC = () => {
 
     const { items, summary, selectedCustomer, currency, resetCart, addProductToCart } = useSalesStore();
     const { suspendedOrders, suspendCurrentOrder, resumeOrder, removeSuspended } = usePOSStore();
-    const { processPayment, isProcessing } = usePOSCheckout();
+    const { processPayment } = usePOSCheckout();
 
     const handleBarcodeScanned = useCallback(async (code: string) => {
         setIsScannerOpen(false);
@@ -55,7 +55,7 @@ const POSPage: React.FC = () => {
         const result = await posSearchService.searchByBarcode(user.company_id, code);
         if (result) {
             const product = buildProductFromSearchResult(result, user.company_id);
-            addProductToCart(product as any);
+            addProductToCart(product);
         } else {
             search.setQuery(code);
         }
@@ -64,16 +64,16 @@ const POSPage: React.FC = () => {
     const handleSearchSelect = useCallback((result: typeof search.results[number]) => {
         const product = buildProductFromSearchResult(result, '');
         search.selectResult(result);
-        addProductToCart(product as any);
+        addProductToCart(product);
     }, [addProductToCart, search]);
 
     const handleViewDetails = useCallback((result: typeof search.results[number]) => {
         const product = buildProductFromSearchResult(result, '');
-        setDetailProduct(product as any);
+        setDetailProduct(product);
     }, []);
 
+    // Keyboard shortcut: Ctrl+B opens barcode scanner
     useEffect(() => {
-        if (items.length === 0) resetCart();
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault();
@@ -81,14 +81,19 @@ const POSPage: React.FC = () => {
             }
         };
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [resetCart, items.length]);
+        return () => { window.removeEventListener('keydown', handleKeyDown); };
+    }, []);
+
+    const validCartItems = useMemo(
+        () => (Array.isArray(items) ? items.filter((i) => i.productId) : []),
+        [items]
+    );
 
     const handlePayConfirm = useCallback(() => {
         processPayment({
             partyId: selectedCustomer?.id || null,
             type: 'sale',
-            items: (Array.isArray(items) ? items.filter((i) => i.productId) : []).map((i) => ({
+            items: validCartItems.map((i) => ({
                 ...i,
                 unitPrice: i.price,
                 costPrice: i.costPrice || 0,
@@ -96,20 +101,19 @@ const POSPage: React.FC = () => {
             })),
             discount: 0,
             paymentMethod: 'cash',
-            treasuryAccountId: undefined,
-            status: 'paid'
+            status: 'paid' as const
         }, {
             onSuccess: () => {
                 resetCart();
             }
         });
-    }, [processPayment, selectedCustomer, items, resetCart]);
+    }, [processPayment, selectedCustomer, validCartItems, resetCart]);
 
-    const handleSuspend = () => {
-        if (!Array.isArray(items) || items.filter((i) => i.productId).length === 0) return;
+    const handleSuspend = useCallback(() => {
+        if (validCartItems.length === 0) return;
         suspendCurrentOrder(items, selectedCustomer);
         resetCart();
-    };
+    }, [validCartItems, items, selectedCustomer, suspendCurrentOrder, resetCart]);
 
     return (
         <div className="h-[100dvh] w-screen flex flex-col bg-gray-50 dark:bg-slate-950 fixed inset-0 z-50 overflow-hidden font-cairo select-none">
@@ -123,7 +127,7 @@ const POSPage: React.FC = () => {
                 showSuspended={showSuspended}
                 setShowSuspended={setShowSuspended}
                 onClearCart={resetCart}
-                onLaunchScanner={() => setIsScannerOpen(true)}
+                onLaunchScanner={() => { setIsScannerOpen(true); }}
                 onSearchSelect={handleSearchSelect}
                 onViewDetails={handleViewDetails}
                 warehouses={warehouses}
@@ -138,7 +142,7 @@ const POSPage: React.FC = () => {
         `}>
                     {!isDesktop && (
                         <div className="shrink-0 p-3 bg-white dark:bg-slate-900 border-b dark:border-slate-800 flex items-center justify-between">
-                            <button onClick={() => setActiveMobileTab('products')} className="flex items-center gap-2 text-blue-600 font-bold text-xs">
+                            <button onClick={() => { setActiveMobileTab('products'); }} className="flex items-center gap-2 text-blue-600 font-bold text-xs">
                                 <ChevronLeft size={16} /> العودة للمنتجات
                             </button>
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">مراجعة الطلب</span>
@@ -150,7 +154,7 @@ const POSPage: React.FC = () => {
 
                     {!isQuickMode && (
                         <div className="shrink-0 p-2 bg-gray-50 dark:bg-slate-950 border-t dark:border-slate-800 hidden md:block">
-                            <SmartRecommendations cartItems={(Array.isArray(items) ? items.filter((i) => i.productId) : []) as any} onAdd={(name) => search.setQuery(name)} />
+                            <SmartRecommendations cartItems={validCartItems as any} onAdd={(name) => { search.setQuery(name); }} />
                         </div>
                     )}
                 </aside>
@@ -161,9 +165,9 @@ const POSPage: React.FC = () => {
         `}>
                     <ProductGrid
                         searchTerm={search.debouncedQuery}
-                        onAddToCart={(p) => addProductToCart(p as any)}
+                        onAddToCart={(p) => { addProductToCart(p); }}
                         inStockOnly={inStockOnly}
-                        onViewDetails={(p) => setDetailProduct(p as any)}
+                        onViewDetails={(p) => { setDetailProduct(p); }}
                         selectedWarehouseId={selectedWarehouseId}
                     />
                 </main>
@@ -172,12 +176,12 @@ const POSPage: React.FC = () => {
             {!isDesktop && activeMobileTab === 'products' && items.length > 0 && (
                 <div className="fixed bottom-0 inset-x-0 p-4 z-40 animate-in slide-in-from-bottom-10 h-24 pointer-events-none">
                     <div
-                        onClick={() => setActiveMobileTab('cart')}
+                        onClick={() => { setActiveMobileTab('cart'); }}
                         className="w-full max-w-md mx-auto h-full bg-blue-600 text-white rounded-[2rem] shadow-2xl shadow-blue-500/40 flex items-center justify-between px-6 py-3 cursor-pointer pointer-events-auto active:scale-[0.98] transition-all"
                     >
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">إجمالي السلة ({items.length})</span>
-                            <span dir="ltr" className="text-xl font-bold font-mono">{formatCurrency(summary.totalAmount, currency as any)}</span>
+                            <span dir="ltr" className="text-xl font-bold font-mono">{formatCurrency(summary.totalAmount, currency)}</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="bg-white/20 p-2.5 rounded-2xl">
@@ -192,7 +196,7 @@ const POSPage: React.FC = () => {
             {isScannerOpen && (
                 <ScannerOverlay
                     onScan={(code) => handleBarcodeScanned(code)}
-                    onClose={() => setIsScannerOpen(false)}
+                    onClose={() => { setIsScannerOpen(false); }}
                 />
             )}
 
@@ -200,14 +204,14 @@ const POSPage: React.FC = () => {
             {detailProduct && (
                 <ProductDetailModal
                     product={detailProduct}
-                    onClose={() => setDetailProduct(null)}
+                    onClose={() => { setDetailProduct(null); }}
                 />
             )}
 
             {showSuspended && (
                 <SuspendedOrdersModal
                     orders={suspendedOrders}
-                    onClose={() => setShowSuspended(false)}
+                    onClose={() => { setShowSuspended(false); }}
                     onResume={(id) => {
                         const res = resumeOrder(id);
                         if (res) {

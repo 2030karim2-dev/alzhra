@@ -6,10 +6,15 @@ export const warehouseService = {
     /**
      * Get all warehouses for a company
      */
-    getWarehouses: async (companyId: string) => {
+    getWarehouses: async (companyId: string, branchId?: string) => {
         const { data, error } = await inventoryApi.getWarehouses(companyId);
         if (error) throw error;
-        return data || [];
+        const warehouses = data || [];
+        // Filter by branch if branchId provided
+        if (branchId) {
+            return warehouses.filter((wh: any) => !wh.branch_id || wh.branch_id === branchId);
+        }
+        return warehouses;
     },
 
     /**
@@ -31,11 +36,11 @@ export const warehouseService = {
         return (data || []).map((item: any) => {
             const product = item.product || {};
             const warehouse = item.warehouse || {};
-            
+
             // Combine Warehouse Name and Product Shelf Location
             const warehouseName = warehouse.name_ar || '';
             const shelfLocation = product.location || '';
-            const compositeLocation = shelfLocation 
+            const compositeLocation = shelfLocation
                 ? `${warehouseName} / ${shelfLocation}`
                 : warehouseName;
 

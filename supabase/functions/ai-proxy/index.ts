@@ -2,11 +2,30 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { OpenAI } from "https://esm.sh/openai@4.26.0"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
-  'Access-Control-Max-Age': '86400',
+// Define allowed origins for CORS security
+// In production, restrict to the actual app domains
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://alzhra-erp.vercel.app",
+  "https://alzhra-erp.netlify.app",
+].join(",");
+
+function getAllowedOrigins(): string[] {
+  const envOrigins = Deno.env.get("ALLOWED_ORIGINS") || DEFAULT_ALLOWED_ORIGINS;
+  return envOrigins.split(",").map((s: string) => s.trim()).filter(Boolean);
+}
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigins = getAllowedOrigins();
+  const origin = req.headers.get("Origin") || "";
+  const isAllowed = allowedOrigins.includes(origin) || origin === "";
+
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? (origin || allowedOrigins[0] || "*") : "null",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-application-name",
+    "Access-Control-Max-Age": "86400",
+    "Access-Control-Allow-Credentials": "true",
+  };
 }
 
 // Validate required fields
@@ -25,6 +44,8 @@ function validateRequest(body: any) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -186,7 +207,7 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 })

@@ -47,15 +47,15 @@ const AuditSessionPage: React.FC = () => {
 
     const {
         items: sessionItems,
-        _isRestoring: isRestoring,
+        isRestoring: _isRestoring,
         saveStatus,
         updateItems,
         mergeWithServer,
         clearSession,
     } = useInventorySession({
         sessionId: sessionId ?? '',
-        warehouseId: (data?.session?.warehouse_id as string | undefined) ?? undefined,
-        initialItems: data?.items ?? [],
+        ...(typeof warehouseId === 'string' ? { warehouseId } : {}),
+        initialItems: Array.isArray(data?.items) ? data.items : [],
     });
 
     const { register, reset, getValues } = useForm({
@@ -202,8 +202,10 @@ const AuditSessionPage: React.FC = () => {
 
         if (!sessionId) return;
 
+        // Use only this warehouse's stock quantity. If the product isn't in this warehouse,
+        // default to 0 — the server's addAuditItem recalculates from product_stock WHERE warehouse_id = ?
         const stockInfo = product.warehouse_distribution?.find((w: any) => w.warehouse_id === data?.session?.warehouse_id);
-        const expectedQuantity = stockInfo ? stockInfo.quantity : (product.stock_quantity || 0);
+        const expectedQuantity = stockInfo ? stockInfo.quantity : 0;
 
         addItemToAudit({ sessionId, productId: product.id, expectedQuantity }, {
             onSuccess: () => {
@@ -231,16 +233,20 @@ const AuditSessionPage: React.FC = () => {
     /** إضافة كل منتجات المستودع المحدد للجلسة دفعةً واحدة */
     const handleBulkAddWarehouseProducts = useCallback(async () => {
         if (!sessionId || !data?.session?.warehouse_id) return;
-        const warehouseId_val = data.session.warehouse_id;
+        const warehouseId_val = data.session.warehouse_id as string;
         const currentItems = getValues('items') as any[];
         const existingProductIds = new Set(currentItems.map((i: any) => i.product_id));
 
-        const { products: allProducts } = await import('../service').then(async (m) => {
-            const result = await m.inventoryService.getProducts({ pageSize: 9999, page: 1, search: '' } as any);
-            return { products: Array.isArray(result) ? result : (result as any).data ?? [] };
-        }).catch(() => ({ products: [] as any[] }));
+        // ✅ Use getProductsForWarehouse: fetches ONLY products in this warehouse
+        // with stock_quantity = the quantity in THIS warehouse (from product_stock WHERE warehouse_id = ?)
+        // This prevents mixing quantities from other warehouses.
+        const warehouseProducts = await import('../service').then(async (m) => {
+            // _companyId param is ignored in the service, only warehouseId is used
+            const result = await m.inventoryService.getProductsForWarehouse('', warehouseId_val);
+            return Array.isArray(result) ? result : [];
+        }).catch(() => [] as any[]);
 
-        const newProducts = allProducts.filter((p: any) => !existingProductIds.has(p.id));
+        const newProducts = warehouseProducts.filter((p: any) => !existingProductIds.has(p.id));
         if (newProducts.length === 0) {
             setShowBulkConfirm(false);
             return;
@@ -253,8 +259,8 @@ const AuditSessionPage: React.FC = () => {
 
         for (let i = 0; i < newProducts.length; i++) {
             const p = newProducts[i];
-            const stockInfo = p.warehouse_distribution?.find((w: any) => w.warehouse_id === warehouseId_val);
-            const expectedQuantity = stockInfo ? stockInfo.quantity : (p.stock_quantity || 0);
+            // stock_quantity here is warehouse-specific (from product_stock WHERE warehouse_id = warehouseId_val)
+            const expectedQuantity = p.stock_quantity || 0;
             await new Promise<void>((resolve) => {
                 addItemToAudit(
                     { sessionId, productId: p.id, expectedQuantity },

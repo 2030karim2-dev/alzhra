@@ -8,17 +8,18 @@ interface UseProductFilterProps {
     selectedWarehouseId?: string | null;
 }
 
-export function useProductFilter({ products, selectedCategory, inStockOnly, selectedWarehouseId }: UseProductFilterProps) {
+export function useProductFilter({ products, selectedCategory, inStockOnly, selectedWarehouseId }: UseProductFilterProps): Product[] {
     return useMemo(() => {
-        let result = Array.isArray(products) ? products.filter((p) => (selectedCategory ? p.category_id === selectedCategory : true)) : [];
+        const base = Array.isArray(products) ? products : [];
+        let result = base.filter((p) => (selectedCategory != null ? p.category_id === selectedCategory : true));
         if (inStockOnly) {
-            result = result.filter((p) => p.stock_quantity > 0);
+            result = result.filter((p) => (p.stock_quantity ?? 0) > 0);
         }
-        if (selectedWarehouseId) {
+        if (selectedWarehouseId != null) {
             result = result.filter((p) => {
-                const dist = p.warehouse_distribution || [];
+                const dist = Array.isArray(p.warehouse_distribution) ? p.warehouse_distribution : [];
                 const whStock = dist.find(w => w.warehouse_id === selectedWarehouseId);
-                return whStock && whStock.quantity > 0;
+                return whStock != null && whStock.quantity > 0;
             });
         }
         return result;

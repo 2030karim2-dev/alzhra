@@ -5,6 +5,7 @@ import { logger } from './core/utils/logger';
 import App from './App';
 import { ReactQueryProvider } from './core/lib/react-query';
 import { OfflineManager } from './core/services/OfflineManager';
+import { ErrorBoundary } from './core/components/ErrorBoundary';
 
 // --- Production: Security & Error Masking ---
 if (import.meta.env.PROD) {
@@ -77,15 +78,27 @@ if (import.meta.env.DEV) {
 }
 
 // ----------------------------------------
+// Service Worker Cleanup
 // This ensures that any previous buggy service workers are removed immediately
 // to prevent "Failed to fetch" errors caused by SW interception.
-if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+// - In DEV: remove ALL service workers (prevents interference with HMR)
+// - In PROD: remove only legacy SWs that aren't the VitePWA-generated "sw.js"
+if ('serviceWorker' in navigator) {
   try {
     navigator.serviceWorker.getRegistrations().then(registrations => {
       for (const registration of registrations) {
-        registration.unregister().catch((err: Error) => {
-          logger.warn('SW', 'unregister failed', err);
-        });
+        const scriptURL = registration.active?.scriptURL || '';
+
+        // In production, always keep the current VitePWA-generated worker (sw.js)
+        const isLegacyInProd =
+          import.meta.env.PROD && !scriptURL.endsWith('/sw.js');
+
+        if (import.meta.env.DEV || isLegacyInProd) {
+          logger.info('SW', 'Unregistering stale service worker', { scriptURL });
+          registration.unregister().catch((err: Error) => {
+            logger.warn('SW', 'unregister failed', err);
+          });
+        }
       }
     }).catch((err: Error) => {
       // This catch block handles "The document is in an invalid state" error
@@ -96,8 +109,6 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
     logger.warn('SW', 'not supported or access denied', e);
   }
 }
-
-import { ErrorBoundary } from './core/components/ErrorBoundary';
 
 const rootElement = document.querySelector('#root');
 if (!rootElement) {

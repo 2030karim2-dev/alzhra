@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { Bot, Mic } from 'lucide-react';
 import { useAuthStore } from '../../features/auth/store';
-import AICommandCenter from '../../features/ai/AICommandCenter';
+
+// ⚡ PERFORMANCE FIX: Lazy-load AICommandCenter so it doesn't block initial render
+const AICommandCenter = lazy(() => import('../../features/ai/AICommandCenter'));
 
 const AIChatButton: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +49,9 @@ const AIChatButton: React.FC = () => {
             )}
 
             {/* Chat Panel */}
-            <AICommandCenter isOpen={isOpen} onClose={() => setIsOpen(false)} />
+            <Suspense fallback={null}>
+                <AICommandCenter isOpen={isOpen} onClose={() => setIsOpen(false)} />
+            </Suspense>
         </>
     );
 };

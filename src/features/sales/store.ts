@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Product } from '../inventory/types';
 import { useDiscountStore } from '../settings/taxDiscountStore';
@@ -20,7 +19,7 @@ export interface SalesCartItem {
   price: number;     // Converted price based on current exchange rate
   discount: number;
   costPrice: number;
-  warehouse_distribution?: Array<{ warehouse_id: string; warehouse_name: string; quantity: number }>;
+  warehouse_distribution?: Array<{ warehouse_id: string; warehouse_name: string; quantity: number }> | undefined;
 }
 
 export interface SalesSummary {
@@ -87,8 +86,41 @@ export const useSalesStore = create<SalesState>((set, get) => ({
   updateItem: (index, field, value) => {
     set(state => {
       const newItems = [...state.items];
-      // @ts-expect-error assignment bypass for generic field updates
-      if (newItems[index]) newItems[index][field] = value;
+      const item = newItems[index];
+      if (!item) return state;
+
+      switch (field) {
+        case 'quantity':
+          item.quantity = Number(value) || 0;
+          break;
+        case 'price':
+          item.price = Number(value) || 0;
+          break;
+        case 'basePrice':
+          item.basePrice = Number(value) || 0;
+          break;
+        case 'discount':
+          item.discount = Number(value) || 0;
+          break;
+        case 'costPrice':
+          item.costPrice = Number(value) || 0;
+          break;
+        case 'sku':
+          item.sku = String(value);
+          break;
+        case 'name':
+          item.name = String(value);
+          break;
+        case 'partNumber':
+          item.partNumber = String(value);
+          break;
+        case 'brand':
+          item.brand = String(value);
+          break;
+        default:
+          (item as unknown as Record<string, unknown>)[field] = value;
+      }
+
       return { items: newItems };
     });
     get().calculateTotals();

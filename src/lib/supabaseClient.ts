@@ -10,7 +10,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Feature flags
 export const AI_FEATURES_ENABLED = import.meta.env.VITE_ENABLE_AI_FEATURES === 'true';
-export const IS_DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
 
 // Validate URL format (should end with .supabase.co)
 const isValidSupabaseUrl = (url: string): boolean => {
@@ -30,11 +29,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('[Supabase] Invalid URL format. Expected: https://your-project.supabase.co');
 }
 
-export const isSupabasePlaceholder = !supabaseUrl || !supabaseAnonKey || !isValidSupabaseUrl(supabaseUrl);
+const isSupabasePlaceholder = !supabaseUrl || !supabaseAnonKey || !isValidSupabaseUrl(supabaseUrl);
 
 // Custom fetch with timeout and retry logic
+// ⚡ PERFORMANCE FIX: Reduced timeout from 45s → 15s and retries from 3 → 1
+// Worst case before: 45s + 45s + 45s + ~7s backoff ≈ 142s per request
+// Worst case now:    15s + 15s + ~1s backoff   ≈ 31s per request
 const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 1;
+  const REQUEST_TIMEOUT = 15000;
   let lastError: Error | unknown;
 
   for (let i = 0; i <= MAX_RETRIES; i++) {
@@ -43,7 +46,7 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
       try {
         timeoutController.abort('timeout');
       } catch (_) { /* ignore */ }
-    }, 45000);
+    }, REQUEST_TIMEOUT);
 
     // Merge signals if options.signal exists
     let signal = timeoutController.signal;
@@ -116,7 +119,7 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
         const reason = isOffline ? 'offline' : 'network instability';
         logger.warn('Supabase', `Request failed (${reason}), retrying ${i + 1}/${MAX_RETRIES}...`, { attempt: i + 1 });
 
-        const backoff = (Math.pow(2, i) * 1000) + Math.random() * 500;
+        const backoff = (Math.pow(2, i) * 250) + Math.random() * 100;
         await new Promise(resolve => setTimeout(resolve, backoff));
         continue;
       }
@@ -181,21 +184,8 @@ export const supabase = isSupabasePlaceholder
       },
       // Add retry configuration
       realtime: {
-        timeout: 45000,
+        timeout: 15000,
       },
     }
   );
 
-// Export a helper function to handle auth errors gracefully
-export const handleSupabaseError = (error: unknown): { message: string; isAuthError: boolean } => {
-  const err = error as { message?: string; error_description?: string };
-  const errorMessage = err?.message || err?.error_description || 'Unknown error occurred';
-  const isAuthError = errorMessage.includes('token') || errorMessage.includes('auth') || errorMessage.includes('JWT');
-
-  return {
-    message: isAuthError
-      ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
-      : errorMessage,
-    isAuthError
-  };
-};

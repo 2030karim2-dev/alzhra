@@ -27,16 +27,55 @@ export function useInventorySession({ sessionId, warehouseId, initialItems, auto
             if (!mounted) return;
             const draft = await inventoryPersistence.restoreSession(sessionId);
             if (draft && mounted) {
-                setItems(draft.items as any[]);
-                lastItemsRef.current = draft.items as any[];
+                // Merge draft quantities into initialItems to preserve full product details
+                const mergedItems = [...initialItems];
+                
+                draft.items.forEach((draftItem: any) => {
+                    const existingIndex = mergedItems.findIndex(
+                        (i: any) => (i.product_id || i.id) === draftItem.productId
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        mergedItems[existingIndex] = {
+                            ...mergedItems[existingIndex],
+                            counted_quantity: draftItem.countedQuantity
+                        };
+                    } else {
+                        // Edge case: item in draft but not in server yet
+                        mergedItems.push({
+                            product_id: draftItem.productId,
+                            counted_quantity: draftItem.countedQuantity
+                        });
+                    }
+                });
+
+                setItems(mergedItems);
+                lastItemsRef.current = mergedItems;
                 setSaveStatus('saved');
                 showToast('تم استعادة بيانات الجلسة من الحفظ التلقائي', 'info');
             }
             setIsRestoring(false);
         }
-        restore();
-        return () => { mounted = false; };
-    }, [sessionId, showToast]);
+        
+        // We only want to restore once, but we need initialItems to be loaded first
+        // If initialItems is empty, it might be loading, or it might actually be empty.
+        // We'll run restore once we have items, or after a short delay if it remains empty.
+        const timer = setTimeout(() => {
+            if (mounted && isRestoring) {
+                restore();
+            }
+        }, initialItems.length > 0 ? 0 : 1000);
+
+        if (initialItems.length > 0 && isRestoring) {
+            clearTimeout(timer);
+            restore();
+        }
+
+        return () => { 
+            mounted = false; 
+            clearTimeout(timer);
+        };
+    }, [sessionId, showToast, initialItems, isRestoring]);
 
     // Subscribe to save status changes
     useEffect(() => {

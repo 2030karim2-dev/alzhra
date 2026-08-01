@@ -13,7 +13,6 @@ import MicroHeader from '../../../ui/base/MicroHeader';
 import { useTranslation } from '../../../lib/hooks/useTranslation';
 import SmartImportView from '../../smart-import/components/SmartImportView';
 import { usePurchaseStore } from '../store';
-// import { purchaseAccountingService } from '../services/purchaseAccounting';
 import { purchaseFixesService } from '../services/maintenance/purchaseFixes';
 import { useAuthStore } from '../../auth/store';
 import { useFeedbackStore } from '../../feedback/store';

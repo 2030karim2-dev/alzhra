@@ -42,6 +42,17 @@ sizes.txt
 *.sln
 *.sw?
 
+# kilo config (contains secrets)
+.kilo/
+
+# corrupted/leftover files
+{2})'
+alzh
+AUDIT_REPORT.md
+schemas/
+*.db
+*.sqlite
+
 # project logs/temp
 tsc-errors*.txt
 ts_errors.txt

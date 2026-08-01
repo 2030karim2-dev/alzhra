@@ -99,7 +99,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             if (e.key === 'Enter' && canConfirm && !isProcessing) handleConfirm();
         };
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        return () => { window.removeEventListener('keydown', handleKeyDown); };
     }, [isOpen, canConfirm, isProcessing]);
 
     if (!isOpen) return null;
@@ -131,7 +131,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
                     <ItemPriceEditor
                         show={showItemEdit}
-                        onToggle={() => setShowItemEdit(v => !v)}
+                        onToggle={() => { setShowItemEdit(v => !v); }}
                         items={validItems}
                         allItems={items}
                         currency={currency}

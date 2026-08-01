@@ -33,19 +33,35 @@ export const useAuditSession = (sessionId: string | undefined) => {
     useEffect(() => {
         if (!sessionId) return;
 
-        const channel = supabase
-            .channel(`audit_session_${sessionId}`)
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'audit_items', filter: `session_id=eq.${sessionId}` },
-                (payload: any) => {
-                    logger.debug('Audit item changed:', payload);
-                    queryClient.invalidateQueries({ queryKey: ['audit_session', sessionId] });
-                }
-            )
-            .subscribe();
+        const channelKey = `audit_session_${sessionId}`;
+        const globalAny = window as any;
+        if (!globalAny.__ALZ_AUDIT_CHANNELS__) {
+            globalAny.__ALZ_AUDIT_CHANNELS__ = new Map<string, any>();
+        }
+        const registry: Map<string, any> = globalAny.__ALZ_AUDIT_CHANNELS__;
 
-        return () => { supabase.removeChannel(channel); };
+        // Reuse existing channel if already subscribed (prevents race condition)
+        if (!registry.has(channelKey)) {
+            const channel = supabase
+                .channel(channelKey)
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'audit_items', filter: `session_id=eq.${sessionId}` },
+                    (payload: any) => {
+                        logger.debug('Audit item changed:', payload);
+                        queryClient.invalidateQueries({ queryKey: ['audit_session', sessionId] });
+                    }
+                )
+                .subscribe((status: any) => {
+                    if (status === 'SUBSCRIBED') {
+                        logger.debug('Audit', `Realtime channel [${channelKey}] subscribed`);
+                    }
+                });
+
+            registry.set(channelKey, channel);
+        }
+
+        return () => { /* no-op: keep channel alive for stability */ };
     }, [sessionId, queryClient]);
 
     return query;
@@ -169,6 +185,42 @@ export const useInventoryMutations = () => {
         }
     });
 
+    const deleteSession = useMutation({
+        mutationFn: (sessionId: string) => inventoryService.deleteAuditSession(sessionId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['audit_sessions'] });
+            showToast("تم حذف جلسة الجرد بنجاح", 'success');
+        },
+        onError: (err: any) => {
+            showToast("فشل حذف الجلسة: " + err.message, 'error');
+        }
+    });
+
+    const renameSession = useMutation({
+        mutationFn: ({ sessionId, title }: { sessionId: string; title: string }) =>
+            inventoryService.renameAuditSession(sessionId, title),
+        onSuccess: (_, { sessionId }) => {
+            queryClient.invalidateQueries({ queryKey: ['audit_sessions'] });
+            queryClient.invalidateQueries({ queryKey: ['audit_session', sessionId] });
+            showToast("تم تعديل اسم الجلسة", 'success');
+        },
+        onError: (err: any) => {
+            showToast("فشل تعديل الاسم: " + err.message, 'error');
+        }
+    });
+
+    const reopenSession = useMutation({
+        mutationFn: (sessionId: string) => inventoryService.reopenAuditSession(sessionId),
+        onSuccess: (_, sessionId) => {
+            queryClient.invalidateQueries({ queryKey: ['audit_sessions'] });
+            queryClient.invalidateQueries({ queryKey: ['audit_session', sessionId] });
+            showToast("تمت إعادة فتح جلسة الجرد", 'info');
+        },
+        onError: (err: any) => {
+            showToast("فشل إعادة الفتح: " + err.message, 'error');
+        }
+    });
+
     return {
         createTransfer: transfer.mutate,
         isTransferring: transfer.isPending,
@@ -184,5 +236,11 @@ export const useInventoryMutations = () => {
         isAddingItem: addItem.isPending,
         removeItemFromAudit: removeItem.mutate,
         isRemovingItem: removeItem.isPending,
+        deleteAuditSession: deleteSession.mutate,
+        isDeletingSession: deleteSession.isPending,
+        renameAuditSession: renameSession.mutate,
+        isRenamingSession: renameSession.isPending,
+        reopenAuditSession: reopenSession.mutate,
+        isReopeningSession: reopenSession.isPending,
     };
 };

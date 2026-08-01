@@ -53,6 +53,7 @@ export interface SupplierPaymentData {
   supplierId: string;
   amount: number;
   date: string;
+  branchId?: string | null;
   notes?: string | undefined;
   currencyCode?: string | undefined;
   exchangeRate?: number | undefined;

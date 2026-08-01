@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { LogOut, GitBranch } from 'lucide-react';
 import { useAuthStore } from '../../../features/auth/store';
 import { useTranslation } from '../../../lib/hooks/useTranslation';
 import { useLogout } from '../../../features/auth/hooks';
-import LogoutConfirmModal from '../../../features/auth/components/LogoutConfirmModal';
 import BranchSwitcher from '../../../features/branches/components/BranchSwitcher';
+
+// ⚡ PERFORMANCE FIX: Lazy-load LogoutConfirmModal (matches HeaderActions)
+const LogoutConfirmModal = lazy(() => import('../../../features/auth/components/LogoutConfirmModal'));
 
 interface SidebarFooterProps {
   isCollapsed: boolean;
@@ -70,14 +72,16 @@ const SidebarFooter: React.FC<SidebarFooterProps> = ({ isCollapsed }) => {
         )}
       </div>
 
-      <LogoutConfirmModal
-        isOpen={isLogoutModalOpen}
-        onClose={() => setIsLogoutModalOpen(false)}
-        onConfirm={performLogout}
-        isLoading={isLoggingOut}
-      />
+      <Suspense fallback={null}>
+        <LogoutConfirmModal
+          isOpen={isLogoutModalOpen}
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={performLogout}
+          isLoading={isLoggingOut}
+        />
+      </Suspense>
     </div>
   );
 };
 
-export default SidebarFooter;
+export default SidebarFooter;

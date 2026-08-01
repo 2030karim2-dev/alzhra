@@ -8,6 +8,14 @@ import { supabase } from '../../../lib/supabaseClient';
 import { logger } from '../../../core/utils/logger';
 import { syncStore } from '../../../core/lib/sync-store';
 
+// Global registry to prevent duplicate/racing realtime channels
+// Follows the same semi-persistent pattern used in useRealtimeSync.ts
+const globalAny = window as any;
+if (!globalAny.__ALZ_PRODUCT_CHANNELS__) {
+    globalAny.__ALZ_PRODUCT_CHANNELS__ = new Map<string, any>();
+}
+const channelRegistry: Map<string, any> = globalAny.__ALZ_PRODUCT_CHANNELS__;
+
 export const useProducts = (searchTerm: string = '', options: { limitNum?: number, enabled?: boolean } = {}) => {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
@@ -20,30 +28,44 @@ export const useProducts = (searchTerm: string = '', options: { limitNum?: numbe
         staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent tab-switching lag
     });
 
-    // Realtime channel for product and stock updates
+    // Semi-persistent Realtime channel (singleton per company).
+    // We intentionally do NOT remove the channel on unmount to avoid the
+    // "cannot add postgres_changes callbacks after subscribe()" race condition
+    // that occurs during StrictMode double-mount, HMR, or rapid tab switching.
     useEffect(() => {
         if (!companyId) return;
 
-        const channel = supabase
-            .channel(`products_realtime_${companyId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'products',
-                    filter: `company_id=eq.${companyId}`
-                },
-                (payload: any) => {
-                    logger.debug('Products', 'Inventory updated via realtime', JSON.stringify(payload));
-                    queryClient.invalidateQueries({ queryKey: ['products', companyId] });
-                }
-            )
-            .subscribe();
+        const channelKey = `products_realtime_${companyId}`;
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        // Reuse existing channel if already subscribed
+        if (!channelRegistry.has(channelKey)) {
+            logger.debug('Products', `Creating realtime channel [${channelKey}]`);
+            const channel = supabase
+                .channel(channelKey)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'products',
+                        filter: `company_id=eq.${companyId}`
+                    },
+                    (payload: any) => {
+                        logger.debug('Products', 'Inventory updated via realtime', JSON.stringify(payload));
+                        queryClient.invalidateQueries({ queryKey: ['products', companyId] });
+                    }
+                )
+                .subscribe((status: any) => {
+                    if (status === 'SUBSCRIBED') {
+                        logger.debug('Products', `Realtime channel [${channelKey}] subscribed`);
+                    }
+                });
+
+            channelRegistry.set(channelKey, channel);
+        }
+
+        // No-op cleanup: keep the channel alive to prevent the subscribe race
+        return () => { /* intentional no-op for channel stability */ };
     }, [companyId, queryClient]);
 
     const filteredProducts = useMemo(() => {

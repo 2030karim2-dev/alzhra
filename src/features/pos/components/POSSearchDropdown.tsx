@@ -114,7 +114,7 @@ const POSSearchDropdown: React.FC<POSSearchDropdownProps> = ({
                                 result={result}
                                 isSelected={idx === selectedIndex}
                                 onSelect={onSelect}
-                                onViewDetails={onViewDetails}
+                                {...(onViewDetails ? { onViewDetails } : {})}
                                 onMouseEnter={() => { }}
                             />
                         </div>

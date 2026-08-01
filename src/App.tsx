@@ -12,8 +12,14 @@ const App: React.FC = () => {
   useSystemInitialization();
 
   React.useEffect(() => {
-    // Start prefetching chunks when app becomes idle
-    prefetchCriticalRoutes();
+    // ⚡ PERFORMANCE FIX: Delay route prefetching until 30 seconds after idle
+    // Old behavior prefetched 4 routes immediately after mount → unnecessary
+    // network traffic and slow navigation while the dashboard loads
+    const prefetchTimer = setTimeout(() => {
+      prefetchCriticalRoutes();
+    }, 30000);
+
+    return () => clearTimeout(prefetchTimer);
   }, []);
 
   return (

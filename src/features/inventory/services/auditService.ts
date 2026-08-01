@@ -36,18 +36,42 @@ export const auditService = {
 
     /**
      * Add a single item to an active audit session
+     * 
+     * ✅ Warehouse isolation: The expected_quantity is ALWAYS recalculated
+     * from product_stock WHERE warehouse_id = session.warehouse_id.
+     * The expectedQuantity param passed from the frontend is only used as a
+     * fallback if the product has no stock record in this warehouse yet.
      */
     addAuditItem: async (sessionId: string, productId: string, expectedQuantity: number = 0, companyId: string, userId: string) => {
+        // Fetch session warehouse_id to get accurate warehouse-specific stock
+        const { data: session } = await supabase.from('audit_sessions').select('warehouse_id').eq('id', sessionId).single();
+        let calculatedExpectedQuantity = expectedQuantity;
+
+        if (session?.warehouse_id) {
+            const { data: stockData } = await supabase.from('product_stock')
+                .select('quantity')
+                .eq('product_id', productId)
+                .eq('warehouse_id', session.warehouse_id) // ✅ Filters by THIS warehouse only
+                .maybeSingle();
+                
+            if (stockData) {
+                calculatedExpectedQuantity = Number(stockData.quantity) || 0;
+            } else {
+                calculatedExpectedQuantity = 0; // Product has no stock in this warehouse → 0
+            }
+        }
+
         const { data, error } = await supabase.from('audit_items').insert({
             session_id: sessionId,
             product_id: productId,
-            expected_quantity: expectedQuantity,
+            expected_quantity: calculatedExpectedQuantity,
             company_id: companyId,
             created_by: userId
         }).select().single();
         if (error) throw error;
         return data;
     },
+
 
     /**
      * Finalize an audit session
@@ -132,7 +156,48 @@ export const auditService = {
     deleteAuditItem: async (itemId: string) => {
         const { error } = await supabase.from('audit_items').delete().eq('id', itemId);
         if (error) throw error;
-    }
+    },
+
+    /**
+     * Delete an audit session (and all its items)
+     */
+    deleteAuditSession: async (sessionId: string) => {
+        // First delete all audit items
+        const { error: itemsError } = await supabase
+            .from('audit_items')
+            .delete()
+            .eq('session_id', sessionId);
+        if (itemsError) throw itemsError;
+
+        // Then delete the session itself
+        const { error } = await supabase
+            .from('audit_sessions')
+            .delete()
+            .eq('id', sessionId);
+        if (error) throw error;
+    },
+
+    /**
+     * Rename an audit session title
+     */
+    renameAuditSession: async (sessionId: string, newTitle: string) => {
+        const { error } = await supabase
+            .from('audit_sessions')
+            .update({ title: newTitle })
+            .eq('id', sessionId);
+        if (error) throw error;
+    },
+
+    /**
+     * Reopen a completed audit session (set back to active)
+     */
+    reopenAuditSession: async (sessionId: string) => {
+        const { error } = await supabase
+            .from('audit_sessions')
+            .update({ status: 'active', completed_at: null, completed_by: null })
+            .eq('id', sessionId);
+        if (error) throw error;
+    },
 };
 
 export default auditService;

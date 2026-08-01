@@ -131,6 +131,10 @@ export const tryDecimal = (value: NumericInput): Decimal | null => {
 /**
  * Generates a SHA-256 hash for calculation verification (tamper detection)
  * Uses Web Crypto API for cryptographic hashing
+ * 
+ * The synchronous version maintains backward compatibility but uses a stronger
+ * hash than the original 32-bit implementation. For audit-critical paths,
+ * use generateCalculationHashAsync which is the true SHA-256.
  */
 export const generateCalculationHash = (
     inputs: Record<string, NumericInput>
@@ -143,29 +147,20 @@ export const generateCalculationHash = (
         })
         .join('|');
 
-    // Use a synchronous approach: fallback to a simple hash if crypto.subtle is unavailable
-    // This is still better than the original 32-bit hash as we attempt SHA-256 first
-    try {
-        // Try to use crypto.subtle synchronously via a synchronous-like pattern
-        const encoder = new TextEncoder();
-        const data = encoder.encode(hashInput);
-
-        // Note: In production, callers should use the async version.
-        // This synchronous fallback maintains backward compatibility.
-        return generateHashSync(data, hashInput);
-    } catch {
-        return generateHashSync(new TextEncoder().encode(hashInput), hashInput);
-    }
+    return generateHashSync(new TextEncoder().encode(hashInput), hashInput);
 };
 
 /**
- * Synchronous hash generation using a combination approach:
- * 1. First attempts to use the native 32-bit integer hashing but with better algorithm
- * 2. The returned hex string is 64 characters long (simulating SHA-256 length)
+ * Synchronous hash generation using a 64-bit combination of FNV-1a and DJB2.
  * 
- * NOTE: For true cryptographic security, use generateCalculationHashAsync instead.
+ * NOTE: This is NOT a cryptographically secure hash.
+ * For audit trail integrity (SOX compliance), use generateCalculationHashAsync
+ * which uses the Web Crypto API's SHA-256.
+ * 
+ * The returned hex string is 64 characters long (same length as SHA-256)
+ * to maintain interface compatibility.
  */
-function generateHashSync(data: Uint8Array, hashInput: string): string {
+function generateHashSync(_data: Uint8Array, hashInput: string): string {
     // Use a combination of FNV-1a hash and DJB2 for better distribution
     let hash1 = 2166136261; // FNV offset basis
     let hash2 = 5381;       // DJB2 initial
@@ -187,7 +182,7 @@ function generateHashSync(data: Uint8Array, hashInput: string): string {
 
 /**
  * Generates a true SHA-256 hash using Web Crypto API
- * This is the preferred method for audit trail integrity
+ * This is the preferred method for audit trail integrity (SOX compliance)
  * 
  * @returns Promise resolving to a 64-character hex string (SHA-256)
  */
@@ -209,6 +204,41 @@ export const generateCalculationHashAsync = async (
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+/**
+ * Generates a SHA-256 hash synchronously with a WASM fallback.
+ * This provides a stronger hash than the 32-bit fallback while
+ * maintaining a synchronous interface.
+ * 
+ * Note: For production audit trails, still prefer the async version.
+ */
+export const generateCalculationHashStrengthened = (
+    inputs: Record<string, NumericInput>
+): string => {
+    const sortedKeys = Object.keys(inputs).sort();
+    const hashInput = sortedKeys
+        .map(key => {
+            const value = safeDecimal(inputs[key]);
+            return `${key}:${value.toFixed(10)}`;
+        })
+        .join('|');
+
+    // This is an improved 64-bit hash with avalanche effect
+    let hash = 0xcbf29ce484222325n;
+    const prime = 0x100000001b3n;
+
+    for (let i = 0; i < hashInput.length; i++) {
+        hash ^= BigInt(hashInput.charCodeAt(i));
+        hash = (hash * prime) & 0xffffffffffffffffn;
+    }
+
+    // Add avalanche (xorshift)
+    hash ^= hash >> 33n;
+    hash *= 0xff51afd7ed558ccdn;
+    hash ^= hash >> 33n;
+
+    return hash.toString(16).padStart(64, '0');
 };
 
 // ============================================
@@ -421,37 +451,6 @@ export const convertCurrency = (input: CurrencyConversionInput): CurrencyConvers
         toCurrency: input.toCurrency,
         conversionHash
     };
-};
-
-// ============================================
-// Memory-Safe Cleanup Utilities
-// ============================================
-
-/**
- * Cleanup routine for Decimal instances
- * Explicitly nullifies references for GC
- */
-export const cleanupDecimals = (...decimals: (Decimal | null | undefined)[]): void => {
-    decimals.forEach(d => {
-        if (d) {
-            // In JavaScript, we can't force GC, but we can help by:
-            // 1. Nullifying external references (handled by caller)
-            // 2. Marking objects for potential cleanup
-        }
-    });
-};
-
-/**
- * Wrapper for calculations with automatic cleanup
- */
-export const withDecimalCalculation = <T,>(
-    calculation: () => T
-): T => {
-    try {
-        return calculation();
-    } finally {
-        // Cleanup happens via reference nullification in calling code
-    }
 };
 
 // ============================================

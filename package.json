@@ -19,7 +19,7 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "clean": "chmod +x cleanup.sh && ./cleanup.sh",
+    "clean": "node scripts/cleanup.mjs",
     "scan:types": "tsx scripts/type-safety-scanner.ts",
     "type-check": "tsc --noEmit",
     "type-check:strict": "tsc --noEmit --strict",

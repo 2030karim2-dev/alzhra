@@ -1,9 +1,10 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import SalesStats from './SalesStats';
 import ExcelTable from '../../../../ui/common/ExcelTable';
 import { useInvoices, useDeleteInvoice } from '../../hooks/index';
 import { formatCurrency } from '../../../../core/utils';
+import type { CurrencyCode } from '../../../../core/utils/currencyUtils';
 import { Eye, Trash2 } from 'lucide-react';
 import ShareButton from '../../../../ui/common/ShareButton';
 import EmptyState from '../../../../ui/base/EmptyState';
@@ -31,23 +32,35 @@ const InvoiceListView: React.FC<InvoiceListViewProps> = ({ viewType, searchTerm,
         });
     }, [invoices, searchTerm, viewType]);
 
+    const handleViewDetails = useCallback((id: string) => onViewDetails(id), [onViewDetails]);
+    const handleDelete = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('هل أنت متأكد من حذف هذه الفاتورة؟ سيتم إلغاء أثرها المالي والمخزني.')) {
+            deleteInvoice(id);
+        }
+    }, [deleteInvoice]);
+
     const columns = useMemo(() => [
         {
             header: 'العملية',
+            accessorKey: 'invoiceNumber' as keyof InvoiceListItem,
             accessor: (row: InvoiceListItem) => <span dir="ltr" className="font-mono font-bold text-blue-600">#{row.invoiceNumber}</span>,
             width: 'w-32'
         },
         {
             header: 'العميل',
+            accessorKey: 'customerName' as keyof InvoiceListItem,
             accessor: (row: InvoiceListItem) => <span className="font-bold text-gray-800 dark:text-slate-100">{row.customerName}</span>
         },
         {
             header: 'التاريخ',
+            accessorKey: 'date' as keyof InvoiceListItem,
             accessor: (row: InvoiceListItem) => <span className="font-mono text-xs text-gray-500 dark:text-slate-400">{row.date}</span>,
             width: 'w-24'
         },
         {
             header: 'طريقة الدفع',
+            accessorKey: 'paymentMethod' as keyof InvoiceListItem,
             accessor: (row: InvoiceListItem) => (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.paymentMethod === 'cash'
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
@@ -61,10 +74,11 @@ const InvoiceListView: React.FC<InvoiceListViewProps> = ({ viewType, searchTerm,
         },
         {
             header: 'الإجمالي (الأساسي)',
+            sortKey: 'total' as keyof InvoiceListItem,
             accessor: (row: InvoiceListItem) => (
                 <div className="flex flex-col items-end leading-tight">
                     <span dir="ltr" className="font-mono font-bold text-emerald-600">
-                        {formatCurrency(row.total, row.currencyCode)}
+                        {formatCurrency(row.total, row.currencyCode as CurrencyCode | undefined)}
                     </span>
                     {(row.currencyCode && row.currencyCode !== 'SAR') && (
                         <span dir="ltr" className="text-[10px] font-bold text-blue-500 mt-0.5">
@@ -78,6 +92,8 @@ const InvoiceListView: React.FC<InvoiceListViewProps> = ({ viewType, searchTerm,
         },
         {
             header: 'الحالة',
+            accessorKey: 'status' as keyof InvoiceListItem,
+            sortKey: 'status' as keyof InvoiceListItem,
             accessor: (row: InvoiceListItem) => (
                 <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${row.status === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                     row.status === 'posted' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
@@ -97,18 +113,13 @@ const InvoiceListView: React.FC<InvoiceListViewProps> = ({ viewType, searchTerm,
                         size="sm"
                         eventType="sale_invoice"
                         title={`مشاركة فاتورة #${row.invoiceNumber}`}
-                        message={`🧾 فاتورة #${row.invoiceNumber}\n━━━━━━━━━━━━━━\n👤 ${row.customerName}\n💰 ${formatCurrency(row.total)}\n📅 ${row.date}\n💳 ${row.paymentMethod === 'cash' ? 'نقدي' : 'آجل'}`}
+                        message={`🧾 فاتورة #${row.invoiceNumber}\n━━━━━━━━━━━━━━\n👤 ${row.customerName}\n💰 ${formatCurrency(row.total, row.currencyCode as CurrencyCode | undefined)}\n📅 ${row.date}\n💳 ${row.paymentMethod === 'cash' ? 'نقدي' : 'آجل'}`}
                     />
-                    <button onClick={() => onViewDetails(row.id)} className="p-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 rounded transition-colors">
+                    <button onClick={() => handleViewDetails(row.id)} className="p-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 rounded transition-colors">
                         <Eye size={16} />
                     </button>
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm('هل أنت متأكد من حذف هذه الفاتورة؟ سيتم إلغاء أثرها المالي والمخزني.')) {
-                                deleteInvoice(row.id);
-                            }
-                        }}
+                        onClick={(e) => handleDelete(e, row.id)}
                         disabled={isDeleting}
                         className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded transition-colors"
                     >
@@ -119,13 +130,13 @@ const InvoiceListView: React.FC<InvoiceListViewProps> = ({ viewType, searchTerm,
             width: 'w-24',
             className: 'text-center'
         }
-    ], [onViewDetails, deleteInvoice, isDeleting]);
+    ], [handleViewDetails, handleDelete, isDeleting]);
 
     if (isLoading) return <PageLoader />;
 
     if (error) return <ErrorDisplay error={error?.message || 'فشل في تحميل البيانات'} onRetry={refetch} />;
 
-    if (!isLoading && filteredData.length === 0) {
+    if (filteredData.length === 0) {
         return <EmptyState title="لا توجد فواتير" description="لم يتم العثور على سجلات مطابقة لمعايير البحث." />;
     }
 

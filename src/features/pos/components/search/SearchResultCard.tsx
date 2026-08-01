@@ -11,7 +11,7 @@ interface SearchResultCardProps {
     onMouseEnter: () => void;
 }
 
-const MatchBadge: React.FC<{ type?: string }> = React.memo(({ type }) => {
+const MatchBadge: React.FC<{ type?: string | undefined }> = React.memo(({ type }) => {
     if (!type || type === 'exact') return null;
 
     const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {

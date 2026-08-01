@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-  BarChart3, Scale, RefreshCw, PieChart, Landmark, Wallet, History,
-  RotateCcw, Droplets, ShoppingCart, TrendingDown, Clock,
+  BarChart3, Scale, PieChart, Wallet, History,
+  Droplets, ShoppingCart, TrendingDown, Clock,
   LayoutGrid, FileText, Activity, Layers
 } from 'lucide-react';
 import MicroHeader from '../../ui/base/MicroHeader';
@@ -24,12 +24,26 @@ import { cn } from '../../core/utils';
 
 type ReportCategory = 'all' | 'ai' | 'sales' | 'financial' | 'accounting';
 
+/** Components map — only the active tab renders (no display:none) */
+const ALL_REPORT_COMPONENTS: Partial<Record<ReportTab, React.ReactNode>> = {
+  daily_sales: <DailySalesReport />,
+  returns_report: <ReturnsReportView />,
+  debt_report: <DebtReportView />,
+  debt_aging: <DebtAgingReport />,
+  operational_expenses: <OperationalExpensesReport />,
+  trial_balance: <TrialBalanceView />,
+  p_and_l: <ProfitLossView />,
+  balance_sheet: <BalanceSheetView />,
+  currency_diff: <CurrencyDiffView />,
+  item_movement: <InventoryMovementView />,
+  cash_flow: <CashFlowView />,
+};
+
 const ReportsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ReportTab>('daily_sales');
   const [activeCategory, setActiveCategory] = useState<ReportCategory>('all');
-  const { t } = useTranslation();
   const [isMaximized, setIsMaximized] = useState(false);
-  const [isZenMode, setIsZenMode] = useState(false);
+  const { t } = useTranslation();
 
   const categories: { id: ReportCategory; label: string; icon: any; color: string }[] = [
     { id: 'all', label: 'الكل', icon: LayoutGrid, color: 'text-slate-500' },
@@ -40,16 +54,16 @@ const ReportsPage: React.FC = () => {
 
   const allTabs: { id: ReportTab; label: string; icon: any; category: ReportCategory }[] = [
     { id: 'daily_sales', label: 'المبيعات اليومي', icon: ShoppingCart, category: 'sales' },
-    { id: 'returns_report', label: 'تقرير المرتجعات', icon: RotateCcw, category: 'sales' },
+    { id: 'returns_report', label: 'تقرير المرتجعات', icon: History, category: 'sales' },
     { id: 'trial_balance', label: t('trial_balance'), icon: Scale, category: 'financial' },
     { id: 'item_movement', label: t('item_movement'), icon: History, category: 'sales' },
     { id: 'debt_report', label: t('debt_report'), icon: Wallet, category: 'accounting' },
     { id: 'debt_aging', label: 'أعمار الديون', icon: Clock, category: 'accounting' },
     { id: 'operational_expenses', label: 'المصاريف التشغيلية', icon: TrendingDown, category: 'accounting' },
     { id: 'cash_flow', label: t('cash_flow'), icon: Droplets, category: 'financial' },
-    { id: 'currency_diff', label: t('currency_differences'), icon: RefreshCw, category: 'accounting' },
+    { id: 'currency_diff', label: t('currency_differences'), icon: PieChart, category: 'accounting' },
     { id: 'p_and_l', label: t('profit_and_loss'), icon: PieChart, category: 'financial' },
-    { id: 'balance_sheet', label: t('バランスシート'), icon: Landmark, category: 'financial' },
+    { id: 'balance_sheet', label: t('バランスシート'), icon: Wallet, category: 'financial' },
   ];
 
   const filteredTabs = useMemo(() => {
@@ -57,25 +71,8 @@ const ReportsPage: React.FC = () => {
     return allTabs.filter(tab => tab.category === activeCategory);
   }, [activeCategory, allTabs]);
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'daily_sales': return <DailySalesReport />;
-      case 'returns_report': return <ReturnsReportView />;
-      case 'debt_report': return <DebtReportView />;
-      case 'debt_aging': return <DebtAgingReport />;
-      case 'operational_expenses': return <OperationalExpensesReport />;
-      case 'trial_balance': return <TrialBalanceView />;
-      case 'p_and_l': return <ProfitLossView />;
-      case 'balance_sheet': return <BalanceSheetView />;
-      case 'currency_diff': return <CurrencyDiffView />;
-      case 'item_movement': return <InventoryMovementView />;
-      case 'cash_flow': return <CashFlowView />;
-      default: return <DailySalesReport />;
-    }
-  };
-
   return (
-    <FullscreenContainer isMaximized={isMaximized} onToggleMaximize={() => { setIsMaximized(false); setIsZenMode(false); }} isZenMode={isZenMode}>
+    <FullscreenContainer isMaximized={isMaximized} onToggleMaximize={() => { setIsMaximized(false); }} isZenMode={false}>
       <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-300">
         <MicroHeader
           title={t('reports_center_title')}
@@ -86,10 +83,9 @@ const ReportsPage: React.FC = () => {
           isMaximized={isMaximized}
           onToggleMaximize={() => {
             setIsMaximized(!isMaximized);
-            if (isMaximized) setIsZenMode(false);
           }}
-          isZenMode={isZenMode}
-          onToggleZen={() => setIsZenMode(!isZenMode)}
+          isZenMode={false}
+          onToggleZen={() => { }}
           extraRow={
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               {categories.map((cat) => (
@@ -111,13 +107,10 @@ const ReportsPage: React.FC = () => {
           }
         />
 
-        <div className={cn(
-          "flex-1 overflow-hidden flex flex-col relative z-20",
-          isZenMode ? "bg-white dark:bg-slate-900" : ""
-        )}>
+        <div className="flex-1 overflow-hidden flex flex-col relative z-20">
           <div className="flex-1 overflow-y-auto px-2 md:px-4 pt-5 md:pt-6 pb-24 custom-scrollbar">
             <div className="max-w-none mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-               {renderContent()}
+              {ALL_REPORT_COMPONENTS[activeTab]}
             </div>
           </div>
         </div>

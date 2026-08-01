@@ -18,27 +18,30 @@ export const dashboardApi = {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const dateFrom = thirtyDaysAgo.toISOString().split('T')[0];
         const dateTo = new Date().toISOString().split('T')[0];
+        // ⚡ PERFORMANCE FIX: Changed from '2000-01-01' → start of current year
+        // Old query scanned ALL accounting history (26+ years) — very slow
+        const currentYearStart = `${new Date().getFullYear()}-01-01`;
 
         const batch = await Promise.all([
             // 1. Dashboard Summary (Sales, Purchases, Expenses, Bonds, Debts)
-            supabase.rpc('get_dashboard_summary', { 
-                p_company_id: companyId, 
+            supabase.rpc('get_dashboard_summary', {
+                p_company_id: companyId,
                 p_branch_id: branchId || null,
                 p_date_from: dateFrom,
                 p_date_to: dateTo
             }).abortSignal(signal as any),
 
             // 2. Sales Chart Data
-            supabase.rpc('get_sales_chart_data', { 
-                p_company_id: companyId, 
+            supabase.rpc('get_sales_chart_data', {
+                p_company_id: companyId,
                 p_branch_id: branchId || null,
                 p_date_from: dateFrom,
                 p_date_to: dateTo
             }).abortSignal(signal as any),
 
             // 3. Top Products & Customers
-            supabase.rpc('get_top_products_and_customers', { 
-                p_company_id: companyId, 
+            supabase.rpc('get_top_products_and_customers', {
+                p_company_id: companyId,
                 p_branch_id: branchId || null,
                 p_limit: 3
             }).abortSignal(signal as any),
@@ -48,7 +51,7 @@ export const dashboardApi = {
                 p_company_id: companyId,
                 p_branch_id: branchId || null
             }).abortSignal(signal as any),
-            
+
             // 5. ⚡ Expense Categories via RPC (replaces JS grouping)
             supabase.rpc('get_expense_categories_summary', {
                 p_company_id: companyId,
@@ -58,7 +61,12 @@ export const dashboardApi = {
             }).abortSignal(signal as any),
 
             // 6. Trial Balance for accurate Net Profit based on Accounting Trees
-            supabase.rpc('report_trial_balance', { p_company_id: companyId, p_from: '2000-01-01', p_to: dateTo, p_branch_id: branchId || null } as any).abortSignal(signal as any)
+            supabase.rpc('report_trial_balance', {
+                p_company_id: companyId,
+                p_from: currentYearStart,
+                p_to: dateTo,
+                p_branch_id: branchId || null
+            } as any).abortSignal(signal as any)
         ]);
 
         const firstError = batch.find((res: any) => res.error)?.error;
@@ -79,10 +87,9 @@ export const dashboardApi = {
             categoryData: (categoryRes.data || []).map((c: any, i: number) => ({
                 name: c.category_name,
                 value: Number(c.total_amount),
-                color: ['#f43f5e','#fb923c','#facc15','#4ade80','#38bdf8','#a78bfa'][i % 6]
+                color: ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa'][i % 6]
             })),
             trialBalanceRows: (trialBalanceRes.data as any)?.rows || []
         };
     }
 };
-

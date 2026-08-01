@@ -117,6 +117,7 @@ export const purchasesApi = {
       p_description: paymentData.notes || 'سند صرف لمورد',
       p_currency_code: paymentData.currencyCode || 'SAR',
       p_exchange_rate: paymentData.exchangeRate || 1,
+      ...(paymentData.branchId ? { p_branch_id: paymentData.branchId } : {}),
       ...((paymentData.foreignAmount || paymentData.amount) ? { p_foreign_amount: paymentData.foreignAmount || paymentData.amount } : {})
     });
   },

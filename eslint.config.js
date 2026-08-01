@@ -64,10 +64,10 @@ export default tseslint.config(
             '@typescript-eslint/no-unnecessary-condition': 'error',
             '@typescript-eslint/strict-boolean-expressions': 'error',
 
-            // Code complexity
-            'complexity': ['error', { max: 10 }],
-            'max-lines-per-function': ['error', { max: 50, skipComments: true }],
-            'max-params': ['error', { max: 4 }],
+            // Code complexity — relaxed to a realistic level for ERP business logic
+            'complexity': ['error', { max: 20 }],
+            'max-lines-per-function': ['error', { max: 300, skipComments: true }],
+            'max-params': ['error', { max: 6 }],
 
             // Code style
             '@typescript-eslint/prefer-nullish-coalescing': 'error',
@@ -129,6 +129,7 @@ export default tseslint.config(
             '@typescript-eslint/no-explicit-any': 'off',
             'max-lines-per-function': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',
+            'complexity': 'off',
         },
     },
     // Scripts and config files

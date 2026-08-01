@@ -1,12 +1,11 @@
 
-import { reportsApi } from '../api/index';
 import { TrialBalanceItem, LedgerEntry } from '../types/index';
 import { supabase } from '../../../lib/supabaseClient';
 
 
 export const reportService = {
     // ⚡ Server-side ledger via RPC — no frontend running balance calculation
-    getLedger: async (companyId: string, accountId: string, branchId?: string | null, fromDate?: string, toDate?: string): Promise<LedgerEntry[]> => {
+    getLedger: async (companyId: string, accountId: string, _branchId?: string | null, fromDate?: string, toDate?: string): Promise<LedgerEntry[]> => {
         const { data, error } = await supabase.rpc('get_account_ledger', {
             p_company_id: companyId,
             p_account_id: accountId,
@@ -115,7 +114,7 @@ export const reportService = {
             p_year: year,
             p_branch_id: branchId || null
         });
-        
+
         if (error) throw error;
 
         // Map RPC results and format month names in Arabic

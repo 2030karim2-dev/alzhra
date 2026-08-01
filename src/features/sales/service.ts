@@ -75,11 +75,27 @@ export const salesService = {
 
     // M1: Use shared smart routing utility
     if (finalTreasuryAccountId && payload.currency) {
-      const accounts = await accountsService.getAccounts(companyId);
-      // 3. Resolve actual treasury account using the multi-currency router
-      const routed = routeToChildByCurrency(accounts as unknown as import('../../core/utils/accountRouting').RoutableAccount[], finalTreasuryAccountId, payload.currency);
-      if (routed) {
-        finalTreasuryAccountId = routed.id;
+      try {
+        const accounts = await accountsService.getAccounts(companyId);
+        // 3. Resolve actual treasury account using the multi-currency router
+        const routed = routeToChildByCurrency(accounts as unknown as import('../../core/utils/accountRouting').RoutableAccount[], finalTreasuryAccountId, payload.currency);
+        if (routed) {
+          finalTreasuryAccountId = routed.id;
+        } else {
+          // Safe fallback: keep using the parent account if routing fails silently
+          logger.warn('SalesService', 'routeToChildByCurrency returned null, using parent account as fallback', {
+            parentAccountId: finalTreasuryAccountId,
+            currency: payload.currency
+          });
+        }
+      } catch (error) {
+        // Critical: never lose the treasury account due to routing failure
+        // Log loudly and fall back to the parent account
+        logger.error('SalesService', 'routeToChildByCurrency failed, falling back to parent account', {
+          parentAccountId: finalTreasuryAccountId,
+          currency: payload.currency,
+          error
+        });
       }
     }
 

@@ -63,6 +63,7 @@ function ExcelTable<T>({
 }: ExcelTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [internalSearch, setInternalSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const isMainSearch = !!onSearchChange;
   const effectiveSearch = isMainSearch ? (searchValue ?? '') : internalSearch;
   const [isZoomed, setIsZoomed] = useState(false);
@@ -89,6 +90,17 @@ function ExcelTable<T>({
   useEffect(() => {
     setItemsPerPage(pageSize);
   }, [pageSize]);
+
+  // Debounce internal search for smoother typing
+  useEffect(() => {
+    if (isMainSearch) return;
+    const timer = setTimeout(() => {
+      setDebouncedSearch(internalSearch);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [internalSearch, isMainSearch]);
+
+  const searchTermForFilter = isMainSearch ? (searchValue ?? '') : debouncedSearch;
 
   const [columnWidths, setColumnWidths] = useState<Record<number, number>>({});
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -137,8 +149,8 @@ function ExcelTable<T>({
 
   const processedData = useMemo(() => {
     let items = [...data];
-    if (!isMainSearch && effectiveSearch) {
-      const term = effectiveSearch.toLowerCase();
+    if (!isMainSearch && searchTermForFilter) {
+      const term = searchTermForFilter.toLowerCase();
 
       // Helper to recursively extract text from any React element or primitive
       const getStringContent = (val: any): string => {
@@ -215,12 +227,12 @@ function ExcelTable<T>({
       });
     }
     return items;
-  }, [data, sortConfig, effectiveSearch, columns, isMainSearch]);
+  }, [data, sortConfig, searchTermForFilter, columns, isMainSearch]);
 
   // Reset page when search/data changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [effectiveSearch, data.length]);
+  }, [searchTermForFilter, data.length]);
 
   const paginatedData = useMemo(() => {
     if (!enablePagination) return processedData;

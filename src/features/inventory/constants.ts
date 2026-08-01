@@ -1,15 +1,11 @@
-import { 
-    Box, 
-    Layers, 
-    FileSearch, 
-    Warehouse, 
-    Car, 
-    ArrowLeftRight, 
-    Archive, 
-    TrendingUp, 
+import {
+    Box,
+    Layers,
+    FileSearch,
+    Warehouse,
+    Car,
+    ArrowLeftRight,
     History,
-    Activity,
-    Sparkles,
     Boxes,
     FileText,
     Settings

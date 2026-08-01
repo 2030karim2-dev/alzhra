@@ -17,7 +17,7 @@ interface Props {
     isLoading?: boolean;
 }
 
-const MiniSparkline: React.FC<{ value: number; color: string }> = ({ value, color }) => {
+const MiniSparkline: React.FC<{ value: number; color: string }> = ({ value: _value, color }) => {
     // Generate a simple sparkline-like SVG bar
     const bars = 7;
     const heights = Array.from({ length: bars }, (_, i) => {

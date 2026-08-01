@@ -122,33 +122,43 @@ export const useDashboard = (options?: UseDashboardOptions) => {
 
     const queryKey = [...queryKeys.dashboard.stats, period];
 
-    // Realtime channel for new sales notifications
+    // Semi-persistent Realtime channel (singleton per company) for new sales notifications.
+    // Prevents "cannot add callbacks after subscribe()" race during StrictMode/HMR.
     useEffect(() => {
         if (!user?.company_id) return;
 
-        const channel = supabase
-            .channel(`dashboard_sales_${user.company_id}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'invoices',
-                    filter: `company_id=eq.${user.company_id}`
-                },
-                (payload: any) => {
-                    // Only notify for actual sales, ignoring returns and purchases
-                    if (payload.new.type === 'sale') {
-                        showToast(`مبيعات جديدة بقيمة ${payload.new.total_amount} ر.س`, 'success');
-                        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats });
-                    }
-                }
-            )
-            .subscribe();
+        const channelKey = `dashboard_sales_${user.company_id}`;
+        const globalAny = window as any;
+        if (!globalAny.__ALZ_DASHBOARD_CHANNELS__) {
+            globalAny.__ALZ_DASHBOARD_CHANNELS__ = new Map<string, any>();
+        }
+        const registry: Map<string, any> = globalAny.__ALZ_DASHBOARD_CHANNELS__;
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        if (!registry.has(channelKey)) {
+            const channel = supabase
+                .channel(channelKey)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'invoices',
+                        filter: `company_id=eq.${user.company_id}`
+                    },
+                    (payload: any) => {
+                        // Only notify for actual sales, ignoring returns and purchases
+                        if (payload.new.type === 'sale') {
+                            showToast(`مبيعات جديدة بقيمة ${payload.new.total_amount} ر.س`, 'success');
+                            queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats });
+                        }
+                    }
+                )
+                .subscribe();
+
+            registry.set(channelKey, channel);
+        }
+
+        return () => { /* no-op: keep channel alive for stability */ };
     }, [user?.company_id, queryClient, showToast]);
 
     const {

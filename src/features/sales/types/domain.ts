@@ -7,6 +7,7 @@
  */
 
 import type { Database } from '../../../core/database.types';
+import { MoneyUtils, UnifiedCurrencyCode } from '../../../core/utils/money';
 
 // ============================================================================
 // Database Type Aliases
@@ -35,7 +36,7 @@ export interface Money {
     readonly exchangeRate: number;
 }
 
-export type CurrencyCode = 'SAR' | 'YER' | 'USD' | 'EUR' | 'OMR' | 'CNY';
+export type CurrencyCode = UnifiedCurrencyCode;
 
 // ============================================================================
 // Domain Entities
@@ -155,68 +156,9 @@ export interface SalesReturnResult {
 // Mappers
 // ============================================================================
 
-export const MoneyUtils = {
-    create(amount: number, currency: CurrencyCode = 'SAR', exchangeRate: number = 1): Money {
-        return {
-            amount: Math.round(amount * 100) / 100,
-            currency,
-            exchangeRate,
-        };
-    },
-
-    zero(currency: CurrencyCode = 'SAR'): Money {
-        return { amount: 0, currency, exchangeRate: 1 };
-    },
-
-    add(a: Money, b: Money): Money {
-        if (a.currency !== b.currency) {
-            throw new Error(`Cannot add ${a.currency} to ${b.currency}`);
-        }
-        return {
-            amount: a.amount + b.amount,
-            currency: a.currency,
-            exchangeRate: a.exchangeRate,
-        };
-    },
-
-    subtract(a: Money, b: Money): Money {
-        if (a.currency !== b.currency) {
-            throw new Error(`Cannot subtract ${b.currency} from ${a.currency}`);
-        }
-        return {
-            amount: a.amount - b.amount,
-            currency: a.currency,
-            exchangeRate: a.exchangeRate,
-        };
-    },
-
-    multiply(money: Money, factor: number): Money {
-        return {
-            amount: Math.round(money.amount * factor * 100) / 100,
-            currency: money.currency,
-            exchangeRate: money.exchangeRate,
-        };
-    },
-
-    format(money: Money, locale: string = 'ar-SA'): string {
-        const symbols: Record<CurrencyCode, string> = {
-            SAR: 'ر.س',
-            YER: 'ر.ي',
-            USD: '$',
-            EUR: '€',
-            OMR: 'ر.ع',
-            CNY: '¥',
-        };
-
-        const symbol = symbols[money.currency] || money.currency;
-
-        if (money.currency === 'USD') {
-            return `${symbol}${money.amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-
-        return `${money.amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
-    },
-};
+// Re-export unified money utilities from core
+// This eliminates the duplicate MoneyUtils implementation
+export { MoneyUtils };
 
 export const InvoiceMapper = {
     fromDB(row: InvoiceRow & { items?: InvoiceItemRow[]; party?: PartyRow | null }): SalesInvoice {

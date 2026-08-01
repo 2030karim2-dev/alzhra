@@ -44,22 +44,6 @@ interface RawTrialBalanceRow {
   balance?: number;
 }
 
-interface RawProductStock {
-  quantity?: number;
-}
-
-interface RawProduct {
-  id?: string;
-  name_ar?: string;
-  min_stock_level?: number;
-  product_stock?: RawProductStock[];
-}
-
-interface RawExpense {
-  amount?: number;
-  expense_categories?: { name: string } | null;
-}
-
 interface RawTopData {
   top_customers?: TopPerformer[];
   top_products?: TopPerformer[];

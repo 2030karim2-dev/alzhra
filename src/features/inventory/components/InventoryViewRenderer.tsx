@@ -40,7 +40,7 @@ const InventoryViewRenderer: React.FC<InventoryViewRendererProps> = ({
     setSelectedProduct,
     handleEdit,
     deleteProduct,
-    handleSmartImportConfirm,
+    handleSmartImportConfirm: _handleSmartImportConfirm,
     onMaximizeProduct
 }) => {
     switch (activeView) {
