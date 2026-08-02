@@ -95,6 +95,14 @@ export const useAuthStore = create<AuthState>()(
           const sessionPromise = supabase.auth.getSession().catch(() => ({ data: { session: null }, error: null }));
           const result = await Promise.race([sessionPromise, timeoutPromise]);
 
+          console.log('[Auth] initialize() - session result:', {
+            timedOut: !!(result && 'timeout' in result),
+            hasSession: !!result?.data?.session,
+            sessionUserId: result?.data?.session?.user?.id,
+            sessionUserEmail: result?.data?.session?.user?.email,
+            sessionError: result?.error,
+          });
+
           if (result && 'timeout' in result) {
             // Only log warning if we DON'T have a persisted session to fall back on
             if (!persistedUser) {
@@ -111,12 +119,14 @@ export const useAuthStore = create<AuthState>()(
 
           // ⚡ If Refresh Token fails, clear session immediately
           if (sessionError) {
+            console.error('[Auth] initialize() - stale session:', sessionError);
             logger.warn('Auth', 'Stale session detected, clearing token', { message: sessionError.message });
             await supabase.auth.signOut({ scope: 'local' });
             queryClient.clear();
             Promise.resolve(persister.removeClient()).catch(() => { });
             set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });
           } else if (session?.user) {
+            console.log('[Auth] initialize() - valid session, fetching profile for user:', session.user.id, session.user.email);
             // 2. Fetch full profile with timeout
             let profile: Record<string, unknown> | null = null;
 

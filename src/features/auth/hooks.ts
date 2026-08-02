@@ -53,6 +53,8 @@ export const useLogin = () => {
         setIsLoading(true);
         setError(null);
         try {
+            console.log('[Auth] login() called with email:', email);
+
             if (!isSupabaseConfigured) {
                 setError(AUTH_NOT_CONFIGURED_MSG);
                 return;
@@ -60,8 +62,15 @@ export const useLogin = () => {
 
             const { data, error: loginError } = await authApi.signInWithPassword(email, pass);
 
+            console.log('[Auth] login() - signInWithPassword result:', {
+                hasUser: !!data?.user,
+                userId: data?.user?.id,
+                userEmail: data?.user?.email,
+                error: loginError,
+            });
+
             if (loginError) {
-                console.error('[Auth] Login failed', {
+                console.error('[Auth] login() FAILED:', {
                     code: loginError?.code || loginError?.name,
                     message: loginError?.message,
                     status: loginError?.status || loginError?.statusCode,
@@ -72,7 +81,15 @@ export const useLogin = () => {
             }
 
             if (data?.user) {
+                console.log('[Auth] login() - user signed in, fetching profile for:', data.user.id, data.user.email);
                 const { data: profile, isAborted } = await authApi.getProfile(data.user.id);
+
+                console.log('[Auth] login() - profile result:', {
+                    hasProfile: !!profile,
+                    isAborted,
+                    profileId: (profile as any)?.id,
+                    profileRole: (profile as any)?.role,
+                });
 
                 if (isAborted) {
                     // Silent return - process was likely cancelled or timed out
