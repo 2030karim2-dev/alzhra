@@ -120,15 +120,6 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
           logger.warn('Supabase', 'JWT verification failed (PGRST301), retrying without Bearer token');
           continue;
         }
-        // If the error is "permission denied" (RLS blocking anon access),
-        // return empty data for read requests instead of throwing
-        if (body.includes('permission denied') && (!options.method || options.method === 'GET')) {
-          logger.info('Supabase', 'RLS blocked anonymous read, returning empty data');
-          return new Response(JSON.stringify([]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
       }
 
       // Notify store of success
