@@ -60,7 +60,16 @@ export const useLogin = () => {
 
             const { data, error: loginError } = await authApi.signInWithPassword(email, pass);
 
-            if (loginError) throw loginError;
+            if (loginError) {
+                console.error('[Auth] Login failed', {
+                    code: loginError?.code || loginError?.name,
+                    message: loginError?.message,
+                    status: loginError?.status || loginError?.statusCode,
+                    details: (loginError as any)?.details,
+                    __isAuthError: (loginError as any)?.__isAuthError,
+                });
+                throw loginError;
+            }
 
             if (data?.user) {
                 const { data: profile, isAborted } = await authApi.getProfile(data.user.id);
