@@ -38,7 +38,7 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-const CategoriesChart: React.FC<CategoriesChartProps> = ({ data }) => {
+const CategoriesChart: React.FC<CategoriesChartProps> = React.memo(({ data }) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -132,4 +132,5 @@ const CategoriesChart: React.FC<CategoriesChartProps> = ({ data }) => {
   );
 };
 
+export { CategoriesChart };
 export default CategoriesChart;

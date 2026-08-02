@@ -1,20 +1,28 @@
 
 import React, { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, Loader2, Download, Save, X, Sparkles, CheckCircle } from 'lucide-react';
-import Modal from '../../../ui/base/Modal';
-import Button from '../../../ui/base/Button';
-import { documentAiService } from '../../ai/documentService';
-import ExcelTable from '../../../ui/common/ExcelTable';
-import { useFeedbackStore } from '../../feedback/store';
-import { cn } from '../../../core/utils';
-import * as _XLSX from 'xlsx-js-style';
-const XLSX = _XLSX as any;
+import Modal from '@/ui/base/Modal';
+import Button from '@/ui/base/Button';
+import { documentAiService } from '@/features/ai';
+import ExcelTable from '@/ui/common/ExcelTable';
+import { useFeedbackStore } from '@/features/feedback';
+import { cn } from '@/core/utils';
+import type { ExtractedItem } from '@/features/smart-import';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (items: any[]) => void;
+    onConfirm: (items: ExtractedItem[]) => void;
     mode: 'invoice' | 'inventory';
+}
+
+interface ColumnDef {
+    header: string;
+    accessor: (row: ExtractedItem) => unknown;
+    isEditable?: boolean;
+    accessorKey?: string;
+    width?: string;
+    className?: string;
 }
 
 const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode }) => {
@@ -23,18 +31,16 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
 
     const [step, setStep] = useState<'upload' | 'review'>('upload');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [extractedItems, setExtractedItems] = useState<any[]>([]);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [extractedItems, setExtractedItems] = useState<ExtractedItem[]>([]);
     const [_filePreview, setFilePreview] = useState<string | null>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Preview setup
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onload = (e) => setFilePreview(e.target?.result as string);
+            reader.onload = () => setFilePreview(reader.result as string);
             reader.readAsDataURL(file);
         } else {
             setFilePreview(null);
@@ -59,13 +65,13 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
         }
     };
 
-    const handleUpdateCell = (rowIndex: number, key: string, value: any) => {
+    const handleUpdateCell = (rowIndex: number, key: string, value: string | number) => {
         const updated = [...extractedItems];
         updated[rowIndex] = { ...updated[rowIndex], [key]: value };
         setExtractedItems(updated);
     };
 
-    const handleRemoveRow = (row: any) => {
+    const handleRemoveRow = (row: ExtractedItem) => {
         const index = extractedItems.indexOf(row);
         if (index > -1) {
             setExtractedItems(prev => prev.filter((_, i) => i !== index));
@@ -73,34 +79,35 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
     };
 
     const downloadTemplate = () => {
-        const ws = XLSX.utils.json_to_sheet([
-            { "اسم المنتج": "فحمات فرامل", "رقم الصنف": "BP-001", "الشركة": "Toyota", "سعر البيع": 150, "التكلفة": 100, "الكمية": 50 }
-        ]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Template");
-        XLSX.writeFile(wb, "Inventory_Template.xlsx");
+        import('xlsx-js-style').then((XLSX) => {
+            const ws = XLSX.utils.json_to_sheet([
+                { "اسم المنتج": "فحمات فرامل", "رقم الصنف": "BP-001", "الشركة": "Toyota", "سعر البيع": 150, "التكلفة": 100, "الكمية": 50 }
+            ]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "Inventory_Template.xlsx");
+        });
     };
 
-    const columns = mode === 'invoice' ? [
-        { header: 'اسم الصنف', accessor: (row: any) => row.name, isEditable: true, accessorKey: 'name' },
-        { header: 'الكمية', accessor: (row: any) => row.quantity, isEditable: true, accessorKey: 'quantity', width: 'w-20' },
-        { header: 'السعر', accessor: (row: any) => row.unitPrice, isEditable: true, accessorKey: 'unitPrice', width: 'w-24' },
-        { header: 'SKU', accessor: (row: any) => row.sku || '---', isEditable: true, accessorKey: 'sku', width: 'w-24' },
+    const columns: ColumnDef[] = mode === 'invoice' ? [
+        { header: 'اسم الصنف', accessor: (row) => row.name, isEditable: true, accessorKey: 'name' },
+        { header: 'الكمية', accessor: (row) => row.quantity, isEditable: true, accessorKey: 'quantity', width: 'w-20' },
+        { header: 'السعر', accessor: (row) => row.unitPrice, isEditable: true, accessorKey: 'unitPrice', width: 'w-24' },
+        { header: 'SKU', accessor: (row) => row.sku || '---', isEditable: true, accessorKey: 'sku', width: 'w-24' },
         {
             header: 'حذف',
-            accessor: (_: any) => <X size={14} />,
+            accessor: () => <X size={14} />,
             width: 'w-10',
             className: 'text-center text-rose-500 cursor-pointer hover:bg-rose-50'
         }
     ] : [
-        // Inventory Columns
-        { header: 'اسم الصنف', accessor: (row: any) => row.name, isEditable: true, accessorKey: 'name' },
-        { header: 'الكمية', accessor: (row: any) => row.stock_quantity, isEditable: true, accessorKey: 'stock_quantity', width: 'w-24' },
-        { header: 'التكلفة', accessor: (row: any) => row.cost_price, isEditable: true, accessorKey: 'cost_price', width: 'w-24' },
-        { header: 'الباركود/SKU', accessor: (row: any) => row.sku || '---', isEditable: true, accessorKey: 'sku', width: 'w-32' },
+        { header: 'اسم الصنف', accessor: (row) => row.name, isEditable: true, accessorKey: 'name' },
+        { header: 'الكمية', accessor: (row) => row.stock_quantity, isEditable: true, accessorKey: 'stock_quantity', width: 'w-24' },
+        { header: 'التكلفة', accessor: (row) => row.cost_price, isEditable: true, accessorKey: 'cost_price', width: 'w-24' },
+        { header: 'الباركود/SKU', accessor: (row) => row.sku || '---', isEditable: true, accessorKey: 'sku', width: 'w-32' },
         {
             header: 'حذف',
-            accessor: (_: any) => <X size={14} />,
+            accessor: () => <X size={14} />,
             width: 'w-10',
             className: 'text-center text-rose-500 cursor-pointer hover:bg-rose-50'
         }
@@ -148,7 +155,6 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
                 {step === 'upload' ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
 
-                        {/* Template Download Section if Inventory Mode */}
                         {mode === 'inventory' && (
                             <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 flex justify-between items-center w-full mb-4">
                                 <div className="flex items-center gap-3">

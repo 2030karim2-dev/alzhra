@@ -100,14 +100,16 @@ const MainLayout: React.FC = () => {
         ></div>
       )}
 
-      <Sidebar
-        className="no-print"
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        sidebarWidth={sidebarWidth}
-      />
+      <nav aria-label={t('sidebar.navigation')} className="no-print">
+        <Sidebar
+          className="no-print"
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          sidebarWidth={sidebarWidth}
+        />
+      </nav>
 
       <div className={cn(
         "flex-1 flex flex-col h-full overflow-hidden relative transition-[margin] duration-150 ease-out print:!m-0 print:!p-0 print:!w-full print:!overflow-visible print:!block",
@@ -120,9 +122,9 @@ const MainLayout: React.FC = () => {
           isTabletLandscape,
         })
       )}>
-        <div className="no-print">
+        <header className="no-print">
           <Header onMenuClick={() => setIsMobileSidebarOpen(true)} />
-        </div>
+        </header>
 
         {isOnline && isUnstable && (
           <div className="no-print bg-amber-500 text-white text-[9px] font-black py-1.5 flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg animate-in slide-in-from-top duration-500">

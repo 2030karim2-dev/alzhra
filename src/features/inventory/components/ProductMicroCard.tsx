@@ -24,7 +24,7 @@ const ProductMicroCard: React.FC<Props> = ({ product, onClick }) => {
       {/* Visual Identity Strip */}
       <div className="h-20 relative bg-gray-50 dark:bg-slate-800/30 flex items-center justify-center border-b dark:border-slate-800">
         {product.image_url ? (
-          <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+          <img src={product.image_url} alt={`صورة ${product.name}`} loading="lazy" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
         ) : (
           <Box size={24} className="text-gray-300 dark:text-slate-700" />
         )}

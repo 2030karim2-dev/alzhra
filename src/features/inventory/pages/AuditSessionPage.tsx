@@ -1,19 +1,50 @@
+
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Save, CheckCircle, Loader2, ScanBarcode, Layers, PackageSearch } from 'lucide-react';
-import { useAuditSession, useInventoryMutations, useInventoryCategories } from '../hooks/useInventoryManagement';
-import { useSearchProducts } from '../hooks/useProducts';
-import { useInventorySession } from '../hooks/useInventorySession';
-import MicroHeader from '../../../ui/base/MicroHeader';
-import Button from '../../../ui/base/Button';
-import AuditStats from '../components/audit/AuditStats';
-import AuditItemsTable from '../components/audit/AuditItemsTable';
+import { useAuditSession, useInventoryMutations, useInventoryCategories } from '@/features/inventory/hooks/useInventoryManagement';
+import { useSearchProducts } from '@/features/inventory/hooks/useProducts';
+import { useInventorySession } from '@/features/inventory/hooks/useInventorySession';
+import MicroHeader from '@/ui/base/MicroHeader';
+import Button from '@/ui/base/Button';
+import AuditStats from '@/features/inventory/components/audit/AuditStats';
+import AuditItemsTable from '@/features/inventory/components/audit/AuditItemsTable';
 import { useForm } from 'react-hook-form';
 import { useDebounce } from 'use-debounce';
-import ScannerOverlay from '../../../ui/base/ScannerOverlay';
-import SearchInput from '../../../ui/components/SearchInput';
-import SearchDropdown from '../../../ui/components/SearchDropdown';
-import { ConfirmModal } from '../../../ui/base/ConfirmModal';
+import ScannerOverlay from '@/ui/base/ScannerOverlay';
+import SearchInput from '@/ui/components/SearchInput';
+import SearchDropdown from '@/ui/components/SearchDropdown';
+import { ConfirmModal } from '@/ui/base/ConfirmModal';
+import { inventoryService } from '@/features/inventory/service';
+import type { Product, warehouseStock } from '@/features/inventory/types';
+
+interface AuditItemEntry {
+    id?: string;
+    audit_item_id?: string;
+    product_id: string;
+    name_ar?: string;
+    name?: string;
+    sku?: string;
+    part_number?: string;
+    brand?: string;
+    size?: string;
+    sale_price?: number;
+    purchase_price?: number;
+    cost_price?: number;
+    stock_quantity?: number;
+    expected_quantity: number | string;
+    counted_quantity: number | string | null;
+    unit?: string;
+    image_url?: string | null;
+    category?: string;
+    category_id?: string;
+    warehouse_id?: string;
+    warehouse_distribution?: warehouseStock[];
+}
+
+interface AuditFormValues {
+    items: AuditItemEntry[];
+}
 
 const AuditSessionPage: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
@@ -41,7 +72,7 @@ const AuditSessionPage: React.FC = () => {
     const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
     const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
-    const { data: searchResults, isLoading: isLoadingSearch } = useSearchProducts(debouncedFilter);
+    const { data: searchResults } = useSearchProducts(debouncedFilter);
 
     const warehouseId = data?.session?.warehouse_id;
 
@@ -58,40 +89,35 @@ const AuditSessionPage: React.FC = () => {
         initialItems: Array.isArray(data?.items) ? data.items : [],
     });
 
-    const { register, reset, getValues } = useForm({
-        defaultValues: { items: [] as Record<string, unknown>[] },
+    const { register, reset, getValues } = useForm<AuditFormValues>({
+        defaultValues: { items: [] },
         shouldUnregister: false,
     });
 
     const lastSyncedRef = useRef<string>('');
     const isInitialMount = useRef(true);
 
-    // On initial mount, load server items into form (only once)
     useEffect(() => {
         if (isInitialMount.current && data?.items && data.items.length > 0) {
             const serialized = JSON.stringify(data.items);
             lastSyncedRef.current = serialized;
-            reset({ items: data.items });
+            reset({ items: data.items as AuditItemEntry[] });
             isInitialMount.current = false;
         } else if (isInitialMount.current) {
             isInitialMount.current = false;
         }
     }, [data?.items, reset]);
 
-    // When sessionItems change (from useInventorySession), sync to form
-    // Guard against loops: only reset if items actually differ from last synced
     useEffect(() => {
         if (!isInitialMount.current && sessionItems.length > 0) {
             const serialized = JSON.stringify(sessionItems);
             if (serialized !== lastSyncedRef.current) {
                 lastSyncedRef.current = serialized;
-                reset({ items: sessionItems });
+                reset({ items: sessionItems as AuditItemEntry[] });
             }
         }
     }, [sessionItems, reset]);
 
-    // Periodically sync form → session (for counted_quantity persistence)
-    // This is what enables auto-save of user-entered quantities
     useEffect(() => {
         const interval = setInterval(() => {
             const formItems = getValues('items');
@@ -99,14 +125,13 @@ const AuditSessionPage: React.FC = () => {
                 const serialized = JSON.stringify(formItems);
                 if (serialized !== lastSyncedRef.current) {
                     lastSyncedRef.current = serialized;
-                    updateItems(formItems as any[]);
+                    updateItems(formItems);
                 }
             }
         }, 1000);
         return () => clearInterval(interval);
     }, [getValues, updateItems]);
 
-    // Sync on blur (when user leaves a quantity field)
     useEffect(() => {
         const handleBlur = () => {
             const formItems = getValues('items');
@@ -114,7 +139,7 @@ const AuditSessionPage: React.FC = () => {
                 const serialized = JSON.stringify(formItems);
                 if (serialized !== lastSyncedRef.current) {
                     lastSyncedRef.current = serialized;
-                    updateItems(formItems as any[]);
+                    updateItems(formItems);
                 }
             }
         };
@@ -122,20 +147,17 @@ const AuditSessionPage: React.FC = () => {
         return () => window.removeEventListener('focusin', handleBlur);
     }, [getValues, updateItems]);
 
-    // On page unload, force-save current form state
     useEffect(() => {
         const handleBeforeUnload = () => {
             const formItems = getValues('items');
             if (formItems && formItems.length > 0) {
-                updateItems(formItems as any[]);
+                updateItems(formItems);
             }
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [getValues, updateItems]);
 
-    // When server data updates (realtime), merge with local state
-    // mergeWithServer only ADDS new items, never overwrites existing ones
     useEffect(() => {
         if (data?.items && data.items.length > 0 && !isInitialMount.current) {
             mergeWithServer(data.items);
@@ -147,8 +169,8 @@ const AuditSessionPage: React.FC = () => {
     const stats = useMemo(() => {
         const sourceItems = sessionItems.length > 0 ? sessionItems : watchedItems;
         const total = sourceItems.length;
-        const counted = sourceItems.filter(i => i.counted_quantity !== null && i.counted_quantity !== undefined && i.counted_quantity !== '').length;
-        const discrepancies = sourceItems.filter(i => {
+        const counted = sourceItems.filter((i: AuditItemEntry) => i.counted_quantity !== null && i.counted_quantity !== undefined && i.counted_quantity !== '').length;
+        const discrepancies = sourceItems.filter((i: AuditItemEntry) => {
             const diff = (i.counted_quantity !== null && i.counted_quantity !== undefined && i.counted_quantity !== '') ? Number(i.counted_quantity) - Number(i.expected_quantity) : 0;
             return diff !== 0;
         }).length;
@@ -157,7 +179,7 @@ const AuditSessionPage: React.FC = () => {
 
     const handleSave = () => {
         const currentItems = getValues('items');
-        saveAuditProgress(currentItems as any[]);
+        saveAuditProgress(currentItems);
     };
 
     const handleFinalize = () => {
@@ -182,11 +204,11 @@ const AuditSessionPage: React.FC = () => {
         setIsScannerOpen(false);
     };
 
-    const handleAddItem = (product: any) => {
+    const handleAddItem = (product: Product) => {
         if (data?.session?.status === 'completed') return;
 
         const currentItems = getValues('items');
-        const existingIndex = currentItems.findIndex((i: any) => i.product_id === product.id);
+        const existingIndex = currentItems.findIndex((i) => i.product_id === product.id);
 
         if (existingIndex >= 0) {
             const newItems = [...currentItems];
@@ -202,9 +224,7 @@ const AuditSessionPage: React.FC = () => {
 
         if (!sessionId) return;
 
-        // Use only this warehouse's stock quantity. If the product isn't in this warehouse,
-        // default to 0 — the server's addAuditItem recalculates from product_stock WHERE warehouse_id = ?
-        const stockInfo = product.warehouse_distribution?.find((w: any) => w.warehouse_id === data?.session?.warehouse_id);
+        const stockInfo = product.warehouse_distribution?.find((w) => w.warehouse_id === data?.session?.warehouse_id);
         const expectedQuantity = stockInfo ? stockInfo.quantity : 0;
 
         addItemToAudit({ sessionId, productId: product.id, expectedQuantity }, {
@@ -221,7 +241,7 @@ const AuditSessionPage: React.FC = () => {
                 onSuccess: () => {
                     setItemToDelete(null);
                     const current = getValues('items');
-                    const filtered = current.filter((i: any) => i.id !== itemToDelete && i.product_id !== itemToDelete && i.audit_item_id !== itemToDelete);
+                    const filtered = current.filter((i) => i.id !== itemToDelete && i.product_id !== itemToDelete && i.audit_item_id !== itemToDelete);
                     lastSyncedRef.current = JSON.stringify(filtered);
                     reset({ items: filtered });
                     updateItems(filtered);
@@ -230,23 +250,16 @@ const AuditSessionPage: React.FC = () => {
         }
     };
 
-    /** إضافة كل منتجات المستودع المحدد للجلسة دفعةً واحدة */
     const handleBulkAddWarehouseProducts = useCallback(async () => {
         if (!sessionId || !data?.session?.warehouse_id) return;
         const warehouseId_val = data.session.warehouse_id as string;
-        const currentItems = getValues('items') as any[];
-        const existingProductIds = new Set(currentItems.map((i: any) => i.product_id));
+        const currentItems = getValues('items');
+        const existingProductIds = new Set(currentItems.map((i) => i.product_id));
 
-        // ✅ Use getProductsForWarehouse: fetches ONLY products in this warehouse
-        // with stock_quantity = the quantity in THIS warehouse (from product_stock WHERE warehouse_id = ?)
-        // This prevents mixing quantities from other warehouses.
-        const warehouseProducts = await import('../service').then(async (m) => {
-            // _companyId param is ignored in the service, only warehouseId is used
-            const result = await m.inventoryService.getProductsForWarehouse('', warehouseId_val);
-            return Array.isArray(result) ? result : [];
-        }).catch(() => [] as any[]);
+        const result = await inventoryService.getProductsForWarehouse('', warehouseId_val);
+        const warehouseProducts: Product[] = Array.isArray(result) ? result : [];
 
-        const newProducts = warehouseProducts.filter((p: any) => !existingProductIds.has(p.id));
+        const newProducts = warehouseProducts.filter((p) => !existingProductIds.has(p.id));
         if (newProducts.length === 0) {
             setShowBulkConfirm(false);
             return;
@@ -259,7 +272,6 @@ const AuditSessionPage: React.FC = () => {
 
         for (let i = 0; i < newProducts.length; i++) {
             const p = newProducts[i];
-            // stock_quantity here is warehouse-specific (from product_stock WHERE warehouse_id = warehouseId_val)
             const expectedQuantity = p.stock_quantity || 0;
             await new Promise<void>((resolve) => {
                 addItemToAudit(
@@ -324,7 +336,6 @@ const AuditSessionPage: React.FC = () => {
                 }
             />
 
-            {/* Search and Scan Bar */}
             {session?.status !== 'completed' && (
                 <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 p-4 sticky top-0 z-40 shadow-sm">
                     <div className="max-w-[1600px] mx-auto relative">
@@ -336,7 +347,7 @@ const AuditSessionPage: React.FC = () => {
                                     if (val.trim()) setShowResults(true);
                                 }}
                                 placeholder="ابحث عن صنف لجرده (مسح باركود، رقم قطعة، أو اسم)..."
-                                loading={isLoadingSearch || isAddingItem}
+                                loading={isAddingItem}
                                 variant="default"
                                 size="md"
                                 className="flex-1"
@@ -350,11 +361,10 @@ const AuditSessionPage: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Search Results Dropdown */}
                         <SearchDropdown
                             open={showResults && !!filter.trim()}
                             onClose={() => setShowResults(false)}
-                            loading={isLoadingSearch || isAddingItem}
+                            loading={isAddingItem}
                             hasResults={(searchResults?.length ?? 0) > 0}
                             emptyMessage="لا توجد نتائج مطابقة"
                             className="z-50"
@@ -369,7 +379,7 @@ const AuditSessionPage: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                                        {searchResults?.map((p: any) => (
+                                        {searchResults?.map((p: Product) => (
                                             <tr
                                                 key={p.id}
                                                 onClick={() => {
@@ -395,7 +405,6 @@ const AuditSessionPage: React.FC = () => {
                 <div className="max-w-[1600px] mx-auto space-y-4">
                     <AuditStats stats={stats} session={session} />
 
-                    {/* Category Filter Bar */}
                     <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-gray-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-sm">
                         <div className="flex items-center gap-2 px-3 border-l dark:border-slate-800 text-gray-400">
                             <Layers size={16} />
@@ -407,7 +416,7 @@ const AuditSessionPage: React.FC = () => {
                         >
                             الكل
                         </button>
-                        {categories?.map((cat: any) => (
+                        {categories?.map((cat: { id: string; name: string }) => (
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.name)}

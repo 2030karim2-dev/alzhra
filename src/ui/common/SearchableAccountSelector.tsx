@@ -13,7 +13,7 @@ interface SearchableAccountSelectorProps {
   className?: string;
 }
 
-const SearchableAccountSelector: React.FC<SearchableAccountSelectorProps> = ({
+const SearchableAccountSelector: React.FC<SearchableAccountSelectorProps> = React.memo(({
   accounts,
   selectedId,
   onSelect,
@@ -202,4 +202,5 @@ const SearchableAccountSelector: React.FC<SearchableAccountSelectorProps> = ({
   );
 };
 
+export { SearchableAccountSelector };
 export default SearchableAccountSelector;

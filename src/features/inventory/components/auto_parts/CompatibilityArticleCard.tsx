@@ -19,7 +19,7 @@ const CompatibilityArticleCard: React.FC<Props> = ({ article }) => {
             <div className="flex items-center gap-4 flex-wrap">
                 {article.imageUrl && (
                     <div className="w-16 h-16 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 shrink-0 shadow-sm">
-                        <img src={article.imageUrl} alt={article.articleProductName} className="w-full h-full object-contain rounded-lg" />
+                        <img src={article.imageUrl} alt={`صورة ${article.articleProductName}`} loading="lazy" className="w-full h-full object-contain rounded-lg" />
                     </div>
                 )}
                 <div className="flex-1 min-w-0">

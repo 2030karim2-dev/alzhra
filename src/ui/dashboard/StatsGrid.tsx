@@ -82,7 +82,7 @@ interface StatsGridProps {
   };
 }
 
-const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
+const StatsGrid: React.FC<StatsGridProps> = React.memo(({ stats }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -239,4 +239,5 @@ const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
   );
 };
 
+export { StatsGrid };
 export default StatsGrid;

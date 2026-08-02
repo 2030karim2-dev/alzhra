@@ -100,7 +100,7 @@ const ProductDetailsContent: React.FC<Props> = ({ product }) => {
                                 <div className="md:col-span-3 border-l border-slate-200 dark:border-slate-800 p-4 bg-slate-50/20">
                                     <div className="aspect-square bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded flex items-center justify-center overflow-hidden relative group">
                                         {product.image_url || aiResult?.image_url ? (
-                                            <img src={product.image_url || aiResult?.image_url || ''} alt={product.name} className="max-w-full max-h-full object-contain" />
+                                            <img src={product.image_url || aiResult?.image_url || ''} alt={`صورة ${product.name}`} loading="lazy" className="max-w-full max-h-full object-contain" />
                                         ) : (
                                             <Package size={32} className="text-slate-200 dark:text-slate-800" strokeWidth={1} />
                                         )}

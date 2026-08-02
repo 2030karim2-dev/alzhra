@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabaseClient';
+import type { Database } from '@/core/database.types';
 import type {
     CustomerActivity,
     CustomerNote,
@@ -13,27 +14,50 @@ import type {
     CustomerActivityFormData,
     CustomerNoteFormData,
     CustomerTagFormData,
-    CustomerActivityFilters
+    CustomerActivityFilters,
+    ActivityStatus,
+    Priority,
+    NoteType,
+    ActivityType,
 } from '@/features/parties/types/enhanced';
+
+type CustomerActivityRow = Database['public']['Tables']['customer_activities']['Row'] & {
+    customer_parties?: { name: string } | null;
+    assigned_to_profile?: { full_name: string } | null;
+    created_by_profile?: { full_name: string } | null;
+};
+type CustomerActivityInsert = Database['public']['Tables']['customer_activities']['Insert'];
+
+type CustomerNoteRow = Database['public']['Tables']['customer_notes']['Row'] & {
+    created_by_profile?: { full_name: string } | null;
+};
+type CustomerNoteInsert = Database['public']['Tables']['customer_notes']['Insert'];
+
+type CustomerTagRow = Database['public']['Tables']['customer_tags']['Row'];
+type CustomerTagInsert = Database['public']['Tables']['customer_tags']['Insert'];
+
+interface TagAssignmentRow {
+    tag: CustomerTagRow;
+}
 
 export const customerApi = {
     // ============================================================
     // Customer Activities
     // ============================================================
 
-    _mapCustomerActivity(item: any): CustomerActivity {
+    _mapCustomerActivity(item: CustomerActivityRow): CustomerActivity {
         return {
             id: item.id,
             companyId: item.company_id || '',
             customerId: item.customer_id || '',
             customerName: item.customer_parties?.name,
-            activityType: item.activity_type as any,
+            activityType: item.activity_type as ActivityType,
             subject: item.subject,
             description: item.description === null ? undefined : item.description,
             scheduledAt: item.scheduled_at === null ? undefined : item.scheduled_at,
             completedAt: item.completed_at === null ? undefined : item.completed_at,
-            status: (item.status || 'pending') as any,
-            priority: (item.priority || 'medium') as any,
+            status: (item.status || 'pending') as ActivityStatus,
+            priority: (item.priority || 'medium') as Priority,
             assignedTo: item.assigned_to === null ? undefined : item.assigned_to,
             assignedToName: (item.assigned_to_profile?.full_name) === null ? undefined : item.assigned_to_profile?.full_name,
             outcome: item.outcome === null ? undefined : item.outcome,
@@ -42,7 +66,7 @@ export const customerApi = {
             createdByName: (item.created_by_profile?.full_name) === null ? undefined : item.created_by_profile?.full_name,
             createdAt: item.created_at || '',
             updatedAt: item.updated_at || ''
-        } as any;
+        };
     },
 
     async getCustomerActivities(customerId: string): Promise<CustomerActivity[]> {
@@ -58,7 +82,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item: any) => this._mapCustomerActivity(item));
+        return (data || []).map((item) => this._mapCustomerActivity(item as CustomerActivityRow));
     },
 
     async getCompanyActivities(companyId: string, filters?: CustomerActivityFilters): Promise<CustomerActivity[]> {
@@ -95,7 +119,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item: any) => this._mapCustomerActivity(item));
+        return (data || []).map((item) => this._mapCustomerActivity(item as CustomerActivityRow));
     },
 
     async createActivity(activity: CustomerActivityFormData & { customerId: string; companyId: string }): Promise<CustomerActivity> {
@@ -115,12 +139,30 @@ export const customerApi = {
                 assigned_to: activity.assignedTo ?? null,
                 created_by: userId,
                 status: 'pending'
-            } as any)
+            } as CustomerActivityInsert)
             .select()
             .single();
 
         if (error) throw error;
-        return data as any as CustomerActivity;
+
+        return {
+            id: data.id,
+            companyId: data.company_id || '',
+            customerId: data.customer_id || '',
+            activityType: data.activity_type as ActivityType,
+            subject: data.subject,
+            description: data.description === null ? undefined : data.description,
+            scheduledAt: data.scheduled_at === null ? undefined : data.scheduled_at,
+            completedAt: data.completed_at === null ? undefined : data.completed_at,
+            status: (data.status || 'pending') as ActivityStatus,
+            priority: (data.priority || 'medium') as Priority,
+            assignedTo: data.assigned_to === null ? undefined : data.assigned_to,
+            outcome: data.outcome === null ? undefined : data.outcome,
+            durationMinutes: data.duration_minutes === null ? undefined : data.duration_minutes,
+            createdBy: data.created_by || '',
+            createdAt: data.created_at || '',
+            updatedAt: data.updated_at || ''
+        };
     },
 
 
@@ -139,7 +181,7 @@ export const customerApi = {
 
 
     async updateActivity(activityId: string, updates: Partial<CustomerActivityFormData>): Promise<void> {
-        const updateData: any = {
+        const updateData: Record<string, unknown> = {
             updated_at: new Date().toISOString()
         };
         if (updates.activityType !== undefined) updateData.activity_type = updates.activityType;
@@ -151,7 +193,7 @@ export const customerApi = {
 
         const { error } = await supabase
             .from('customer_activities')
-            .update(updateData as any)
+            .update(updateData as CustomerActivityInsert)
             .eq('id', activityId);
 
         if (error) throw error;
@@ -182,17 +224,17 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item: any) => ({
+        return (data || []).map((item: CustomerNoteRow) => ({
             id: item.id,
             companyId: item.company_id || '',
             customerId: item.customer_id || '',
-            noteType: item.note_type as any,
+            noteType: item.note_type as NoteType,
             content: item.content,
             isImportant: item.is_important || false,
             createdBy: item.created_by || '',
             createdByName: item.created_by_profile?.full_name || undefined,
             createdAt: item.created_at || ''
-        } as any));
+        }));
     },
 
     async addNote(note: CustomerNoteFormData & { customerId: string; companyId: string }): Promise<CustomerNote> {
@@ -208,12 +250,23 @@ export const customerApi = {
                 content: note.content,
                 is_important: note.isImportant || false,
                 created_by: userId
-            } as any)
+            } as CustomerNoteInsert)
             .select()
             .single();
 
         if (error) throw error;
-        return data as any as CustomerNote;
+
+        return {
+            id: data.id,
+            companyId: data.company_id || '',
+            customerId: data.customer_id || '',
+            noteType: data.note_type as NoteType,
+            content: data.content,
+            isImportant: data.is_important || false,
+            createdBy: data.created_by || '',
+            createdByName: undefined,
+            createdAt: data.created_at || ''
+        };
     },
 
     async deleteNote(noteId: string): Promise<void> {
@@ -238,9 +291,8 @@ export const customerApi = {
 
         if (error) throw error;
 
-        // Get count for each tag
         const tagsWithCount = await Promise.all(
-            (data || []).map(async (tag: any) => {
+            (data || []).map(async (tag: CustomerTagRow) => {
                 const { count } = await supabase
                     .from('customer_tag_assignments')
                     .select('*', { count: 'exact', head: true })
@@ -267,11 +319,12 @@ export const customerApi = {
                 company_id: tag.companyId,
                 name: tag.name,
                 color: tag.color
-            } as any)
+            } as CustomerTagInsert)
             .select()
             .single();
 
         if (error) throw error;
+
         return {
             id: data.id,
             companyId: data.company_id || '',
@@ -281,12 +334,13 @@ export const customerApi = {
     },
 
     async updateTag(tagId: string, updates: Partial<CustomerTagFormData>): Promise<void> {
+        const updateData: CustomerTagInsert = {};
+        if (updates.name !== undefined) updateData.name = updates.name;
+        if (updates.color !== undefined) updateData.color = updates.color;
+
         const { error } = await supabase
             .from('customer_tags')
-            .update({
-                name: updates.name,
-                color: updates.color
-            } as any)
+            .update(updateData)
             .eq('id', tagId);
 
         if (error) throw error;
@@ -332,7 +386,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item: any) => ({
+        return (data || []).map((item: TagAssignmentRow) => ({
             id: item.tag.id,
             companyId: item.tag.company_id || '',
             name: item.tag.name,
@@ -349,7 +403,7 @@ export const customerApi = {
             .rpc('get_customer_stats', { p_company_id: companyId });
 
         if (error) throw error;
-        return data as any as CustomerStats;
+        return data as unknown as CustomerStats;
     },
 
     async getTopCustomers(companyId: string, limit: number = 10): Promise<TopCustomer[]> {
@@ -360,7 +414,15 @@ export const customerApi = {
             });
 
         if (error) throw error;
-        return (data || []).map((item: any) => ({
+
+        interface TopCustomerRPC {
+            id: string;
+            name: string;
+            total_revenue: number;
+            invoice_count: number;
+        }
+
+        return ((data || []) as TopCustomerRPC[]).map((item) => ({
             id: item.id,
             name: item.name,
             totalRevenue: item.total_revenue,
@@ -392,7 +454,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item: any) => this._mapCustomerActivity(item));
+        return (data || []).map((item) => this._mapCustomerActivity(item as CustomerActivityRow));
     },
 
     async getOverdueActivities(companyId: string): Promise<CustomerActivity[]> {
@@ -412,18 +474,17 @@ export const customerApi = {
 
         if (error) throw error;
 
-        // Mark them as overdue
         if (data && data.length > 0) {
             await supabase
                 .from('customer_activities')
-                .update({ status: 'overdue' })
+                .update({ status: 'overdue' } as CustomerActivityInsert)
                 .eq('company_id', companyId)
                 .eq('status', 'pending')
                 .lt('scheduled_at', now);
         }
 
-        return (data || []).map((item: any) => {
-            const activity = this._mapCustomerActivity(item);
+        return (data || []).map((item) => {
+            const activity = this._mapCustomerActivity(item as CustomerActivityRow);
             activity.status = 'overdue';
             return activity;
         });

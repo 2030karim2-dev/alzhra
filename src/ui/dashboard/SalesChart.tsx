@@ -13,7 +13,7 @@ interface SalesChartProps {
 
 type PeriodType = 'today' | 'week' | 'month' | 'year';
 
-const SalesChart: React.FC<SalesChartProps> = ({
+const SalesChart: React.FC<SalesChartProps> = React.memo(({
   data,
   showPeriodSelector = false,
   onPeriodChange
@@ -226,4 +226,5 @@ const SalesChart: React.FC<SalesChartProps> = ({
   );
 };
 
+export { SalesChart };
 export default SalesChart;

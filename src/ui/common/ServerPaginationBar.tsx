@@ -47,7 +47,7 @@ function buildPageItems(page: number, totalPages: number): (number | '...')[] {
   return pages;
 }
 
-const ServerPaginationBar: React.FC<ServerPaginationBarProps> = ({
+const ServerPaginationBar: React.FC<ServerPaginationBarProps> = React.memo(({
   page,
   totalPages,
   totalCount,
@@ -204,4 +204,5 @@ const PagBtn: React.FC<PagBtnProps> = ({ onClick, disabled, active, title, child
   </button>
 );
 
+export { ServerPaginationBar };
 export default ServerPaginationBar;

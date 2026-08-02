@@ -1,11 +1,60 @@
 
 import { useEffect, useState } from 'react';
-import { formatCurrency } from '../../../core/utils';
-import { useInvoiceSettings } from '../../settings/settingsStore';
-import { useCompany } from '../../settings/hooks';
+import { formatCurrency } from '@/core/utils';
+import { useInvoiceSettings } from '@/features/settings';
+import { useCompany } from '@/features/settings';
 
-// Helper to ensure we always have a minimum number of rows for layout purposes
-const padItems = (items: any[], minRows: number) => {
+interface InvoiceItemEntry {
+    id: string;
+    name: string;
+    quantity: number | string;
+    price: number | string;
+}
+
+interface InvoiceData {
+    company?: {
+        name?: string;
+        name_ar?: string;
+        english_name?: string;
+        name_en?: string;
+        address?: string;
+        tax_number?: string;
+        phone?: string;
+    } | null;
+    invoice_number: string;
+    issue_date: string;
+    party_name: string;
+    items: InvoiceItemEntry[];
+    total_amount: number;
+    issuedBy?: string;
+    currency_code?: string;
+}
+
+interface PrintableInvoiceProps {
+    invoice: InvoiceData;
+}
+
+interface HeaderState {
+    nameAr: string;
+    nameEn: string;
+    address: string;
+    taxNumber: string;
+    specialization: string;
+    phone: string;
+    email: string;
+    headerText: string;
+    titleAr: string;
+    titleEn: string;
+}
+
+interface PadItem {
+    id: string;
+    name: string;
+    quantity: string;
+    price: string;
+}
+
+const padItems = (items: InvoiceItemEntry[], minRows: number): (InvoiceItemEntry | PadItem)[] => {
     const padded = [...items];
     while (padded.length < minRows) {
         padded.push({ id: `pad-${padded.length}`, name: '', quantity: '', price: '' });
@@ -13,13 +62,12 @@ const padItems = (items: any[], minRows: number) => {
     return padded;
 };
 
-const PrintableInvoice = ({ invoice }: { invoice: any }) => {
+const PrintableInvoice = ({ invoice }: PrintableInvoiceProps) => {
     const { company: invoiceCompany, invoice_number, issue_date, party_name, items, total_amount, issuedBy } = invoice;
-    const { data: settingsCompany, isLoading: _isCompanyLoading } = useCompany();
+    const { data: settingsCompany } = useCompany();
     const invoiceSettings = useInvoiceSettings();
 
-    // Header State
-    const [header, setHeader] = useState({
+    const [header, setHeader] = useState<HeaderState>({
         nameAr: '',
         nameEn: '',
         address: '',
@@ -32,13 +80,11 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
         titleEn: 'Sales Invoice'
     });
 
-    // Effect to initialize header from settings and profile
     useEffect(() => {
         const c = settingsCompany || invoiceCompany || {};
 
         setHeader(prev => ({
             ...prev,
-            // Settings take high priority, then profile data
             nameAr: invoiceSettings.company_name_ar || c.name || c.name_ar || prev.nameAr || 'اسم المنشأة',
             nameEn: invoiceSettings.company_name_en || c.english_name || c.name_en || prev.nameEn || 'Company Name',
             address: invoiceSettings.company_address || c.address || prev.address || 'المملكة العربية السعودية',
@@ -50,7 +96,7 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
         }));
     }, [settingsCompany, invoiceCompany, invoiceSettings]);
 
-    const displayItems = padItems(items.filter((i: any) => i.name), 10); // increased padding for better look
+    const displayItems = padItems(items.filter((i) => i.name), 10);
 
     return (
         <div id="invoice-printable-content" className="printable-area bg-white text-black font-sans">
@@ -74,7 +120,6 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
             font-family: 'Arial', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #000;
             line-height: 1.4;
-            /* Force English numerals implicitly in modern browsers */
             font-variant-numeric: tabular-nums;
         }
         .inv-header { 
@@ -158,13 +203,11 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
       `}</style>
 
             <div className="invoice-box" dir="rtl">
-                {/* Visual Hint - Screen Only */}
                 <div className="edit-hint no-print">
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
                     نصيحة: يمكنك النقر على أي نص في الترويسة (الاسم، العنوان، الرقم الضريبي، مسمى الفاتورة) لتعديله مباشرة قبل الطباعة.
                 </div>
 
-                {/* Header with Company Info */}
                 <div className="inv-header">
                     <div className="text-right flex-1">
                         <h1
@@ -222,7 +265,6 @@ const PrintableInvoice = ({ invoice }: { invoice: any }) => {
                                 {header.headerText}
                             </p>
                         )}
-                        {/* Space for Logo if needed */}
                         <div className="h-16 w-32 border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center text-gray-300 text-xs rounded no-print">
                             مساحة الشعار
                         </div>

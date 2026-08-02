@@ -75,7 +75,7 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = React.memo(({
                 {hasImage ? (
                     <img
                         src={result.image_url!}
-                        alt={result.name_ar}
+                        alt={`صورة ${result.name_ar}`}
                         className="w-full h-full object-cover"
                         loading="lazy"
                     />
