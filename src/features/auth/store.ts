@@ -185,7 +185,7 @@ export const useAuthStore = create<AuthState>()(
               }
 
               const currentUser = get().user;
-              if (currentUser && currentUser.id === session.user.id && (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
+              if (currentUser && session?.user?.id && currentUser.id === session.user.id && (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
                 return;
               }
 
