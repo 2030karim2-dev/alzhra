@@ -60,7 +60,8 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
       }
       options.signal.addEventListener('abort', () => {
         try {
-          timeoutController.abort(options.signal?.reason || 'signal-merge');
+          const reason = String(options.signal?.reason || '').replace(/[^\x00-\xFF]/g, '') || 'signal-merge';
+          timeoutController.abort(reason);
         } catch (_) { /* ignore */ }
       }, { once: true });
     }
@@ -70,8 +71,23 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
         throw new Error('network_offline');
       }
 
+      // Sanitize headers to prevent non-ISO-8859-1 errors
+      const safeOptions = { ...options };
+      if (safeOptions.headers) {
+        const headers = safeOptions.headers as Record<string, string>;
+        const cleanHeaders: Record<string, string> = {};
+        for (const [key, value] of Object.entries(headers)) {
+          const cleanKey = key.replace(/[^\x00-\xFF]/g, '');
+          const cleanValue = String(value).replace(/[^\x00-\xFF]/g, '');
+          if (cleanKey && cleanValue) {
+            cleanHeaders[cleanKey] = cleanValue;
+          }
+        }
+        safeOptions.headers = cleanHeaders;
+      }
+
       const response = await fetch(url, {
-        ...options,
+        ...safeOptions,
         signal,
       });
       clearTimeout(timeoutId);
