@@ -68,7 +68,8 @@ export const authApi = {
   },
 
   getProfile: async (userId: string): Promise<{ data: any, error: any, isAborted?: boolean }> => {
-    // 1. Check if a request for this user is already in progress
+    // Deduplicate in-flight requests only (avoid concurrent calls racing).
+    // On failure, clear the cached promise so a retry can issue a fresh request.
     if (profileRequests.has(userId)) {
       return profileRequests.get(userId)!;
     }
@@ -90,14 +91,21 @@ export const authApi = {
             throw new Error('No companies in profile');
           }
 
-          // Sort companies by created_at ASC (oldest first = original company)
+          // Sort companies by joined_at/created_at ASC (oldest first = original company with data)
           const companies = [...data.companies].sort((a, b) => {
-            const dateA = a.joined_at ? new Date(a.joined_at).getTime() : 0;
-            const dateB = b.joined_at ? new Date(b.joined_at).getTime() : 0;
+            const dateA = a.joined_at ? new Date(a.joined_at).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
+            const dateB = b.joined_at ? new Date(b.joined_at).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
             return dateA - dateB;
           });
 
           const firstCompany = companies[0];
+
+          if (!firstCompany?.company_id) {
+            logger.error('Auth', 'Profile loaded but company_id is missing — all data queries will be disabled', {
+              userId: data.id,
+              companiesCount: companies.length
+            });
+          }
 
           const flatData = {
             id: data.id,

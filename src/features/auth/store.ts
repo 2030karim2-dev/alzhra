@@ -72,10 +72,9 @@ export const useAuthStore = create<AuthState>()(
 
         // ⚡ Trust Persisted Data First (Optimistic UI)
         const persistedUser = get().user;
-        const wasAuthenticated = get().isAuthenticated;
 
-        if (persistedUser && wasAuthenticated) {
-          set({ isLoading: false, isReady: true });
+        if (persistedUser) {
+          set({ isLoading: false, isReady: true, isAuthenticated: true });
         }
 
         try {
@@ -195,7 +194,29 @@ export const useAuthStore = create<AuthState>()(
               }
 
               const currentUser = get().user;
-              if (currentUser && session?.user?.id && currentUser.id === session.user.id && (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
+              if (currentUser && session?.user?.id && currentUser.id === session.user.id
+                  && (event === 'TOKEN_REFRESHED')) {
+                return;
+              }
+              if (event === 'INITIAL_SESSION' && currentUser && session?.user?.id && currentUser.id === session.user.id) {
+                if (!currentUser.company_id && session.user.id) {
+                  try {
+                    const profileResult = await authApi.getProfile(session.user.id);
+                    const resolved = profileResult as { data?: Record<string, unknown> } | Record<string, unknown>;
+                    const profile = ('data' in resolved && resolved.data ? resolved.data : resolved) as Record<string, unknown>;
+                    if (profile && typeof profile === 'object' && profile.id && profile.company_id) {
+                      set({
+                        user: profile as unknown as AuthUser,
+                        isAuthenticated: true,
+                        isLoading: false,
+                        isReady: true
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['auth'] });
+                      queryClient.invalidateQueries({ queryKey: ['companies'] });
+                      return;
+                    }
+                  } catch (_) { /* silent */ }
+                }
                 return;
               }
 
