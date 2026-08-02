@@ -193,7 +193,9 @@ export const authApi = {
   },
 
   resetPasswordForEmail: async (email: string) => {
-    return await supabase.auth.resetPasswordForEmail(normalizeEmail(email));
+    return await supabase.auth.resetPasswordForEmail(normalizeEmail(email), {
+      redirectTo: `${window.location.origin}/update-password`,
+    });
   },
 
   updateUserPassword: async (password: string) => {
