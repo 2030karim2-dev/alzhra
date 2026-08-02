@@ -17,7 +17,10 @@ export const parseError = (error: any): AppError => {
 
   const errorObj = error instanceof Error ? error : error;
   
-  const code = errorObj?.code || 'UNKNOWN';
+  // Supabase Auth errors use `.name` and `.__isAuthError` instead of `.code`
+  const isAuthError = errorObj?.__isAuthError === true || errorObj?.name === 'AuthApiError' || errorObj?.name === 'AuthSessionMissingError';
+  const code = errorObj?.code || (isAuthError ? errorObj?.name : 'UNKNOWN');
+  const status = errorObj?.status || errorObj?.statusCode || 500;
   const rawMessage = errorObj?.message || String(errorObj);
   const lowerMsg = rawMessage.toLowerCase();
 
@@ -70,10 +73,39 @@ export const parseError = (error: any): AppError => {
       );
     case 'AuthApiError':
     case 'invalid_credentials':
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
       return new AppError(
         'بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.',
         code,
         401,
+        undefined,
+        'medium'
+      );
+    case 'AuthSessionMissingError':
+      return new AppError(
+        'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+        code,
+        401,
+        undefined,
+        'medium',
+        'تسجيل الدخول'
+      );
+    case 'auth/email-not-confirmed':
+      return new AppError(
+        'لم يتم تأكيد البريد الإلكتروني. يرجى التحقق من صندوق الوارد.',
+        code,
+        403,
+        undefined,
+        'medium'
+      );
+    case 'auth/rate-limit':
+    case 'auth/too-many-requests':
+      return new AppError(
+        'طلبات كثيرة جداً. يرجى الانتظار قليلاً والمحاولة مرة أخرى.',
+        code,
+        429,
         undefined,
         'medium'
       );
@@ -85,13 +117,15 @@ export const parseError = (error: any): AppError => {
         undefined,
         'medium'
       );
-    default:
+    default: {
+      const message = `حدث خطأ غير متوقع${rawMessage ? ` (${rawMessage})` : ''}، يرجى المحاولة لاحقاً.`;
       return new AppError(
-        'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً.',
+        message,
         code,
-        500,
+        status,
         undefined,
         'medium'
       );
+    }
   }
 };
