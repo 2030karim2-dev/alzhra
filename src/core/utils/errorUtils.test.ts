@@ -46,7 +46,7 @@ describe('errorUtils', () => {
             const result = parseError(error);
             expect(result).toBeInstanceOf(AppError);
             expect(result.code).toBe('UNKNOWN');
-            expect(result.message).toBe('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً.');
+            expect(result.message).toBe('حدث خطأ غير متوقع (Something weird)، يرجى المحاولة لاحقاً.');
         });
 
         it('should handle string errors', () => {
