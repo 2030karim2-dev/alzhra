@@ -22,7 +22,7 @@ if (import.meta.env.PROD) {
       !response.ok &&
       args[0] &&
       typeof args[0] === 'string' &&
-      (args[0].includes('supabase') || args[0].includes('rest/v1') || args[0].includes('rpc/'))
+      (args[0].includes('rest/v1') || args[0].includes('rpc/'))
     ) {
       // It's a failed Supabase request
       const cloned = response.clone();

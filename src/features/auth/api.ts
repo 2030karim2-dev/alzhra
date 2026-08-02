@@ -121,7 +121,27 @@ export const authApi = {
         ]);
 
         if (profileRes.error) {
-          return { data: null, error: profileRes.error };
+          // 3. Last resort: construct minimal profile from auth session
+          logger.warn('Auth', 'Profile table query failed, constructing from auth session', profileRes.error);
+          const { data: authData } = await supabase.auth.getUser();
+          const user = authData?.user ?? null;
+          if (!user) {
+            return { data: null, error: new Error('Authentication session lost. Please log in again.') };
+          }
+
+          const sessionProfile = {
+            id: userId,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || '',
+            avatar_url: user.user_metadata?.avatar_url || null,
+            role: 'viewer',
+            company_id: null,
+            company_name: null,
+            branch_id: null,
+            branch_name: null,
+          };
+
+          return { data: sessionProfile, error: null };
         }
 
         const profileData = profileRes.data as any;
