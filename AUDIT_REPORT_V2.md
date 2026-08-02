@@ -3,7 +3,7 @@
 **Date:** 2026-08-02  
 **Scope:** Full-stack (Frontend + Backend + Infra) — 15 audit categories  
 **Methodology:** Static analysis, API contract validation, architecture review  
-**Project:** `al-zahra-smart-erp` v1.0.0 · Supabase · React 19 · Vite 5 · Tailwind 3
+**Project:** `al-zahra-smart-erp` v1.0.0 · Supabase · React 19 · Vite 5 · Tailwind 3  
 
 ---
 
@@ -27,7 +27,6 @@ However, this audit reveals **111 issues** across 15 categories — including **
 6. **72% of feature modules (16/22) have zero test files**
 
 ### Severity Counts
-
 🔴 **Critical:** 32 | 🟠 **High:** 37 | 🟡 **Medium:** 30 | 🔵 **Low:** 17
 
 ---
@@ -69,14 +68,14 @@ All 3 Playwright spec files (`auth.spec.ts`, `sales-flow.spec.ts`, `accounting-f
 
 ### 1.6 🟠 Store Tests Have Significant Edge Case Gaps
 
-| Store                            | Test Coverage Gaps                                                                                                              |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `auth/store.test.ts`             | No init lifecycle test, no error path on logout, no token refresh flow, no multiple rapid login/logout                          |
-| `sales/store.test.ts`            | No multi-item cart totals, no tax-inclusive calculation, no item removal, no zero/negative discount, no stock constraint checks |
-| `pos/store.test.ts`              | No `fetchSuspendedOrders` test, no max-order limit, no duplicate order IDs                                                      |
-| `settings/settingsStore.test.ts` | No nested setting updates, no payment method CRUD, no settings schema migration                                                 |
-| `offlineQueueStore.test.ts`      | No sync success path, no retry exhaustion, no queue ordering (FIFO), no persistence verification                                |
-| `journalService.test.ts`         | No empty results, no null credit/debit amounts, no pagination boundaries                                                        |
+| Store | Test Coverage Gaps |
+|-------|--------------------|
+| `auth/store.test.ts` | No init lifecycle test, no error path on logout, no token refresh flow, no multiple rapid login/logout |
+| `sales/store.test.ts` | No multi-item cart totals, no tax-inclusive calculation, no item removal, no zero/negative discount, no stock constraint checks |
+| `pos/store.test.ts` | No `fetchSuspendedOrders` test, no max-order limit, no duplicate order IDs |
+| `settings/settingsStore.test.ts` | No nested setting updates, no payment method CRUD, no settings schema migration |
+| `offlineQueueStore.test.ts` | No sync success path, no retry exhaustion, no queue ordering (FIFO), no persistence verification |
+| `journalService.test.ts` | No empty results, no null credit/debit amounts, no pagination boundaries |
 
 ### 1.7 🟡 Per-Module Coverage Threshold Overrides Missing
 
@@ -102,22 +101,22 @@ Critical modules (`decimalUtils.ts`, `currencyUtils.ts`, `PostTransactionUsecase
 
 The following production tables have **no Row-Level Security policies whatsoever**:
 
-| Table                    | Accessed In                      | Risk                                        |
-| ------------------------ | -------------------------------- | ------------------------------------------- |
-| `journal_entry_lines`    | Every accounting report          | Can read/modify all companies' journal data |
-| `invoice_items`          | Sales analytics, top products    | Can read all companies' invoice details     |
-| `payments`               | Dashboard, bonds, debt aging     | Can read/modify all payment records         |
-| `inventory_transactions` | `assemble_kit`/`disassemble_kit` | Can read all companies' inventory history   |
-| `expense_categories`     | Expense forms                    | Can read shared categories                  |
-| `product_categories`     | Product browsing, search         | Can read shared categories                  |
-| `fiscal_years`           | Accounting reports               | Can read all companies' fiscal configs      |
-| `monthly_targets`        | 20260802000000 creates → no RLS  | Can read/modify all targets                 |
-| `suspended_orders`       | 20260802000000 creates → no RLS  | Can read all POS suspended orders           |
-| `backup_configs`         | 20260802000000 creates → no RLS  | Can read all backup configurations          |
-| `backup_logs`            | 20260802000000 creates → no RLS  | Can read all backup history                 |
-| `branches`               | Used as FK reference             | Can read all tenants' branch structures     |
-| `supported_currencies`   | Currency conversion              | Reference data — possibly acceptable        |
-| `file_attachments`       | Not in any migration             | Unknown scope                               |
+| Table | Accessed In | Risk |
+|-------|-------------|------|
+| `journal_entry_lines` | Every accounting report | Can read/modify all companies' journal data |
+| `invoice_items` | Sales analytics, top products | Can read all companies' invoice details |
+| `payments` | Dashboard, bonds, debt aging | Can read/modify all payment records |
+| `inventory_transactions` | `assemble_kit`/`disassemble_kit` | Can read all companies' inventory history |
+| `expense_categories` | Expense forms | Can read shared categories |
+| `product_categories` | Product browsing, search | Can read shared categories |
+| `fiscal_years` | Accounting reports | Can read all companies' fiscal configs |
+| `monthly_targets` | 20260802000000 creates → no RLS | Can read/modify all targets |
+| `suspended_orders` | 20260802000000 creates → no RLS | Can read all POS suspended orders |
+| `backup_configs` | 20260802000000 creates → no RLS | Can read all backup configurations |
+| `backup_logs` | 20260802000000 creates → no RLS | Can read all backup history |
+| `branches` | Used as FK reference | Can read all tenants' branch structures |
+| `supported_currencies` | Currency conversion | Reference data — possibly acceptable |
+| `file_attachments` | Not in any migration | Unknown scope |
 
 Additionally, `purchase_items` and `audit_items` have `USING(true)` — effectively no tenant isolation.
 
@@ -152,11 +151,11 @@ Every RPC (25+) accepts `p_company_id` as a parameter but never verifies it matc
 
 ### 2.6 🔴 Conflicting Function Signatures (Overloaded RPCs)
 
-| Function                         | Version 1                           | Version 2                               | Conflict                                           |
-| -------------------------------- | ----------------------------------- | --------------------------------------- | -------------------------------------------------- |
-| `search_inventory`               | `(text, uuid)` → 18 cols            | `(uuid, text, integer)` → 13 cols       | Ambiguous overload — second may not be resolvable  |
-| `get_monthly_performance`        | `(uuid, int, uuid)` → monthly_index | `(uuid, integer, integer)` → year/month | Second overwrites first due to `CREATE OR REPLACE` |
-| `get_expense_categories_summary` | `(uuid)` → category_name            | `(uuid)` → name/value/color             | Second overwrites first, breaking callers          |
+| Function | Version 1 | Version 2 | Conflict |
+|----------|-----------|-----------|----------|
+| `search_inventory` | `(text, uuid)` → 18 cols | `(uuid, text, integer)` → 13 cols | Ambiguous overload — second may not be resolvable |
+| `get_monthly_performance` | `(uuid, int, uuid)` → monthly_index | `(uuid, integer, integer)` → year/month | Second overwrites first due to `CREATE OR REPLACE` |
+| `get_expense_categories_summary` | `(uuid)` → category_name | `(uuid)` → name/value/color | Second overwrites first, breaking callers |
 
 **Files:** `20260724000000`, `20260731000001`, `20260802000001`, `20260802000005`
 
@@ -174,16 +173,16 @@ In `commit_sales_invoice`, if `v_sales_account_id` or `v_cash_account_id` is `NU
 
 ### 2.9 🟠 Missing Indexes on Heavily-Queried Columns
 
-| Table                      | Missing Indexes                                            |
-| -------------------------- | ---------------------------------------------------------- |
-| `invoices`                 | `(company_id, type, status)`, `(issue_date)`, `(party_id)` |
-| `journal_entries`          | `(company_id, status, entry_date)`                         |
-| `journal_entry_lines`      | `(journal_entry_id)`, `(account_id)`                       |
-| `expenses`                 | `(company_id, status, expense_date)`                       |
-| `product_cross_references` | `(company_id, base_product_id)`                            |
-| `supplier_prices`          | `(company_id, product_id)`                                 |
-| `product_kit_items`        | `(kit_product_id)`                                         |
-| `audit_sessions`           | `(company_id)`                                             |
+| Table | Missing Indexes |
+|-------|----------------|
+| `invoices` | `(company_id, type, status)`, `(issue_date)`, `(party_id)` |
+| `journal_entries` | `(company_id, status, entry_date)` |
+| `journal_entry_lines` | `(journal_entry_id)`, `(account_id)` |
+| `expenses` | `(company_id, status, expense_date)` |
+| `product_cross_references` | `(company_id, base_product_id)` |
+| `supplier_prices` | `(company_id, product_id)` |
+| `product_kit_items` | `(kit_product_id)` |
+| `audit_sessions` | `(company_id)` |
 
 Without these indexes, every tenant-filtered query will perform sequential scans that degrade linearly with data growth.
 
@@ -312,9 +311,9 @@ Both workflows use only Node 20. No Node 22 or LTS matrix testing.
 
 Two different `AppError` types exist in the codebase:
 
-| Source                     | Shape                                                                                               |
-| -------------------------- | --------------------------------------------------------------------------------------------------- |
-| `core/types/common.ts`     | Class: `{ message, code: ErrorCode enum, statusCode, details? }`                                    |
+| Source | Shape |
+|--------|-------|
+| `core/types/common.ts` | Class: `{ message, code: ErrorCode enum, statusCode, details? }` |
 | `core/utils/errorUtils.ts` | Interface: `{ message, code: string, severity: 'low'\|'medium'\|'high'\|'critical', actionLabel? }` |
 
 `ErrorDisplay.tsx` imports from `errorUtils.ts` but `ErrorBoundary.tsx` imports from `types/common.ts`. These types are structurally incompatible — the `parseError()` function's `switch(code)` won't match `ErrorCode` enum values, causing a runtime bug.
@@ -325,13 +324,13 @@ Two different `AppError` types exist in the codebase:
 
 Widespread use of type assertions bypassing the entire TypeScript type system. Highest concentration in:
 
-| Pattern                         | Count | Files                            |
-| ------------------------------- | ----- | -------------------------------- |
-| `(supabase.from(...) as any)`   | 11    | `purchaseFixes.ts` (9), services |
-| `.abortSignal(signal as any)`   | 9     | `dashboard/api/index.ts`         |
-| `const result = data as any`    | 7     | 4 different RPC call sites       |
-| `Promise.resolve([] as any[])`  | 6     | Various query hooks              |
-| `XLSX = (_XLSX as any).default` | 5     | All Excel exporters              |
+| Pattern | Count | Files |
+|---------|-------|-------|
+| `(supabase.from(...) as any)` | 11 | `purchaseFixes.ts` (9), services |
+| `.abortSignal(signal as any)` | 9 | `dashboard/api/index.ts` |
+| `const result = data as any` | 7 | 4 different RPC call sites |
+| `Promise.resolve([] as any[])` | 6 | Various query hooks |
+| `XLSX = (_XLSX as any).default` | 5 | All Excel exporters |
 
 ### 5.3 🔴 650 `: any` Type Annotations
 
@@ -395,11 +394,11 @@ Pages are hidden but remounted when `display` is toggled, losing internal React 
 
 The journal entry validation exists in three locations with **inconsistent tolerance values**:
 
-| Location                                           | Balance Tolerance                  |
-| -------------------------------------------------- | ---------------------------------- |
-| `core/validators/index.ts`                         | `SOX_BALANCE_TOLERANCE = 0.000001` |
-| `features/accounting/hooks/useJournalEntryForm.ts` | Hardcoded `0.01`                   |
-| `core/utils/decimalUtils.ts`                       | `SOX_BALANCE_TOLERANCE = 0.000001` |
+| Location | Balance Tolerance |
+|----------|------------------|
+| `core/validators/index.ts` | `SOX_BALANCE_TOLERANCE = 0.000001` |
+| `features/accounting/hooks/useJournalEntryForm.ts` | Hardcoded `0.01` |
+| `core/utils/decimalUtils.ts` | `SOX_BALANCE_TOLERANCE = 0.000001` |
 
 The form-level 0.01 tolerance is **10,000x more lenient** than the core validator. This could allow slightly imbalanced journal entries to pass form validation but fail at the use case level.
 
@@ -441,52 +440,52 @@ Financial amounts in the expense schema use JavaScript's native `Number` type in
 
 The following 27 RPC function names are called from frontend code but have **no definition** in any SQL migration file. All calls will fail at runtime:
 
-| RPC Name                          | Frontend Call Location                              |
-| --------------------------------- | --------------------------------------------------- |
-| `calculate_and_update_wac`        | `StockMovementUsecase.ts:25`                        |
-| `process_stock_transfer`          | `transferService.ts:10`                             |
-| `get_item_movements_with_balance` | `productService.ts:317`                             |
-| `get_similar_products`            | `productService.ts:339`                             |
-| `get_potential_duplicates`        | `productService.ts:372`                             |
-| `get_stock_valuation`             | `analyticsService.ts:11`                            |
-| `get_top_selling_products`        | `analyticsService.ts:112`                           |
-| `get_vehicle_products`            | `vehiclesApi.ts:69`                                 |
-| `get_dead_stock`                  | `analyticsApi.ts:32`                                |
-| `get_warehouses_with_stats`       | `warehouseApi.ts:7`                                 |
-| `get_cash_liquidity`              | `reports/service.ts:196`                            |
-| `get_bonds_stats`                 | `bonds/api.ts:93`                                   |
-| `get_purchase_stats`              | `purchases/service.ts:78,97`                        |
-| `commit_purchase_invoice`         | `purchases/api.ts:73`                               |
-| `commit_purchase_return`          | `purchases/api.ts:95`                               |
-| `create_financial_bond`           | `purchases/api.ts:108`                              |
-| `void_expense`                    | `expenses/api.ts:71`                                |
-| `get_party_statement`             | `parties/service.ts:43`                             |
-| `get_customer_stats`              | `customerApi.ts:403`                                |
-| `get_top_customers_by_revenue`    | `customerApi.ts:411`                                |
-| `get_account_ledger`              | `reportService.ts:9`                                |
-| `post_manual_journal`             | `journalsApi.ts:66`                                 |
-| `commit_sale_return`              | `sales/api/index.ts:111`                            |
-| `void_invoice`                    | `sales/api/index.ts:175`                            |
-| `process_sales_return`            | `useSalesReturns.ts:191`                            |
-| `get_user_profile`                | `auth/api.ts:74`                                    |
-| `check_rate_limit`                | `supabase/functions/send-notification/index.ts:222` |
+| RPC Name | Frontend Call Location |
+|----------|----------------------|
+| `calculate_and_update_wac` | `StockMovementUsecase.ts:25` |
+| `process_stock_transfer` | `transferService.ts:10` |
+| `get_item_movements_with_balance` | `productService.ts:317` |
+| `get_similar_products` | `productService.ts:339` |
+| `get_potential_duplicates` | `productService.ts:372` |
+| `get_stock_valuation` | `analyticsService.ts:11` |
+| `get_top_selling_products` | `analyticsService.ts:112` |
+| `get_vehicle_products` | `vehiclesApi.ts:69` |
+| `get_dead_stock` | `analyticsApi.ts:32` |
+| `get_warehouses_with_stats` | `warehouseApi.ts:7` |
+| `get_cash_liquidity` | `reports/service.ts:196` |
+| `get_bonds_stats` | `bonds/api.ts:93` |
+| `get_purchase_stats` | `purchases/service.ts:78,97` |
+| `commit_purchase_invoice` | `purchases/api.ts:73` |
+| `commit_purchase_return` | `purchases/api.ts:95` |
+| `create_financial_bond` | `purchases/api.ts:108` |
+| `void_expense` | `expenses/api.ts:71` |
+| `get_party_statement` | `parties/service.ts:43` |
+| `get_customer_stats` | `customerApi.ts:403` |
+| `get_top_customers_by_revenue` | `customerApi.ts:411` |
+| `get_account_ledger` | `reportService.ts:9` |
+| `post_manual_journal` | `journalsApi.ts:66` |
+| `commit_sale_return` | `sales/api/index.ts:111` |
+| `void_invoice` | `sales/api/index.ts:175` |
+| `process_sales_return` | `useSalesReturns.ts:191` |
+| `get_user_profile` | `auth/api.ts:74` |
+| `check_rate_limit` | `supabase/functions/send-notification/index.ts:222` |
 
 This represents a massive gap between frontend expectations and backend implementations. Several of these (e.g., `commit_purchase_invoice`, `commit_sale_return`, `process_stock_transfer`) are **core business operations**.
 
 ### 8.2 🔴 10+ API Contract Mismatches (Param Name/Type Differences)
 
-| RPC                          | Frontend Sends                              | Backend Expects                         | Severity             |
-| ---------------------------- | ------------------------------------------- | --------------------------------------- | -------------------- |
-| `commit_sales_invoice`       | 10+ individual params                       | `p_company_id, p_user_id, p_data jsonb` | 🔴 Will fail         |
-| `commit_expense_v2`          | 7 individual params                         | `p_company_id, p_user_id, p_data jsonb` | 🔴 Will fail         |
-| `get_next_invoice_number`    | `p_prefix: 'INV'`                           | No such param — uses `p_type`           | 🔴 Will fail         |
-| `get_next_sequence`          | `p_type`                                    | `p_sequence_name`                       | 🔴 Will fail         |
-| `report_profit_loss`         | Missing `p_from, p_to`                      | 3 required params                       | 🔴 Will fail         |
-| `report_balance_sheet`       | `p_branch_id, p_from, p_to`                 | `p_company_id, p_as_of_date`            | 🔴 Will fail         |
-| `report_cash_flow`           | Missing `p_from, p_to`                      | 3 required params                       | 🔴 Will fail         |
-| `get_low_stock_products`     | Destructures `total_stock, min_stock_level` | Returns `quantity, min_quantity`        | 🟠 Wrong field names |
-| `get_monthly_performance`    | Passes `p_branch_id`                        | v2 doesn't accept `p_branch_id`         | 🔴 Will fail         |
-| `search_inventory_paginated` | Extra `p_branch_id`                         | No branch filtering                     | 🟡 Silently ignored  |
+| RPC | Frontend Sends | Backend Expects | Severity |
+|-----|---------------|-----------------|----------|
+| `commit_sales_invoice` | 10+ individual params | `p_company_id, p_user_id, p_data jsonb` | 🔴 Will fail |
+| `commit_expense_v2` | 7 individual params | `p_company_id, p_user_id, p_data jsonb` | 🔴 Will fail |
+| `get_next_invoice_number` | `p_prefix: 'INV'` | No such param — uses `p_type` | 🔴 Will fail |
+| `get_next_sequence` | `p_type` | `p_sequence_name` | 🔴 Will fail |
+| `report_profit_loss` | Missing `p_from, p_to` | 3 required params | 🔴 Will fail |
+| `report_balance_sheet` | `p_branch_id, p_from, p_to` | `p_company_id, p_as_of_date` | 🔴 Will fail |
+| `report_cash_flow` | Missing `p_from, p_to` | 3 required params | 🔴 Will fail |
+| `get_low_stock_products` | Destructures `total_stock, min_stock_level` | Returns `quantity, min_quantity` | 🟠 Wrong field names |
+| `get_monthly_performance` | Passes `p_branch_id` | v2 doesn't accept `p_branch_id` | 🔴 Will fail |
+| `search_inventory_paginated` | Extra `p_branch_id` | No branch filtering | 🟡 Silently ignored |
 
 **Files:** Multiple frontend API service files vs SQL migrations
 
@@ -512,11 +511,11 @@ As documented in §2.6 — `search_inventory`, `get_monthly_performance`, and `g
 
 Three separate offline queue/persistence mechanisms exist:
 
-| System              | Location         | Backend              | Purpose                    |
-| ------------------- | ---------------- | -------------------- | -------------------------- |
+| System | Location | Backend | Purpose |
+|--------|----------|---------|---------|
 | `offlineQueueStore` | `core/services/` | Zustand + idb-keyval | Action-based offline queue |
-| `sync-store`        | `core/lib/`      | idb-keyval (direct)  | Pending mutation tracking  |
-| `offlineService`    | `lib/`           | idb-keyval (direct)  | Simple offline queue       |
+| `sync-store` | `core/lib/` | idb-keyval (direct) | Pending mutation tracking |
+| `offlineService` | `lib/` | idb-keyval (direct) | Simple offline queue |
 
 These are not integrated — they operate independently with separate IndexedDB keys. There's no single source of truth for offline state.
 
@@ -614,12 +613,12 @@ The audit agents did not execute `npm audit` due to runtime constraints. This sh
 
 ### 11.2 🟡 Several Packages Are Behind Latest Versions
 
-| Package            | Current | Latest (Aug 2026)   |
-| ------------------ | ------- | ------------------- |
-| `react`            | 19.2.4  | Check for patches   |
-| `react-router-dom` | 7.13.0  | Check for latest v7 |
-| `lucide-react`     | 0.563.0 | Likely behind       |
-| `zod`              | 3.25.76 | Check               |
+| Package | Current | Latest (Aug 2026) |
+|---------|---------|-------------------|
+| `react` | 19.2.4 | Check for patches |
+| `react-router-dom` | 7.13.0 | Check for latest v7 |
+| `lucide-react` | 0.563.0 | Likely behind |
+| `zod` | 3.25.76 | Check |
 
 ### 11.3 🔵 377 `lucide-react` Import Instances
 
@@ -636,7 +635,6 @@ All packages in `dependencies` and `devDependencies` have at least one import re
 ### 12.1 🟠 `vercel.json` CSP — Missing `frame-ancestors` and `form-action`
 
 The CSP is well-configured for `connect-src`, `script-src`, and `img-src` but missing critical directives:
-
 - `frame-ancestors 'none'` (prevents clickjacking)
 - `form-action 'self'` (prevents form hijacking)
 - `base-uri 'self'` (prevents base tag injection)
@@ -671,12 +669,12 @@ The `.env.example` file exists but its completeness against all actual `VITE_*` 
 
 The `logger` singleton (`core/utils/logger.ts`) provides structured logging with levels, timestamps, APM integration, and deduplication. However, 4 files bypass it and use raw `console.*`:
 
-| File                                                     | Console Method Used |
-| -------------------------------------------------------- | ------------------- |
-| `src/lib/offlineService.ts`                              | `console.info`      |
-| `src/lib/localDB.ts`                                     | `console.error`     |
-| `src/core/utils/pdfExporter.ts`                          | `console.error`     |
-| `src/features/settings/hooks/useDefaultExchangeRates.ts` | `console.log`       |
+| File | Console Method Used |
+|------|-------------------|
+| `src/lib/offlineService.ts` | `console.info` |
+| `src/lib/localDB.ts` | `console.error` |
+| `src/core/utils/pdfExporter.ts` | `console.error` |
+| `src/features/settings/hooks/useDefaultExchangeRates.ts` | `console.log` |
 
 **Files:** As listed above
 
@@ -750,7 +748,6 @@ This is not a valid Tailwind configuration key and will generate CSS classes lik
 ### 15.4 🔵 `@media` Query Responsive Breakpoints Defined in 3 Places
 
 Responsive breakpoints are defined in:
-
 - `tailwind.config.js` (Tailwind `screens`)
 - `index.css` (CSS `@media` queries for theme/density)
 - `src/lib/hooks/useBreakpoint.ts` (JS breakpoint detection)
@@ -763,92 +760,92 @@ These must be kept in sync manually — no single source of truth or shared cons
 
 ### Immediate (Block Production — Fix Before Deploy)
 
-| #   | Severity | Category       | Issue                                                   | Impact                                         |
-| --- | -------- | -------------- | ------------------------------------------------------- | ---------------------------------------------- |
-| I-1 | 🔴       | API Contract   | 27 RPCs called on frontend don't exist in migrations    | **Silent runtime failures across 9+ features** |
-| I-2 | 🔴       | API Contract   | 10+ RPC param name/type mismatches                      | **Critical operations fail silently**          |
-| I-3 | 🔴       | Database       | 15+ tables missing RLS                                  | **No tenant isolation for financial data**     |
-| I-4 | 🔴       | Edge Functions | 3 of 5 functions have zero authentication               | **Open endpoints for AI, PDF, ZATCA**          |
-| I-5 | 🔴       | Database       | SECURITY DEFINER RPCs trust arbitrary p_company_id      | **Cross-tenant data leakage**                  |
-| I-6 | 🔴       | Database       | Migration ordering conflict (RLS before table creation) | **Migrations may fail in fresh deploy**        |
-| I-7 | 🔴       | Edge Functions | ZATCA TaxExclusiveAmount calculation bug                | **Tax compliance failure**                     |
-| I-8 | 🔴       | Error Handling | Duplicate AppError types cause dispatch bug             | **All AppError instances show generic error**  |
+| # | Severity | Category | Issue | Impact |
+|---|----------|----------|-------|--------|
+| I-1 | 🔴 | API Contract | 27 RPCs called on frontend don't exist in migrations | **Silent runtime failures across 9+ features** |
+| I-2 | 🔴 | API Contract | 10+ RPC param name/type mismatches | **Critical operations fail silently** |
+| I-3 | 🔴 | Database | 15+ tables missing RLS | **No tenant isolation for financial data** |
+| I-4 | 🔴 | Edge Functions | 3 of 5 functions have zero authentication | **Open endpoints for AI, PDF, ZATCA** |
+| I-5 | 🔴 | Database | SECURITY DEFINER RPCs trust arbitrary p_company_id | **Cross-tenant data leakage** |
+| I-6 | 🔴 | Database | Migration ordering conflict (RLS before table creation) | **Migrations may fail in fresh deploy** |
+| I-7 | 🔴 | Edge Functions | ZATCA TaxExclusiveAmount calculation bug | **Tax compliance failure** |
+| I-8 | 🔴 | Error Handling | Duplicate AppError types cause dispatch bug | **All AppError instances show generic error** |
 
 ### Sprint 1 (Security Hardening)
 
-| #     | Severity | Category       | Issue                                                                       |
-| ----- | -------- | -------------- | --------------------------------------------------------------------------- |
-| S1-1  | 🔴       | Database       | Conflicting RLS policies on audit_items/user_profiles                       |
-| S1-2  | 🔴       | Database       | Conflicting function signatures (search_inventory, get_monthly_performance) |
-| S1-3  | 🔴       | Database       | Zero input validation in financial commit RPCs                              |
-| S1-4  | 🔴       | Database       | Silent skip when accounts not found in commit functions                     |
-| S1-5  | 🔴       | PWA            | Plaintext auth token path alongside encrypted storage                       |
-| S1-6  | 🔴       | PWA            | Three parallel offline queue systems                                        |
-| S1-7  | 🔴       | Validation     | Journal entry schema defined 3 places with 10000x tolerance mismatch        |
-| S1-8  | 🟠       | Edge Functions | ai-proxy missing rate limiting / model allowlist                            |
-| S1-9  | 🟠       | Edge Functions | car-ai-assistant CORS wildcard + uncaught JSON.parse                        |
-| S1-10 | 🟠       | Edge Functions | send-notification WhatsApp keys in plaintext                                |
-| S1-11 | 🟠       | Database       | Missing indexes on heavily-queried columns                                  |
+| # | Severity | Category | Issue |
+|---|----------|----------|-------|
+| S1-1 | 🔴 | Database | Conflicting RLS policies on audit_items/user_profiles |
+| S1-2 | 🔴 | Database | Conflicting function signatures (search_inventory, get_monthly_performance) |
+| S1-3 | 🔴 | Database | Zero input validation in financial commit RPCs |
+| S1-4 | 🔴 | Database | Silent skip when accounts not found in commit functions |
+| S1-5 | 🔴 | PWA | Plaintext auth token path alongside encrypted storage |
+| S1-6 | 🔴 | PWA | Three parallel offline queue systems |
+| S1-7 | 🔴 | Validation | Journal entry schema defined 3 places with 10000x tolerance mismatch |
+| S1-8 | 🟠 | Edge Functions | ai-proxy missing rate limiting / model allowlist |
+| S1-9 | 🟠 | Edge Functions | car-ai-assistant CORS wildcard + uncaught JSON.parse |
+| S1-10 | 🟠 | Edge Functions | send-notification WhatsApp keys in plaintext |
+| S1-11 | 🟠 | Database | Missing indexes on heavily-queried columns |
 
 ### Sprint 2 (Test Coverage & Reliability)
 
-| #     | Severity | Category       | Issue                                               |
-| ----- | -------- | -------------- | --------------------------------------------------- |
-| S2-1  | 🔴       | Tests          | Mock Supabase client unusable for integration tests |
-| S2-2  | 🔴       | Tests          | E2E tests are placeholder quality                   |
-| S2-3  | 🔴       | PWA            | useInvalidateQueries is dead stub                   |
-| S2-4  | 🟠       | Tests          | 72% of features have zero tests                     |
-| S2-5  | 🟠       | Tests          | Branch coverage threshold too low (60%)             |
-| S2-6  | 🟠       | Tests          | UI component tests unacceptably thin                |
-| S2-7  | 🟠       | CI/CD          | No Edge Function CI                                 |
-| S2-8  | 🟠       | CI/CD          | No bundle size regression enforcement               |
-| S2-9  | 🟠       | Error Handling | Section-level error boundaries nearly absent        |
-| S2-10 | 🟠       | Error Handling | No exponential backoff on offline retries           |
+| # | Severity | Category | Issue |
+|---|----------|----------|-------|
+| S2-1 | 🔴 | Tests | Mock Supabase client unusable for integration tests |
+| S2-2 | 🔴 | Tests | E2E tests are placeholder quality |
+| S2-3 | 🔴 | PWA | useInvalidateQueries is dead stub |
+| S2-4 | 🟠 | Tests | 72% of features have zero tests |
+| S2-5 | 🟠 | Tests | Branch coverage threshold too low (60%) |
+| S2-6 | 🟠 | Tests | UI component tests unacceptably thin |
+| S2-7 | 🟠 | CI/CD | No Edge Function CI |
+| S2-8 | 🟠 | CI/CD | No bundle size regression enforcement |
+| S2-9 | 🟠 | Error Handling | Section-level error boundaries nearly absent |
+| S2-10 | 🟠 | Error Handling | No exponential backoff on offline retries |
 
 ### Sprint 3 (Code Quality & Polish)
 
-| #     | Severity | Category    | Issue                                                        |
-| ----- | -------- | ----------- | ------------------------------------------------------------ |
-| S3-1  | 🔴       | TypeScript  | 213 as any assertions — highest-concentration fixes          |
-| S3-2  | 🟠       | Validation  | No form schemas for purchases, POS, bonds, returns, settings |
-| S3-3  | 🟠       | Offline     | Service Worker cache update not waitUntil-wrapped            |
-| S3-4  | 🟠       | Production  | vercel.json CSP missing frame-ancestors/form-action          |
-| S3-5  | 🟡       | Duplication | 5 Excel exporters with duplicated bootstrap code             |
-| S3-6  | 🟡       | Duplication | SearchInput exists in two locations                          |
-| S3-7  | 🟡       | Monitoring  | Logger adoption incomplete (4 files use raw console)         |
-| S3-8  | 🟡       | Monitoring  | APM adapter commented out                                    |
-| S3-9  | 🟡       | Database    | Missing CHECK constraints on financial columns               |
-| S3-10 | 🔴       | CSS         | Invalid Tailwind config key `stat`                           |
+| # | Severity | Category | Issue |
+|---|----------|----------|-------|
+| S3-1 | 🔴 | TypeScript | 213 as any assertions — highest-concentration fixes |
+| S3-2 | 🟠 | Validation | No form schemas for purchases, POS, bonds, returns, settings |
+| S3-3 | 🟠 | Offline | Service Worker cache update not waitUntil-wrapped |
+| S3-4 | 🟠 | Production | vercel.json CSP missing frame-ancestors/form-action |
+| S3-5 | 🟡 | Duplication | 5 Excel exporters with duplicated bootstrap code |
+| S3-6 | 🟡 | Duplication | SearchInput exists in two locations |
+| S3-7 | 🟡 | Monitoring | Logger adoption incomplete (4 files use raw console) |
+| S3-8 | 🟡 | Monitoring | APM adapter commented out |
+| S3-9 | 🟡 | Database | Missing CHECK constraints on financial columns |
+| S3-10 | 🔴 | CSS | Invalid Tailwind config key `stat` |
 
 ---
 
 ## Summary Statistics
 
-| Severity    | Count   | Categories Affected |
-| ----------- | ------- | ------------------- |
-| 🔴 Critical | 32      | All 15              |
-| 🟠 High     | 37      | All 15              |
-| 🟡 Medium   | 30      | 14                  |
-| 🔵 Low/Info | 17      | 12                  |
-| **Total**   | **116** | **15**              |
+| Severity | Count | Categories Affected |
+|----------|-------|--------------------|
+| 🔴 Critical | 32 | All 15 |
+| 🟠 High | 37 | All 15 |
+| 🟡 Medium | 30 | 14 |
+| 🔵 Low/Info | 17 | 12 |
+| **Total** | **116** | **15** |
 
-| Category         | Critical | High | Medium | Low | Total |
-| ---------------- | -------- | ---- | ------ | --- | ----- |
-| Test Suite       | 4        | 4    | 2      | 1   | 11    |
-| Database & RLS   | 9        | 4    | 3      | 0   | 16    |
-| Edge Functions   | 5        | 5    | 2      | 0   | 12    |
-| CI/CD            | 1        | 4    | 2      | 0   | 7     |
-| TypeScript       | 3        | 2    | 1      | 0   | 6     |
-| Error Handling   | 1        | 4    | 2      | 0   | 7     |
-| Validation       | 2        | 4    | 1      | 0   | 7     |
-| API Contract     | 4        | 2    | 1      | 0   | 7     |
-| PWA/Offline      | 3        | 5    | 1      | 0   | 9     |
-| Code Duplication | 0        | 4    | 1      | 0   | 5     |
-| Dependencies     | 0        | 0    | 2      | 2   | 4     |
-| Production       | 0        | 3    | 1      | 1   | 5     |
-| Monitoring       | 0        | 2    | 1      | 1   | 4     |
-| Export/Print     | 1        | 2    | 1      | 1   | 5     |
-| CSS              | 1        | 1    | 0      | 2   | 4     |
+| Category | Critical | High | Medium | Low | Total |
+|----------|----------|------|--------|-----|-------|
+| Test Suite | 4 | 4 | 2 | 1 | 11 |
+| Database & RLS | 9 | 4 | 3 | 0 | 16 |
+| Edge Functions | 5 | 5 | 2 | 0 | 12 |
+| CI/CD | 1 | 4 | 2 | 0 | 7 |
+| TypeScript | 3 | 2 | 1 | 0 | 6 |
+| Error Handling | 1 | 4 | 2 | 0 | 7 |
+| Validation | 2 | 4 | 1 | 0 | 7 |
+| API Contract | 4 | 2 | 1 | 0 | 7 |
+| PWA/Offline | 3 | 5 | 1 | 0 | 9 |
+| Code Duplication | 0 | 4 | 1 | 0 | 5 |
+| Dependencies | 0 | 0 | 2 | 2 | 4 |
+| Production | 0 | 3 | 1 | 1 | 5 |
+| Monitoring | 0 | 2 | 1 | 1 | 4 |
+| Export/Print | 1 | 2 | 1 | 1 | 5 |
+| CSS | 1 | 1 | 0 | 2 | 4 |
 
 ---
 
@@ -858,25 +855,25 @@ These must be kept in sync manually — no single source of truth or shared cons
 
 ### A.1 `npm audit` — 12 Vulnerabilities
 
-| Severity    | Count | Key Findings                                                                                                                          |
-| ----------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔴 Critical | 1     | Vulnerable `vite` (< 6.12.2) in `vitest` dependency chain                                                                             |
-| 🟠 High     | 3     | `react-router` 7.12.0-8.2.0: CSRF bypass (GHSA-qwww-vcr4-c8h2). Fix: `npm audit fix --force` (breaking change — downgrades to 7.11.0) |
-| 🟡 Moderate | 2     | Via `vite` in `vitest` dependency                                                                                                     |
-| 🔵 Low      | 6     | Minor issues                                                                                                                          |
+| Severity | Count | Key Findings |
+|----------|-------|-------------|
+| 🔴 Critical | 1 | Vulnerable `vite` (< 6.12.2) in `vitest` dependency chain |
+| 🟠 High | 3 | `react-router` 7.12.0-8.2.0: CSRF bypass (GHSA-qwww-vcr4-c8h2). Fix: `npm audit fix --force` (breaking change — downgrades to 7.11.0) |
+| 🟡 Moderate | 2 | Via `vite` in `vitest` dependency |
+| 🔵 Low | 6 | Minor issues |
 
 ### A.2 `tsc --noEmit` — 6 TypeScript Errors
 
 All 6 errors are `TS1005: ')' expected` — syntax errors in JSX components:
 
-| File                                          | Line |
-| --------------------------------------------- | ---- |
-| `src/ui/common/ExcelTableToolbar.tsx`         | 147  |
-| `src/ui/common/SearchableAccountSelector.tsx` | 203  |
-| `src/ui/common/ServerPaginationBar.tsx`       | 176  |
-| `src/ui/dashboard/CategoriesChart.tsx`        | 133  |
-| `src/ui/dashboard/SalesChart.tsx`             | 227  |
-| `src/ui/dashboard/StatsGrid.tsx`              | 240  |
+| File | Line |
+|------|------|
+| `src/ui/common/ExcelTableToolbar.tsx` | 147 |
+| `src/ui/common/SearchableAccountSelector.tsx` | 203 |
+| `src/ui/common/ServerPaginationBar.tsx` | 176 |
+| `src/ui/dashboard/CategoriesChart.tsx` | 133 |
+| `src/ui/dashboard/SalesChart.tsx` | 227 |
+| `src/ui/dashboard/StatsGrid.tsx` | 240 |
 
 These are likely mismatched closing tags, missing brackets, or incorrect JSX syntax.
 
@@ -885,7 +882,6 @@ These are likely mismatched closing tags, missing brackets, or incorrect JSX syn
 This is an **extreme** volume of lint issues. The strict ESLint configuration (`strict-boolean-expressions`, `no-explicit-any`, `explicit-function-return-type`, etc.) is correctly identifying violations, but the codebase has not been maintained against these rules. 1,520 errors are auto-fixable via `--fix`.
 
 **Top rule violations** (estimated from sampling):
-
 - `@typescript-eslint/strict-boolean-expressions` — nullable values in conditionals
 - `@typescript-eslint/no-unsafe-*` — unsafe assignments, member access, returns
 - `@typescript-eslint/explicit-function-return-type` — missing return types
@@ -894,24 +890,23 @@ This is an **extreme** volume of lint issues. The strict ESLint configuration (`
 
 ### A.4 `vitest run` — 3 Failed Test Files (17 Passed)
 
-| Status    | File                        | Tests     | Failures                                      |
-| --------- | --------------------------- | --------- | --------------------------------------------- |
-| ✅ Passed | 17 files                    | 204 tests | 0                                             |
-| ❌ Failed | `decimalUtils.test.ts`      | 23        | 1 (`isPositiveDecimal`)                       |
-| ❌ Failed | `currencyUtils.test.ts`     | 21        | 1 (`convertFromBaseCurrency: invalid amount`) |
-| ❌ Failed | `errorUtils.test.ts`        | 8         | 2 (`unknown errors`, `null/undefined`)        |
-| ❌ Error  | `offlineQueueStore.test.ts` | 7         | IndexedDB not mocked                          |
+| Status | File | Tests | Failures |
+|--------|------|-------|----------|
+| ✅ Passed | 17 files | 204 tests | 0 |
+| ❌ Failed | `decimalUtils.test.ts` | 23 | 1 (`isPositiveDecimal`) |
+| ❌ Failed | `currencyUtils.test.ts` | 21 | 1 (`convertFromBaseCurrency: invalid amount`) |
+| ❌ Failed | `errorUtils.test.ts` | 8 | 2 (`unknown errors`, `null/undefined`) |
+| ❌ Error | `offlineQueueStore.test.ts` | 7 | IndexedDB not mocked |
 
 The `offlineQueueStore.test.ts` failures are from `indexedDB is not defined` — the test setup doesn't mock IndexedDB despite the store using `idb-keyval`. The 4 functional test failures indicate real bugs in `isPositiveDecimal` (returns wrong value), `convertFromBaseCurrency` (throws on invalid input instead of returning 0), and `parseError` (returns wrong messages for unknown/null inputs).
 
 ### A.5 `console.log` Violations in Source
 
 Only **1 real violation** in production source code:
-
 - `src/features/settings/hooks/useDefaultExchangeRates.ts:47` — `console.log("[Currency] No rates found...")`
 
 All other occurrences are in `index.tsx` (suppression logic) or `scripts/` (build tools).
 
 ---
 
-_Report generated from full static analysis of `src/`, `supabase/`, `.github/`, `e2e/`, and config files at commit HEAD. Runtime checks (TypeScript, ESLint, Vitest, npm audit) were also performed and results appended._
+*Report generated from full static analysis of `src/`, `supabase/`, `.github/`, `e2e/`, and config files at commit HEAD. Runtime checks (TypeScript, ESLint, Vitest, npm audit) were also performed and results appended.*
