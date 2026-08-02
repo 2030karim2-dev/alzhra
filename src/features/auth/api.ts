@@ -85,7 +85,19 @@ export const authApi = {
           const { data: authData } = await supabase.auth.getUser();
           const user = authData?.user ?? null;
 
-          const firstCompany = Array.isArray(data.companies) && data.companies.length > 0 ? data.companies[0] : null;
+          if (!Array.isArray(data.companies) || data.companies.length === 0) {
+            logger.warn('Auth', 'RPC returned profile with no companies, falling back');
+            throw new Error('No companies in profile');
+          }
+
+          // Sort companies by created_at ASC (oldest first = original company)
+          const companies = [...data.companies].sort((a, b) => {
+            const dateA = a.joined_at ? new Date(a.joined_at).getTime() : 0;
+            const dateB = b.joined_at ? new Date(b.joined_at).getTime() : 0;
+            return dateA - dateB;
+          });
+
+          const firstCompany = companies[0];
 
           const flatData = {
             id: data.id,
