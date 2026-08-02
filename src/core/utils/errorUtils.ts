@@ -73,9 +73,6 @@ export const parseError = (error: any): AppError => {
       );
     case 'AuthApiError':
     case 'invalid_credentials':
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
       return new AppError(
         'بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.',
         code,
@@ -92,7 +89,7 @@ export const parseError = (error: any): AppError => {
         'medium',
         'تسجيل الدخول'
       );
-    case 'auth/email-not-confirmed':
+    case 'email_not_confirmed':
       return new AppError(
         'لم يتم تأكيد البريد الإلكتروني. يرجى التحقق من صندوق الوارد.',
         code,
@@ -100,8 +97,8 @@ export const parseError = (error: any): AppError => {
         undefined,
         'medium'
       );
-    case 'auth/rate-limit':
-    case 'auth/too-many-requests':
+    case 'over_request_rate_limit':
+    case 'over_email_send_rate_limit':
       return new AppError(
         'طلبات كثيرة جداً. يرجى الانتظار قليلاً والمحاولة مرة أخرى.',
         code,

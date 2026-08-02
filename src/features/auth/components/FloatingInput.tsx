@@ -17,11 +17,12 @@ interface FloatingInputProps {
     onEndIconClick?: () => void;
     autoFocus?: boolean;
     autoComplete?: string;
+    inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export const FloatingInput: React.FC<FloatingInputProps> = ({
     id, label, type = 'text', value, onChange, icon, dir, required,
-    minLength, error, endIcon, onEndIconClick, autoFocus, autoComplete
+    minLength, error, endIcon, onEndIconClick, autoFocus, autoComplete, inputRef
 }) => {
     const [focused, setFocused] = useState(false);
     const isActive = focused || value.length > 0;
@@ -37,9 +38,15 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
 
                 <input
                     id={id}
+                    ref={inputRef}
                     type={type}
                     value={value}
                     onChange={onChange}
+                    onAnimationStart={(e: React.AnimationEvent<HTMLInputElement>) => {
+                        if (e.animationName === 'onAutoFillStart') {
+                            onChange({ target: e.target } as React.ChangeEvent<HTMLInputElement>);
+                        }
+                    }}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     required={required}

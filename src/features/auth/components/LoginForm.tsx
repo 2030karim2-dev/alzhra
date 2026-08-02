@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useLogin, useGoogleLogin } from '../hooks';
@@ -6,6 +6,8 @@ import { useTranslation } from '../../../lib/hooks/useTranslation';
 import { FloatingInput } from './FloatingInput';
 
 export const LoginForm: React.FC = () => {
+    const emailRef = useRef<HTMLInputElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +17,9 @@ export const LoginForm: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        login(email, password);
+        const finalEmail = email || emailRef.current?.value || '';
+        const finalPassword = password || passwordRef.current?.value || '';
+        login(finalEmail, finalPassword);
     };
 
     return (
@@ -56,6 +60,7 @@ export const LoginForm: React.FC = () => {
                 dir="ltr"
                 autoComplete="email"
                 required
+                inputRef={emailRef}
             />
 
             <div className="space-y-2">
@@ -69,6 +74,7 @@ export const LoginForm: React.FC = () => {
                     dir="ltr"
                     autoComplete="current-password"
                     required
+                    inputRef={passwordRef}
                     endIcon={showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     onEndIconClick={() => setShowPassword(!showPassword)}
                 />
