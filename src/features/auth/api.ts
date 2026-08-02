@@ -4,10 +4,15 @@ import { logger } from '../../core/utils/logger';
 // Registry to deduplicate in-flight profile requests
 const profileRequests = new Map<string, Promise<{ data: any, error: any, isAborted?: boolean }>>();
 
+// Normalize an email address: trim whitespace and lowercase it so that
+// minor input differences (autofill/copy-paste spaces, case) don't cause
+// spurious "invalid credentials" errors on login/signup.
+const normalizeEmail = (email: string): string => String(email || '').trim().toLowerCase();
+
 export const authApi = {
   signInWithPassword: async (email: string, pass: string) => {
     return await supabase.auth.signInWithPassword({
-      email,
+      email: normalizeEmail(email),
       password: pass,
     });
   },
@@ -51,7 +56,7 @@ export const authApi = {
     const cleanCompanyName = String(companyName || '').trim();
 
     return await supabase.auth.signUp({
-      email,
+      email: normalizeEmail(email),
       password: pass,
       options: {
         data: {
@@ -188,7 +193,7 @@ export const authApi = {
   },
 
   resetPasswordForEmail: async (email: string) => {
-    return await supabase.auth.resetPasswordForEmail(email);
+    return await supabase.auth.resetPasswordForEmail(normalizeEmail(email));
   },
 
   updateUserPassword: async (password: string) => {
