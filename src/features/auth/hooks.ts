@@ -6,6 +6,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../core/routes/paths';
 import { parseError } from '../../core/utils/errorUtils';
+import { isSupabaseConfigured } from '../../lib/supabaseClient';
+
+const AUTH_NOT_CONFIGURED_MSG = 'خدمة تسجيل الدخول غير مُعدّة بعد (إعدادات الاتصال بالخادم مفقودة). يرجى التواصل مع مسؤول النظام.';
 
 export const useAuth = () => {
     const { user, isAuthenticated, isLoading, isReady, initialize, logout } = useAuthStore();
@@ -50,11 +53,16 @@ export const useLogin = () => {
         setIsLoading(true);
         setError(null);
         try {
+            if (!isSupabaseConfigured) {
+                setError(AUTH_NOT_CONFIGURED_MSG);
+                return;
+            }
+
             const { data, error: loginError } = await authApi.signInWithPassword(email, pass);
 
             if (loginError) throw loginError;
 
-            if (data.user) {
+            if (data?.user) {
                 const { data: profile, isAborted } = await authApi.getProfile(data.user.id);
 
                 if (isAborted) {
@@ -68,6 +76,8 @@ export const useLogin = () => {
                 } else {
                     throw new Error("حسابك موجود ولكن ملف التعريف غير مكتمل. يرجى التواصل مع الدعم.");
                 }
+            } else {
+                throw new Error("تعذر إتمام تسجيل الدخول. يرجى المحاولة مرة أخرى.");
             }
         } catch (err: unknown) {
             const parsed = parseError(err);
@@ -105,6 +115,11 @@ export const useRegister = () => {
                 throw new Error("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل");
             }
 
+            if (!isSupabaseConfigured) {
+                setError(AUTH_NOT_CONFIGURED_MSG);
+                return;
+            }
+
             // 2. Call Supabase API
             const { data, error } = await authApi.signUp(email, pass, companyName, fullName);
 
@@ -112,7 +127,7 @@ export const useRegister = () => {
                 throw error;
             }
 
-            if (data.user) {
+            if (data?.user) {
                 // Check if session exists (Auto login vs Email Confirmation)
                 if (data.session) {
                     navigate(ROUTES.DASHBOARD.ROOT, { replace: true });
@@ -201,6 +216,11 @@ export const useGoogleLogin = () => {
         setIsLoading(true);
         setError(null);
         try {
+            if (!isSupabaseConfigured) {
+                setError(AUTH_NOT_CONFIGURED_MSG);
+                setIsLoading(false);
+                return;
+            }
             await loginWithGoogle();
             // Redirect is handled by the browser
         } catch (err: unknown) {

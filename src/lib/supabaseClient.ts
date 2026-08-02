@@ -31,6 +31,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const isSupabasePlaceholder = !supabaseUrl || !supabaseAnonKey || !isValidSupabaseUrl(supabaseUrl);
 
+// Exported so UI/auth flows can detect missing configuration and show a clear
+// message instead of crashing on the mock client's null responses.
+export const isSupabaseConfigured = !isSupabasePlaceholder;
+
 // Custom fetch with timeout and retry logic
 // ⚡ PERFORMANCE FIX: Reduced timeout from 45s → 15s and retries from 3 → 1
 // Worst case before: 45s + 45s + 45s + ~7s backoff ≈ 142s per request
@@ -190,7 +194,14 @@ const createMockClient = () => {
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-      signInWithPassword: () => Promise.resolve({ data: null, error: null }),
+      // Must match the real client's shape ({ data: { user, session } }) — returning
+      // `data: null` here caused "Cannot read properties of null (reading 'user')"
+      // crashes in the login flow when env vars were missing.
+      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      signInWithOAuth: () => Promise.resolve({ data: { provider: null, url: null }, error: null }),
+      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      resetPasswordForEmail: () => Promise.resolve({ data: {}, error: null }),
+      updateUser: () => Promise.resolve({ data: { user: null }, error: null }),
       signOut: () => Promise.resolve({ error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
     },
