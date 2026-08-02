@@ -82,14 +82,14 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
         const srcHeaders = safeOptions.headers;
         const cleanHeaders = new Headers();
         const sanitize = (key: string, value: string): void => {
-          const cleanKey = key.replace(/[^\x00-\xFF]/g, '');
-          const cleanValue = value.replace(/[^\x00-\xFF]/g, '');
-          if (cleanKey && cleanValue) {
-            // Skip Authorization header if flagged for removal (JWT workaround)
-            if (cleanKey.toLowerCase() === 'authorization' && skipAuth) {
-              return;
-            }
+          const cleanKey = String(key ?? '').replace(/[^\x21-\x7E]/g, '').trim();
+          const cleanValue = String(value ?? '').replace(/[^\x00-\xFF]/g, '');
+          if (!cleanKey || !cleanValue) return;
+          if (cleanKey.toLowerCase() === 'authorization' && skipAuth) return;
+          try {
             cleanHeaders.set(cleanKey, cleanValue);
+          } catch {
+            // skip invalid headers silently
           }
         };
 

@@ -141,8 +141,13 @@ export const authApi = {
         }
 
         const [profileRes, roleRes] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', userId).single(),
-          supabase.from('user_company_roles').select('role, company_id, branch_id, companies(name_ar), branches(name)').eq('user_id', userId).single()
+          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+          supabase.from('user_company_roles')
+            .select('role, company_id, branch_id, created_at, companies:company_id(name_ar), branches:branch_id(name)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle()
         ]);
 
         if (profileRes.error) {
@@ -182,7 +187,7 @@ export const authApi = {
           avatar_url: profileData?.avatar_url || user?.user_metadata?.avatar_url,
           role: (roleRes.data as any)?.role || 'viewer',
           company_id: (roleRes.data as any)?.company_id,
-          company_name: (roleRes.data as any)?.companies?.name_ar,
+          company_name: (roleRes.data as any)?.companies?.name_ar || (roleRes.data as any)?.companies,
           branch_id: (roleRes.data as any)?.branch_id ?? null,
           branch_name: (roleRes.data as any)?.branches?.name ?? null,
         };
