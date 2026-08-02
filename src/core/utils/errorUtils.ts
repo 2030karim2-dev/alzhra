@@ -71,7 +71,6 @@ export const parseError = (error: any): AppError => {
         'high',
         'طلب إذن'
       );
-    case 'AuthApiError':
     case 'invalid_credentials':
       return new AppError(
         'بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.',
@@ -80,6 +79,32 @@ export const parseError = (error: any): AppError => {
         undefined,
         'medium'
       );
+    case 'AuthApiError': {
+      // Generic Supabase auth error without a specific machine-readable code.
+      // Only show "invalid credentials" when the underlying message actually
+      // indicates bad credentials; otherwise show a generic auth error so we
+      // don't mislead users whose credentials are correct.
+      if (
+        lowerMsg.includes('invalid login credentials') ||
+        lowerMsg.includes('invalid_credentials') ||
+        lowerMsg.includes('invalid email or password')
+      ) {
+        return new AppError(
+          'بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.',
+          'invalid_credentials',
+          401,
+          undefined,
+          'medium'
+        );
+      }
+      return new AppError(
+        `حدث خطأ في المصادقة${rawMessage ? ` (${rawMessage})` : ''}. يرجى المحاولة مرة أخرى.`,
+        code,
+        status,
+        undefined,
+        'medium'
+      );
+    }
     case 'AuthSessionMissingError':
       return new AppError(
         'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
