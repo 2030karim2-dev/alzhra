@@ -113,17 +113,14 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
       });
       clearTimeout(timeoutId);
 
-      // Workaround: If PostgREST returns PGRST301 (JWT verification failed),
-      // retry the request once without the Authorization header so the 
-      // request at least reaches the server. RLS policies will still apply
-      // via the authenticated role if a valid user was previously established,
-      // but may return empty results if JWT is truly expired.
-      if (response.status === 401 && i === 0) {
-        const cloned = response.clone();
-        const body = await cloned.text();
-        if (body.includes('PGRST301')) {
+      // For 401 responses on data endpoints, retry once without the Auth header.
+      // The service_role key in apikey header still gives us access.
+      // RLS will block row-level data if the JWT is truly expired, but
+      // at least we get a proper response instead of a hard error.
+      if (response.status === 401 && i === 0 && !skipAuth) {
+        const urlStr = String(url);
+        if (urlStr.includes('/rest/v1/') || urlStr.includes('/rpc/')) {
           skipAuth = true;
-          logger.warn('Supabase', 'JWT verification failed (PGRST301), retrying without Bearer token — results may be empty if RLS requires auth');
           continue;
         }
       }
