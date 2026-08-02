@@ -6,6 +6,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryApi } from '../../inventory/api';
+import { SharedProduct } from '../../../core/types/product';
 
 interface UseProductSearchOptions {
     companyId: string;
@@ -13,11 +14,7 @@ interface UseProductSearchOptions {
     enabled?: boolean;
 }
 
-export interface ProductSearchResult {
-    id: string;
-    name_ar: string;
-    sku: string;
-    sale_price: number;
+export interface ProductSearchResult extends SharedProduct {
     purchase_price: number;
     quantity: number;
     category?: string;

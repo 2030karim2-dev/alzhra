@@ -72,7 +72,7 @@ const PersonalProfile: React.FC = () => {
                             <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-3xl md:text-5xl font-black shadow-2xl shadow-indigo-500/30">
                                 {userInitial}
                             </div>
-                            <button className="absolute -bottom-2 -right-2 p-2.5 bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl text-gray-400 hover:text-indigo-600 hover:scale-110 active:scale-90 transition-all shadow-lg">
+                            <button className="absolute -bottom-2 -right-2 p-2.5 bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl text-gray-400 hover:text-indigo-600 hover:scale-110 active:scale-90 transition-all shadow-lg" aria-label="تغيير الصورة الشخصية">
                                 <Camera size={18} />
                             </button>
                         </div>

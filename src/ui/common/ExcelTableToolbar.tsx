@@ -22,7 +22,7 @@ interface ExcelTableToolbarProps {
     setShowShortcuts: (v: boolean) => void;
 }
 
-const ExcelTableToolbar: React.FC<ExcelTableToolbarProps> = ({
+const ExcelTableToolbar: React.FC<ExcelTableToolbarProps> = React.memo(({
     title,
     currentTheme,
     showSearch,
@@ -115,7 +115,7 @@ const ExcelTableToolbar: React.FC<ExcelTableToolbarProps> = ({
                         </div>
                     )}
                     {onExport && (
-                        <button onClick={onExport} className="p-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-600 hover:text-white transition-all rounded-lg shadow-sm">
+                        <button onClick={onExport} className="p-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-600 hover:text-white transition-all rounded-lg shadow-sm" aria-label="تصدير إلى إكسل">
                             <FileSpreadsheet size={16} />
                         </button>
                     )}
@@ -146,4 +146,5 @@ const ExcelTableToolbar: React.FC<ExcelTableToolbarProps> = ({
     );
 };
 
+export { ExcelTableToolbar };
 export default ExcelTableToolbar;

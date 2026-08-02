@@ -28,6 +28,7 @@ const AuditLogHeader: React.FC<AuditLogHeaderProps> = ({
                         onClick={onBack}
                         className="p-2.5 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm text-gray-500 hover:text-blue-500 transition-all active:scale-90"
                         title="رجوع للقائمة"
+                        aria-label="رجوع للقائمة"
                     >
                         <X size={18} />
                     </button>
@@ -84,6 +85,7 @@ const AuditLogHeader: React.FC<AuditLogHeaderProps> = ({
                         <button 
                             onClick={() => setIsMaximized(false)}
                             className="p-3 bg-rose-500 text-white rounded-2xl shadow-lg shadow-rose-500/20 transition-all active:scale-90"
+                            aria-label="إغلاق العرض الموسع"
                         >
                             <X size={20} />
                         </button>

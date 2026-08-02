@@ -27,10 +27,10 @@ const CategoryCard: React.FC<Props> = ({ category, onEdit, onDelete }) => {
         </div>
 
         <div className="flex gap-px bg-gray-100 dark:bg-slate-800 border dark:border-slate-800">
-          <button onClick={onEdit} className="p-1.5 bg-white dark:bg-slate-900 text-gray-400 hover:text-blue-500 transition-colors">
+          <button onClick={onEdit} className="p-1.5 bg-white dark:bg-slate-900 text-gray-400 hover:text-blue-500 transition-colors" aria-label="تعديل">
             <Edit size={12} />
           </button>
-          <button onClick={onDelete} className="p-1.5 bg-white dark:bg-slate-900 text-gray-400 hover:text-rose-500 transition-colors border-r dark:border-slate-800">
+          <button onClick={onDelete} className="p-1.5 bg-white dark:bg-slate-900 text-gray-400 hover:text-rose-500 transition-colors border-r dark:border-slate-800" aria-label="حذف">
             <Trash2 size={12} />
           </button>
         </div>

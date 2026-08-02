@@ -37,6 +37,7 @@ const AlertsSection: React.FC = () => {
                 <button
                     onClick={() => setIsVisible(false)}
                     className="p-1.5 text-rose-300 hover:text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                    aria-label="إخفاء التنبيه"
                 >
                     <X size={14} />
                 </button>

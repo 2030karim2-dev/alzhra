@@ -29,7 +29,7 @@ const JournalEntryRow: React.FC<JournalEntryRowProps> = ({ entry }) => {
         `}
             >
                 <td className="px-2 py-2 border-l border-gray-300 dark:border-slate-700 text-center w-10">
-                    <button className="p-1 rounded hover:bg-black/10 text-gray-500">
+                    <button className="p-1 rounded hover:bg-black/10 text-gray-500" aria-label={isExpanded ? 'طي' : 'توسيع'}>
                         {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </button>
                 </td>

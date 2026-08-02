@@ -63,7 +63,7 @@ const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, onClose
                             <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">تسجيل دفعة نقدية أو بنكية للمورد</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors" aria-label="إغلاق">
                         <X size={24} />
                     </button>
                 </div>
@@ -85,7 +85,7 @@ const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, onClose
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" onClick={() => setSelectedSupplier(null)} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 text-gray-400 hover:text-red-500 rounded-md transition-all shadow-sm">
+                                <button type="button" onClick={() => setSelectedSupplier(null)} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 text-gray-400 hover:text-red-500 rounded-md transition-all shadow-sm" aria-label="إزالة المورد">
                                     <X size={18} />
                                 </button>
                             </div>

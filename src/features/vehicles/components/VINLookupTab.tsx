@@ -53,7 +53,7 @@ const VINLookupTab: React.FC = () => {
                             />
                             <div className="absolute left-3 top-1/2 -translate-y-1/2">
                                 {vinInput.length > 0 && (
-                                    <button onClick={handleCopyVin} className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors" title="نسخ">
+                                    <button onClick={handleCopyVin} className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors" title="نسخ" aria-label="نسخ">
                                         {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} className="text-gray-400" />}
                                     </button>
                                 )}

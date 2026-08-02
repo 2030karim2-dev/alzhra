@@ -88,7 +88,7 @@ const CreateQuotationModal: React.FC<Props> = ({ onClose, onSuccess }) => {
                     <User size={14} className="text-indigo-600" />
                     <span className="text-sm font-bold text-gray-800 dark:text-slate-100 truncate">{selectedParty.name}</span>
                   </div>
-                  <button onClick={() => setSelectedParty(null)} className="p-1 hover:bg-white dark:hover:bg-slate-800 rounded text-gray-400 hover:text-rose-500 transition-all">
+                  <button onClick={() => setSelectedParty(null)} className="p-1 hover:bg-white dark:hover:bg-slate-800 rounded text-gray-400 hover:text-rose-500 transition-all" aria-label="إزالة العميل">
                     <X size={14} />
                   </button>
                 </div>

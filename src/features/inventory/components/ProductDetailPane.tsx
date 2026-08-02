@@ -79,6 +79,7 @@ const ProductDetailPane: React.FC<Props> = ({ product, onEdit, onDelete, onClose
               onClick={onClose} 
               className="p-1.5 text-slate-400 hover:text-rose-500 rounded transition-colors"
               title="إغلاق"
+              aria-label="إغلاق"
             >
               <X size={16} />
             </button>

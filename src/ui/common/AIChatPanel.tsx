@@ -66,10 +66,10 @@ const AIChatPanel: React.FC<Props> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div className="relative flex items-center gap-1">
-                        <button onClick={clearChat} className="p-2 hover:bg-white/10 rounded-xl transition-colors" title="مسح المحادثة">
+                        <button onClick={clearChat} className="p-2 hover:bg-white/10 rounded-xl transition-colors" title="مسح المحادثة" aria-label="مسح المحادثة">
                             <Trash2 size={16} />
                         </button>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors" aria-label="إغلاق">
                             <X size={18} />
                         </button>
                     </div>

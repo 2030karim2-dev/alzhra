@@ -146,6 +146,7 @@ const ProductDetailModal: React.FC<Props> = ({ product, onClose, onEdit, onDelet
                             type="button"
                             onClick={handleClose}
                             className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg bg-transparent transition-all active:scale-95 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                            aria-label="إغلاق"
                         >
                             <X size={16} />
                         </button>

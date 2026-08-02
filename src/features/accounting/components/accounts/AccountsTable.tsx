@@ -77,11 +77,11 @@ const AccountTreeRow: React.FC<{ node: any; level: number; onToggle: (id: string
                 {/* Actions */}
                 <td className="p-2 border-b border-gray-100 dark:border-slate-800 text-center">
                     <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-none" title="عرض كشف الحساب">
+                        <button className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-none" title="عرض كشف الحساب" aria-label="عرض كشف الحساب">
                             <FileText size={12} />
                         </button>
                         {!node.is_system && (
-                            <button onClick={() => onDelete(node.id, node.is_system)} className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-none">
+                            <button onClick={() => onDelete(node.id, node.is_system)} className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-none" aria-label="حذف الحساب">
                                 <Trash2 size={12} />
                             </button>
                         )}

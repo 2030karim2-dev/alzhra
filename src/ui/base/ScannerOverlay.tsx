@@ -89,7 +89,7 @@ const ScannerOverlay: React.FC<Props> = ({ onScan: _onScan, onClose }) => {
           <div className="p-2 bg-blue-600 rounded-xl"><Scan size={20} /></div>
           <span className="text-[10px] font-bold uppercase tracking-widest">Vision Scanner Pro</span>
         </div>
-        <button onClick={onClose} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><X size={24} /></button>
+        <button onClick={onClose} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors" aria-label="إغلاق الماسح"><X size={24} /></button>
       </div>
 
       <div className="flex-1 relative flex items-center justify-center overflow-hidden">

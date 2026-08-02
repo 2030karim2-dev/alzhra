@@ -71,6 +71,7 @@ const BranchFormModal: React.FC<BranchFormModalProps> = ({
           <button
             onClick={onClose}
             className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+            aria-label="إغلاق"
           >
             <X size={18} />
           </button>

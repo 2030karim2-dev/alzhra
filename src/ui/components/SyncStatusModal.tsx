@@ -74,6 +74,7 @@ const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClose }) =>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                        aria-label="إغلاق"
                     >
                         <X size={20} className="text-slate-500" />
                     </button>

@@ -232,6 +232,7 @@ export const AdvancedReturnModal: React.FC<AdvancedReturnModalProps> = ({
                             className="p-2 hover:bg-red-100 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"
                             onClick={onClose}
                             title="إغلاق (Esc)"
+                            aria-label="إغلاق"
                         >
                             <X size={18} />
                         </button>

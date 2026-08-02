@@ -47,6 +47,7 @@ const FeedbackToast: React.FC = () => {
                 <button
                   onClick={() => hideToast(toast.id)}
                   className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-[var(--app-text-secondary)] hover:text-rose-500 transition-colors"
+                  aria-label="إخفاء الإشعار"
                 >
                   <X size={14} />
                 </button>

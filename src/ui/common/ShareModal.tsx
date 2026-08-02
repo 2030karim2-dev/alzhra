@@ -106,7 +106,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
                                 </div>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors" aria-label="إغلاق">
                             <X className="w-5 h-5 text-slate-400" />
                         </button>
                     </div>

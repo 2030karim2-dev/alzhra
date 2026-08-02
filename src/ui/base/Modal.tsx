@@ -256,6 +256,7 @@ const Modal: React.FC<ModalProps> = ({
               type="button"
               onClick={onClose}
               className="p-2 text-[var(--app-text-secondary)] hover:text-red-500 active:scale-90 transition-all rounded-full"
+              aria-label="إغلاق"
             >
               <X size={20} />
             </button>

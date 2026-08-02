@@ -52,6 +52,7 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
                 <button
                     onClick={onClose}
                     className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                    aria-label="إغلاق"
                 >
                     <X size={15} />
                 </button>

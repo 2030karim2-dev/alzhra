@@ -18,7 +18,7 @@ const VehicleModal: React.FC<Props> = ({ vehicle, onClose, onSave }) => {
             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-xl border dark:border-slate-800 flex flex-col max-h-[90vh]">
                 <div className="flex justify-between items-center p-4 border-b dark:border-slate-800">
                     <h3 className="text-lg font-bold">{vehicle ? 'تعديل مركبة' : 'إضافة مركبة جديدة'}</h3>
-                    <button onClick={onClose}><X size={20} /></button>
+                    <button onClick={onClose} aria-label="إغلاق"><X size={20} /></button>
                 </div>
                 <div className="p-4 space-y-4 overflow-y-auto">
                     <div className="grid grid-cols-2 gap-4">

@@ -73,6 +73,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 <button 
                   onClick={() => onPageSearchChange('')}
                   className={`absolute top-2.5 text-blue-400 hover:text-rose-500 transition-colors ${dir === 'rtl' ? 'left-3' : 'right-3'}`}
+                  aria-label="مسح البحث"
                 >
                   <X size={14} />
                 </button>
@@ -95,6 +96,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   type="button"
                   onClick={() => setGlobalSearchVal('')}
                   className={`absolute top-2.5 text-gray-400 hover:text-rose-500 transition-colors ${dir === 'rtl' ? 'left-3' : 'right-3'}`}
+                  aria-label="مسح البحث"
                 >
                   <X size={14} />
                 </button>

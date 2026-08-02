@@ -153,7 +153,7 @@ const InventoryPage: React.FC = () => {
                             <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
                                 <div className="p-3 border-b flex justify-between items-center bg-gray-50 dark:bg-slate-950/50">
                                     <h3 className="font-bold flex items-center gap-2 text-purple-600"><Sparkles size={16} /> الاستيراد الذكي (AI)</h3>
-                                    <button onClick={() => setShowSmartImport(false)} className="p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-lg">
+                                    <button onClick={() => setShowSmartImport(false)} className="p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-lg" aria-label="إغلاق">
                                         <X size={16} />
                                     </button>
                                 </div>

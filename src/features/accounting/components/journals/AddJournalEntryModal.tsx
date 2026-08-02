@@ -52,7 +52,7 @@ const AddJournalEntryModal: React.FC<AddJournalEntryModalProps> = ({ isOpen, onC
                             <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">إنشاء قيد محاسبي يدوي في دفتر اليومية</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors" aria-label="إغلاق">
                         <X size={24} />
                     </button>
                 </div>

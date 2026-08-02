@@ -108,6 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onCloseMobile}
             className="p-2 text-[var(--app-text-secondary)] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all active:scale-90"
+            aria-label="إغلاق القائمة"
           >
             <X size={22} />
           </button>

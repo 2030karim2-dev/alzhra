@@ -97,7 +97,7 @@ const AccountingPage: React.FC = () => {
             />
           </div>
         </div>
-        <button className="p-1 text-blue-400 hover:text-blue-600 transition-colors">
+        <button className="p-1 text-blue-400 hover:text-blue-600 transition-colors" aria-label="تحديث">
           <RefreshCw size={12} />
         </button>
       </div>

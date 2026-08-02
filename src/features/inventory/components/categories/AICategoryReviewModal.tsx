@@ -125,7 +125,7 @@ const AICategoryReviewModal: React.FC<Props> = ({ isOpen, onClose, onComplete })
                             <p className="text-[10px] text-gray-500">يقوم الذكاء الاصطناعي بتحليل أسماء المنتجات واقتراح التصنيف الأفضل لها.</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white" aria-label="إغلاق">
                         <X size={20} />
                     </button>
                 </div>

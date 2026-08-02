@@ -58,10 +58,10 @@ const MicroReturnCard: React.FC<Props> = ({ data, onView }) => {
         </div>
 
         <div className="flex items-center gap-1">
-          <button onClick={() => onView(data.id)} className="p-2 bg-white dark:bg-slate-700 text-blue-600 rounded-xl shadow-sm active:scale-90 transition-all border border-gray-100 dark:border-slate-600">
+          <button onClick={() => onView(data.id)} className="p-2 bg-white dark:bg-slate-700 text-blue-600 rounded-xl shadow-sm active:scale-90 transition-all border border-gray-100 dark:border-slate-600" aria-label="عرض التفاصيل">
             <Eye size={14} />
           </button>
-          <button className="p-2 bg-white dark:bg-slate-700 text-gray-400 rounded-xl shadow-sm active:scale-90 transition-all border border-gray-100 dark:border-slate-600">
+          <button className="p-2 bg-white dark:bg-slate-700 text-gray-400 rounded-xl shadow-sm active:scale-90 transition-all border border-gray-100 dark:border-slate-600" aria-label="طباعة">
             <Printer size={14} />
           </button>
         </div>

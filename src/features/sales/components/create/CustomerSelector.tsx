@@ -58,6 +58,7 @@ const CustomerSelector: React.FC<Props> = ({ compact = false }) => {
           <button
             onClick={() => setCustomer(null)}
             className="p-1 hover:bg-white dark:hover:bg-slate-800 rounded text-gray-400 hover:text-rose-500 transition-all"
+            aria-label="إزالة العميل"
           >
             <X size={compact ? 14 : 18} />
           </button>

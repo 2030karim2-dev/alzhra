@@ -47,7 +47,7 @@ const ProductImageUploader: React.FC<Props> = ({ setValue, watch }) => {
             imagePreview && "border-solid border-blue-500 shadow-lg"
         )}>
           {imagePreview ? (
-            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+            <img src={imagePreview} alt="معاينة الصورة" loading="lazy" className="w-full h-full object-cover" />
           ) : (
             <div className="flex flex-col items-center gap-1 text-gray-300 dark:text-slate-700">
               <Camera size={28} />
@@ -59,7 +59,7 @@ const ProductImageUploader: React.FC<Props> = ({ setValue, watch }) => {
           </label>
         </div>
         {imagePreview && (
-          <button type="button" onClick={clearImage} className="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all z-10">
+          <button type="button" onClick={clearImage} className="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all z-10" aria-label="إزالة الصورة">
             <X size={14} />
           </button>
         )}

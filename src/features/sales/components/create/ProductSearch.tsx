@@ -58,6 +58,7 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onSelectProduct, }) => {
                     <button
                         onClick={() => setSearchTerm('')}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        aria-label="مسح البحث"
                     >
                         <X size={18} />
                     </button>

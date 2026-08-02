@@ -142,7 +142,7 @@ const CreatePurchaseQuotationModal: React.FC<Props> = ({ onClose, onSuccess, rfq
                     <Building2 size={14} className="text-violet-600" />
                     <span className="text-sm font-bold text-gray-800 dark:text-slate-100 truncate">{selectedParty.name}</span>
                   </div>
-                  <button onClick={() => setSelectedParty(null)} className="p-1 hover:bg-white dark:hover:bg-slate-800 rounded text-gray-400 hover:text-rose-500 transition-all">
+                  <button onClick={() => setSelectedParty(null)} className="p-1 hover:bg-white dark:hover:bg-slate-800 rounded text-gray-400 hover:text-rose-500 transition-all" aria-label="إزالة المورد">
                     <X size={14} />
                   </button>
                 </div>

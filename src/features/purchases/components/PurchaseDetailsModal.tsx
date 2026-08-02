@@ -127,13 +127,13 @@ const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ invoiceId, 
                     </div>
                     <div className="flex items-center gap-2">
                         {/* Resize Controls */}
-                        <button onClick={handleDecreaseSize} disabled={modalSize === 'lg'} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-30" title="تصغير">
+                        <button onClick={handleDecreaseSize} disabled={modalSize === 'lg'} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-30" title="تصغير" aria-label="تصغير النافذة">
                             <Minimize2 size={18} />
                         </button>
-                        <button onClick={handleIncreaseSize} disabled={modalSize === 'full'} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-30" title="تكبير">
+                        <button onClick={handleIncreaseSize} disabled={modalSize === 'full'} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-30" title="تكبير" aria-label="تكبير النافذة">
                             <Maximize2 size={18} />
                         </button>
-                        <button onClick={toggleFullscreen} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title={modalSize === 'full' ? 'خروج' : 'ملء الشاشة'}>
+                        <button onClick={toggleFullscreen} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title={modalSize === 'full' ? 'خروج' : 'ملء الشاشة'} aria-label={modalSize === 'full' ? 'خروج من ملء الشاشة' : 'ملء الشاشة'}>
                             {modalSize === 'full' ? <Shrink size={18} /> : <Expand size={18} />}
                         </button>
                         <button
@@ -148,10 +148,11 @@ const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ invoiceId, 
                             onClick={handlePrint}
                             className="p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-all shadow-sm"
                             title="طباعة"
+                            aria-label="طباعة"
                         >
                             <Printer size={20} />
                         </button>
-                        <button onClick={onClose} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
+                        <button onClick={onClose} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all" aria-label="إغلاق">
                             <X size={24} />
                         </button>
                     </div>

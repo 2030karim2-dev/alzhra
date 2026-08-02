@@ -100,7 +100,7 @@ const PurchaseMeta: React.FC = () => {
                             <User size={12} className="text-blue-200" />
                             <span className="text-[11px] font-bold uppercase">المورد: {supplier.name}</span>
                         </div>
-                        <button onClick={() => { setSupplier(null); }} className="p-1 hover:bg-white/10 rounded"><X size={14} /></button>
+                        <button onClick={() => { setSupplier(null); }} className="p-1 hover:bg-white/10 rounded" aria-label="إزالة المورد"><X size={14} /></button>
                     </div>
                 ) : (
                     <div className="relative">

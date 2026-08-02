@@ -34,6 +34,7 @@ export const WizardDraggableHeader: React.FC<Props> = ({ returnType, handleMouse
             <button
                 onClick={onClose}
                 className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-lg transition-colors no-drag relative z-10"
+                aria-label="إغلاق"
             >
                 <X size={24} />
             </button>

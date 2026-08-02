@@ -105,7 +105,7 @@ export const AuditModal: React.FC<Props> = ({ onClose }) => {
                             <p className="text-sm text-gray-500">مراجعة توازن القيود واكتشاف الأخطاء</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-400 hover:text-red-500">
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-400 hover:text-red-500" aria-label="إغلاق">
                         <X size={20} />
                     </button>
                 </div>
