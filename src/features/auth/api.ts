@@ -68,30 +68,20 @@ export const authApi = {
   },
 
   getProfile: async (userId: string): Promise<{ data: any, error: any, isAborted?: boolean }> => {
-    // Deduplicate in-flight requests only (avoid concurrent calls racing).
-    // On failure, clear the cached promise so a retry can issue a fresh request.
     if (profileRequests.has(userId)) {
       return profileRequests.get(userId)!;
     }
 
     const fetchPromise = (async () => {
       try {
-        // 1. Try RPC first
         const { data, error } = await (supabase.rpc as any)('get_user_profile', {
           p_user_id: userId,
         });
 
-        if (!error && data && Object.keys(data).length > 2) {
-          // Fetch email from session as RPC does not return it
+        if (!error && data && Array.isArray(data.companies) && data.companies.length > 0) {
           const { data: authData } = await supabase.auth.getUser();
           const user = authData?.user ?? null;
 
-          if (!Array.isArray(data.companies) || data.companies.length === 0) {
-            logger.warn('Auth', 'RPC returned profile with no companies, falling back');
-            throw new Error('No companies in profile');
-          }
-
-          // Sort companies by joined_at/created_at ASC (oldest first = original company with data)
           const companies = [...data.companies].sort((a, b) => {
             const dateA = a.joined_at ? new Date(a.joined_at).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
             const dateB = b.joined_at ? new Date(b.joined_at).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
@@ -100,44 +90,26 @@ export const authApi = {
 
           const firstCompany = companies[0];
 
-          if (!firstCompany?.company_id) {
-            logger.error('Auth', 'Profile loaded but company_id is missing — all data queries will be disabled', {
-              userId: data.id,
-              companiesCount: companies.length
-            });
-          }
-
-          const flatData = {
-            id: data.id,
-            email: user?.email || '',
-            full_name: data.full_name || user?.user_metadata?.full_name || '',
-            avatar_url: data.avatar_url || user?.user_metadata?.avatar_url,
-            role: firstCompany?.role || 'viewer',
-            company_id: firstCompany?.company_id,
-            company_name: firstCompany?.company_name,
-            branch_id: firstCompany?.branch_id ?? null,
-            branch_name: firstCompany?.branch_name ?? null,
+          return {
+            data: {
+              id: data.id,
+              email: user?.email || '',
+              full_name: data.full_name || user?.user_metadata?.full_name || '',
+              avatar_url: data.avatar_url || user?.user_metadata?.avatar_url,
+              role: firstCompany?.role || 'viewer',
+              company_id: firstCompany?.company_id,
+              company_name: firstCompany?.company_name,
+              branch_id: firstCompany?.branch_id ?? null,
+              branch_name: firstCompany?.branch_name ?? null,
+            },
+            error: null
           };
-
-          return { data: flatData, error: null };
         }
 
-        // 2. Fallback: Manual fetch if RPC fails (e.g. timeout or connection closed)
         if (error) {
-          // ⚡ Skip warning for abortions as they are expected during concurrency
           const isAbort = error.name === 'AbortError' || error.message?.includes('aborted') || error.message === 'signal is aborted without reason';
-
-          if (isAbort) {
-            return { data: null, error: null, isAborted: true };
-          }
-
-          logger.warn('Auth', `RPC get_user_profile failed (${error.code}: ${error.message}), failing back to manual`, {
-            code: error.code,
-            message: error.message,
-            details: error.details
-          });
-        } else {
-          logger.warn('Auth', 'RPC get_user_profile returned incomplete data, attempting manual fallback');
+          if (isAbort) return { data: null, error: null, isAborted: true };
+          logger.warn('Auth', 'RPC get_user_profile failed, falling back to direct query', { message: error.message });
         }
 
         const [profileRes, roleRes] = await Promise.all([

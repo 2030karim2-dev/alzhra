@@ -24,15 +24,15 @@ if (import.meta.env.PROD) {
       typeof args[0] === 'string' &&
       (args[0].includes('rest/v1') || args[0].includes('rpc/'))
     ) {
-      // It's a failed Supabase request
+      if (response.status === 401) {
+        return response;
+      }
+
       const cloned = response.clone();
       try {
         const data = await cloned.json();
         if (data && (data.code || data.message || data.details)) {
-          // Log silently
           logger.error('DB_ERROR_SILENT', 'Underlying database error intercepted', data);
-
-          // Modify the response body to return a generic message
           data.message = "حدث خطأ غير متوقع أثناء معالجة البيانات، المرجو المحاولة لاحقاً.";
           return new Response(JSON.stringify(data), {
             status: response.status,
