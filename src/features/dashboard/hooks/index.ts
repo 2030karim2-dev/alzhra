@@ -14,16 +14,6 @@ import type {
 } from '../models';
 import { useBranchFilter } from '../../branches/hooks/useBranchFilter';
 
-// Re-export specific hooks from the old structure for backwards compatibility
-export {
-  useSalesChart,
-  useInventoryChart,
-  useRecentActivity,
-  useTopProducts,
-  useTopCustomers,
-  useDashboardAlerts,
-} from './useDashboard';
-
 // ------------------------------------------
 // Type definitions for raw RPC data
 // ------------------------------------------
@@ -35,6 +25,7 @@ interface RawSummary {
   payment_bonds?: number | string;
   total_debts?: number | string;
   total_supplier_debts?: number | string;
+  invoice_count?: number;
 }
 
 interface RawTrialBalanceRow {
@@ -199,7 +190,7 @@ export const useDashboardData = (): UseDashboardDataResult => {
         debts: formatCurrency(
           toNumber(summary.total_debts) + toNumber(summary.total_supplier_debts),
         ),
-        invoices: '0',
+        invoices: String(toNumber(summary.invoice_count) || invoiceCount || '0'),
         profit: formatCurrency(netProfit),
         netCash: formatCurrency(netCashPosition),
         salesTrend: Math.round(insightsResult.salesTrend * 10) / 10,

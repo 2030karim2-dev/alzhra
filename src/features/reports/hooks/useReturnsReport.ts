@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSalesReturns } from '../../sales/hooks/useSalesReturns';
 import { usePurchaseReturns } from '../../purchases/hooks/usePurchaseReturns';
 import { exportReturnsToExcel } from '../../../core/utils/returnsExcelExporter';
+import { useCompany } from '../../settings/hooks';
 
 export type DateRange = 'today' | 'week' | 'month' | 'year' | 'custom';
 export type ReturnsType = 'all' | 'sales' | 'purchase';
@@ -24,6 +25,7 @@ export const useReturnsReport = () => {
         reason: 'all'
     });
     const [reportView, setReportView] = useState<ReportView>('overview');
+    const { data: company } = useCompany();
 
     // Calculate date range
     const dateRange = useMemo(() => {
@@ -178,7 +180,7 @@ export const useReturnsReport = () => {
                 [...filteredSalesReturns, ...filteredPurchaseReturns];
 
         const excelData = {
-            companyName: 'Al-Zahra Smart',
+            companyName: company?.name_ar || 'Al-Zahra Smart',
             returns: returns.map((r: any) => ({
                 invoiceNumber: r.invoice_number,
                 issueDate: r.issue_date,

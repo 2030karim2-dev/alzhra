@@ -16,6 +16,7 @@ export const calculateDashboardInsights = (data: {
 }) => {
     const { 
         totalSales = 0, 
+        salesTarget = 100000,
         invoicesData = [], 
         expensesData = [], 
         lowStockProducts = [], 
@@ -120,7 +121,7 @@ export const calculateDashboardInsights = (data: {
         });
     }
 
-    const salesProgress = totalSales > 0 ? Math.min(100, (totalSales / 100000) * 100) : 0;
+    const salesProgress = totalSales > 0 ? Math.min(100, (totalSales / salesTarget) * 100) : 0;
     insights.push({
         id: 'target',
         type: 'target' as const,

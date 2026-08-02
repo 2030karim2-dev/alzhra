@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Product } from '../inventory/types';
 import { useDiscountStore } from '../settings/taxDiscountStore';
 import { convertCurrency } from '../../core/utils/currencyUtils';
@@ -69,7 +70,9 @@ const createNewItem = (): SalesCartItem => ({
   costPrice: 0,
 });
 
-export const useSalesStore = create<SalesState>((set, get) => ({
+export const useSalesStore = create<SalesState>()(
+  persist(
+    (set, get) => ({
   items: [],
   selectedCustomer: null,
   summary: { subtotal: 0, discountAmount: 0, totalAmount: 0 },
@@ -294,4 +297,7 @@ export const useSalesStore = create<SalesState>((set, get) => ({
     summary: { subtotal: 0, discountAmount: 0, totalAmount: 0 },
     invoiceType: 'cash'
   }))
-}));
+    }),
+    { name: 'al-zahra-sales-cart', partialize: (state) => ({ items: state.items, selectedCustomer: state.selectedCustomer, invoiceType: state.invoiceType }) }
+  )
+);

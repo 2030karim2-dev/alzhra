@@ -3,6 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import ContentContainer from '../../ui/layout/ContentContainer';
 import { useDashboardMetrics } from './hooks/useDashboardMetrics';
 import { useTranslation } from '../../lib/hooks/useTranslation';
+import { useAuthStore } from '../auth/store';
 
 import MicroHeader from '../../ui/base/MicroHeader';
 import ChartSkeleton from '../../ui/base/ChartSkeleton';
@@ -80,6 +81,7 @@ const DashboardPage: React.FC = () => {
         growthRate,
         salesValue
     } = useDashboardMetrics();
+    const { user } = useAuthStore();
 
     if (isLoading) return <DashboardLoading />;
     if (isError) return <DashboardError refetch={refetch} isFetching={isFetching} />;
@@ -171,7 +173,7 @@ const DashboardPage: React.FC = () => {
                         <Suspense fallback={<div className="h-40 min-h-[160px] animate-pulse bg-[var(--app-surface)] rounded-2xl" />}>
                             <PerformanceGauge
                                 value={salesValue}
-                                target={100000}
+                                target={targets?.salesTarget || 100000}
                                 title="هدف المبيعات الشهري"
                             />
                         </Suspense>
@@ -209,7 +211,7 @@ const DashboardPage: React.FC = () => {
                         </Suspense>
 
                         <Suspense fallback={null}>
-                            <CustomerSegmentation companyId="" />
+                            <CustomerSegmentation companyId={user?.company_id || ''} />
                         </Suspense>
 
                         <Suspense fallback={null}>
