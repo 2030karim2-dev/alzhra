@@ -154,15 +154,30 @@ export const reportsService = {
       .not('currency_code', 'is', null)
       .neq('currency_code', baseCurrency);
 
-    // 3. Map into the format expected by CurrencyDiffView
-    // ⚡ unrealizedGain is now 0 — will be calculated from real exchange rates when implemented
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // 3. Fetch current exchange rates for unrealized gain calculation
+    const { data: rates } = await supabase
+      .from('exchange_rates')
+      .select('currency_code, rate_to_base')
+      .eq('company_id', companyId)
+      .order('effective_date', { ascending: false });
+
+    const rateMap: Record<string, number> = {};
+    (rates || []).forEach((r: any) => {
+      if (!rateMap[r.currency_code]) rateMap[r.currency_code] = r.rate_to_base;
+    });
+
+    // 4. Map with actual unrealized gain calculation
+    // We use the formula: unrealizedGain = balance * (currentRate - 1)
+    // For foreign currency accounts: if rate is 3.75 SAR/YER, holding 1000 YER = 3750 SAR value
+    // If original recorded at rate 3.80, unrealized gain = 1000 * (3.75 - 3.80) = -50 (loss)
     return (accounts || []).map((a: any): CurrencyAccount => ({
       id: a.id,
       name: a.name_ar,
       currency_code: a.currency_code,
       balance: Math.abs(a.balance || 0),
-      unrealizedGain: 0 // ⚡ Previously Math.random() — now 0 until revaluation is implemented
+      unrealizedGain: a.currency_code !== baseCurrency && rateMap[a.currency_code]
+        ? Math.round(Math.abs(a.balance || 0) * (rateMap[a.currency_code] - 1) * 100) / 100
+        : 0
     }));
   },
 

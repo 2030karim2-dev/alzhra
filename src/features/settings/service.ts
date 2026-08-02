@@ -93,33 +93,63 @@ export const settingsService = {
         if (error) throw error;
     },
 
-    // LocalStorage helpers for Backup Config (Client preference)
-    getAutoBackupConfig: (): AutoBackupConfig => {
+    // Backup Config - Supabase primary, localStorage fallback
+    getAutoBackupConfig: async (companyId?: string): Promise<AutoBackupConfig> => {
+        if (companyId) {
+            try {
+                const { data } = await supabase.from('backup_configs').select('*').eq('company_id', companyId).single();
+                if (data) return { enabled: data.auto_backup_enabled, frequency: data.backup_frequency_hours <= 24 ? 'daily' : 'weekly', retentionDays: 30, includeImages: false, lastBackupStatus: data.last_backup_at ? 'success' : 'idle' };
+            } catch {}
+        }
         const stored = localStorage.getItem('alz_auto_backup');
         return stored ? JSON.parse(stored) : { enabled: true, frequency: 'daily', retentionDays: 30, includeImages: false, lastBackupStatus: 'idle' };
     },
 
-    saveAutoBackupConfig: (config: AutoBackupConfig) => {
+    saveAutoBackupConfig: async (config: AutoBackupConfig, companyId?: string) => {
         localStorage.setItem('alz_auto_backup', JSON.stringify(config));
+        if (companyId) {
+            try {
+                await supabase.from('backup_configs').upsert({
+                    company_id: companyId,
+                    auto_backup_enabled: config.enabled,
+                    backup_frequency_hours: config.frequency === 'daily' ? 24 : 168,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'company_id' });
+            } catch {}
+        }
     },
 
-    getStorageStats: () => {
-        return {
-            totalRecords: 0,
-            details: {},
-            lastSync: new Date().toISOString(),
-            spaceUsed: 'DB Managed',
-            spaceLimit: 'Unlimited'
-        };
+    getStorageStats: async (companyId?: string) => {
+        try {
+            const { count: products } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('company_id', companyId);
+            const { count: invoices } = await supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('company_id', companyId);
+            const { count: parties } = await supabase.from('parties').select('*', { count: 'exact', head: true }).eq('company_id', companyId);
+            const totalRecords = (products || 0) + (invoices || 0) + (parties || 0);
+            return { totalRecords, details: { products, invoices, parties }, lastSync: new Date().toISOString(), spaceUsed: `${(totalRecords / 1000).toFixed(1)}K records`, spaceLimit: 'Unlimited' };
+        } catch {
+            return { totalRecords: 0, details: {}, lastSync: new Date().toISOString(), spaceUsed: 'DB Managed', spaceLimit: 'Unlimited' };
+        }
     },
 
-    getBackupLogs: (): { id: string; action: string; size: string; time: string; status: string; icon: string }[] => {
+    getBackupLogs: async (companyId?: string): Promise<{ id: string; action: string; size: string; time: string; status: string; icon: string }[]> => {
+        if (companyId) {
+            try {
+                const { data } = await supabase.from('backup_logs').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(20);
+                if (data) return data.map(log => ({
+                    id: log.id, action: log.backup_type === 'google_drive' ? 'نسخ سحابي' : 'نسخ محلي',
+                    size: log.file_size_bytes ? `${(log.file_size_bytes / 1024).toFixed(1)} KB` : '--',
+                    time: new Date(log.created_at).toLocaleString('ar-SA'),
+                    status: log.status === 'success' ? 'Success' : 'Error',
+                    icon: log.backup_type === 'google_drive' ? 'cloud' : 'file'
+                }));
+            } catch {}
+        }
         const logs = localStorage.getItem('alz_backup_logs');
         return logs ? JSON.parse(logs) : [];
     },
 
-    addBackupLog: (action: string, size: string, status: 'Success' | 'Error') => {
-        const logs = settingsService.getBackupLogs();
+    addBackupLog: async (action: string, size: string, status: 'Success' | 'Error', companyId?: string, userId?: string) => {
+        const logs = await settingsService.getBackupLogs(companyId);
         const newLog = {
             id: Date.now().toString(),
             action,
@@ -129,6 +159,20 @@ export const settingsService = {
             icon: action.includes('Google') ? 'CloudSync' : 'HardDrive'
         };
         localStorage.setItem('alz_backup_logs', JSON.stringify([newLog, ...logs].slice(0, 10)));
+
+        // Also save to Supabase
+        if (companyId) {
+            try {
+                await supabase.from('backup_logs').insert({
+                    company_id: companyId,
+                    user_id: userId,
+                    backup_type: action.includes('Google') ? 'google_drive' : 'manual',
+                    file_name: action,
+                    file_size_bytes: size !== '--' ? parseFloat(size) * 1024 : null,
+                    status: status === 'Success' ? 'success' : 'failed',
+                });
+            } catch {}
+        }
     },
 
     exportSystemData: async () => {

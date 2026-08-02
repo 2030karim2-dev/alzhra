@@ -44,10 +44,12 @@ interface RawDashboardData {
   summary: RawSummary;
   salesChart: unknown[];
   topData: RawTopData;
-  // ⚡ These are now pre-computed by Postgres RPCs:
   lowStockProducts: LowStockProduct[];
   categoryData: ChartDataPoint[];
   trialBalanceRows: unknown[];
+  recentInvoices: any[];
+  recentExpenses: any[];
+  overdueInvoices: any[];
 }
 
 // ------------------------------------------
@@ -175,10 +177,10 @@ export const useDashboardData = (): UseDashboardDataResult => {
       netProfit,
       totalDebts: toNumber(summary.total_debts),
       totalSupplierDebts: toNumber(summary.total_supplier_debts),
-      invoicesData: [],
-      expensesData: [],
+      invoicesData: rawDataQuery.data.recentInvoices || [],
+      expensesData: rawDataQuery.data.recentExpenses || [],
       lowStockProducts: safeLowStockProducts,
-      overdueInvoices: [],
+      overdueInvoices: rawDataQuery.data.overdueInvoices || [],
     });
 
     // Assemble final payload directly from RPC data

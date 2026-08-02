@@ -66,13 +66,46 @@ export const dashboardApi = {
                 p_from: currentYearStart,
                 p_to: dateTo,
                 p_branch_id: branchId || null
-            } as any).abortSignal(signal as any)
+            } as any).abortSignal(signal as any),
+
+            // 7. Recent Invoices for insights
+            supabase.from('invoices').select('id,invoice_number,total_amount,paid_amount,issue_date,due_date,status,type')
+                .eq('company_id', companyId)
+                .gte('issue_date', dateFrom)
+                .lte('issue_date', dateTo)
+                .neq('status', 'void')
+                .is('deleted_at', null)
+                .order('issue_date', { ascending: false })
+                .limit(100)
+                .abortSignal(signal as any),
+
+            // 8. Recent Expenses for insights
+            supabase.from('expenses').select('id,amount,description,expense_date,status')
+                .eq('company_id', companyId)
+                .gte('expense_date', dateFrom)
+                .lte('expense_date', dateTo)
+                .eq('status', 'posted')
+                .is('deleted_at', null)
+                .order('expense_date', { ascending: false })
+                .limit(100)
+                .abortSignal(signal as any),
+
+            // 9. Overdue Invoices
+            supabase.from('invoices').select('id,invoice_number,total_amount,paid_amount,due_date,party_id,parties(name)')
+                .eq('company_id', companyId)
+                .eq('type', 'sale')
+                .in('status', ['posted', 'partially_paid'])
+                .lt('due_date', new Date().toISOString().split('T')[0])
+                .is('deleted_at', null)
+                .order('due_date', { ascending: true })
+                .limit(50)
+                .abortSignal(signal as any)
         ]);
 
         const firstError = batch.find((res: any) => res.error)?.error;
         if (firstError) throw firstError;
 
-        const [summaryRes, chartRes, topRes, lowStockRes, categoryRes, trialBalanceRes] = batch;
+        const [summaryRes, chartRes, topRes, lowStockRes, categoryRes, trialBalanceRes, recentInvoicesRes, recentExpensesRes, overdueInvoicesRes] = batch;
 
         return {
             summary: summaryRes.data || {},
@@ -81,15 +114,18 @@ export const dashboardApi = {
             lowStockProducts: (lowStockRes.data || []).map((p: any) => ({
                 id: p.id,
                 name: p.name_ar,
-                quantity: Number(p.quantity),
-                min_quantity: Number(p.min_quantity)
+                quantity: Number(p.total_stock),
+                min_quantity: Number(p.min_stock_level)
             })),
             categoryData: (categoryRes.data || []).map((c: any, i: number) => ({
-                name: c.category_name,
-                value: Number(c.total_amount),
-                color: ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa'][i % 6]
+                name: c.name,
+                value: Number(c.value),
+                color: c.color || ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa'][i % 6]
             })),
-            trialBalanceRows: (trialBalanceRes.data as any)?.rows || []
+            trialBalanceRows: (trialBalanceRes.data as any)?.rows || [],
+            recentInvoices: recentInvoicesRes.data || [],
+            recentExpenses: recentExpensesRes.data || [],
+            overdueInvoices: overdueInvoicesRes.data || []
         };
     }
 };

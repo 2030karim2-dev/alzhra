@@ -18,9 +18,15 @@ interface AISmartNotificationsProps {
     } | undefined;
     lowStockProducts?: any[] | undefined;
     alerts?: any[] | undefined;
+    debtThresholdPercent?: number;
+    marginThresholdPercent?: number;
 }
 
-const AISmartNotifications: React.FC<AISmartNotificationsProps> = ({ stats, lowStockProducts, alerts: _dashAlerts }) => {
+const AISmartNotifications: React.FC<AISmartNotificationsProps> = ({ 
+    stats, lowStockProducts, alerts: dashAlerts,
+    debtThresholdPercent = 20,
+    marginThresholdPercent = 15
+}) => {
     const [smartAlerts, setSmartAlerts] = useState<SmartAlert[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [dismissed, setDismissed] = useState(false);
@@ -48,8 +54,9 @@ const AISmartNotifications: React.FC<AISmartNotificationsProps> = ({ stats, lowS
             });
         }
 
-        // High debt alert
-        if (debts > 50000) {
+        // High debt alert (relative to sales)
+        const debtThreshold = sales * (debtThresholdPercent / 100);
+        if (debts > debtThreshold && debtThreshold > 0) {
             localAlerts.push({
                 type: 'danger',
                 icon: '💸',
@@ -72,12 +79,12 @@ const AISmartNotifications: React.FC<AISmartNotificationsProps> = ({ stats, lowS
         // Low margin alert
         if (sales > 0) {
             const margin = ((sales - expenses) / sales) * 100;
-            if (margin < 15 && margin > 0) {
+            if (margin < marginThresholdPercent && margin > 0) {
                 localAlerts.push({
                     type: 'warning',
                     icon: '⚠️',
                     title: `هامش ربح منخفض: ${margin.toFixed(1)}%`,
-                    description: 'الهامش أقل من 15% — راجع التسعير'
+                    description: `الهامش أقل من ${marginThresholdPercent}% — راجع التسعير`
                 });
             }
         }
