@@ -199,6 +199,8 @@ export const authApi = {
   },
 
   updateUserPassword: async (password: string) => {
+    // Supabase requires the user to have recently authenticated.
+    // If the session is stale, updateUser will fail with a reauthentication error.
     return await supabase.auth.updateUser({ password });
   },
 

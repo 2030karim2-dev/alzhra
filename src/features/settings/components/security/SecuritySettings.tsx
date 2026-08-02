@@ -12,15 +12,29 @@ const SecuritySettings: React.FC = () => {
   const { dictionary: t } = useI18nStore();
   const { showToast } = useFeedbackStore();
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm();
-  const { changePassword, isLoading } = usePasswordChange();
+  const { changePassword, isLoading, error: changePasswordError } = usePasswordChange();
 
   const onSubmit = async (data: any) => {
     if (data.newPassword !== data.confirmPassword) {
-      // This is now handled by form validation, but kept as a safeguard
+      showToast(
+        t.passwords_not_match || 'كلمتا المرور غير متطابقتين',
+        'warning'
+      );
+      return;
+    }
+    if (!data.currentPassword) {
+      showToast(
+        t.current_password_required || 'يجب إدخال كلمة المرور الحالية',
+        'warning'
+      );
       return;
     }
     const success = await changePassword(data.newPassword);
     if (success) {
+      showToast(
+        t.password_updated || 'تم تحديث كلمة المرور بنجاح',
+        'success'
+      );
       reset();
     }
   };
@@ -48,7 +62,8 @@ const SecuritySettings: React.FC = () => {
             </h3>
             <Key size={14} className="text-blue-500" />
           </div>
-          <Input label={t.current_password || "كلمة المرور الحالية"} type="password" placeholder="••••••••" dir="ltr" variant="micro" {...register('currentPassword')} />
+          <Input label={t.current_password || "كلمة المرور الحالية"} type="password" placeholder="••••••••" dir="ltr" variant="micro"
+            {...register('currentPassword', { required: t.current_password_required || 'كلمة المرور الحالية مطلوبة' })} />
           <Input
             label={t.new_password || "كلمة المرور الجديدة"}
             type="password"
@@ -70,6 +85,9 @@ const SecuritySettings: React.FC = () => {
           <Button type="submit" isLoading={isLoading} className="w-full rounded-xl py-2 text-[11px] font-bold">
             {t.update_password || 'تحديث كلمة السر'}
           </Button>
+          {changePasswordError && (
+            <p className="text-[10px] text-red-500 font-bold mt-2 text-center">{changePasswordError}</p>
+          )}
         </form>
 
         {/* 2FA & Sessions */}
