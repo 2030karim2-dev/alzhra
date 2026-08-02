@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../auth/hooks';
+import { formatDate } from '../../../core/utils/dateUtils';
 
 export interface CustomerDebtProfile {
   id: string;
@@ -197,7 +198,7 @@ export const useDebtManagement = () => {
                      invoiceId: inv.id,
                      invoiceNumber: inv.invoice_number,
                      type: 'long_overdue',
-                     message: generateReminderMessage(party.name, inv.invoice_number, dueDate.toLocaleDateString('ar-SA'), 'long_overdue')
+                     message: generateReminderMessage(party.name, inv.invoice_number, formatDate(dueDate, 'ar-SA'), 'long_overdue')
                  });
                  newAlerts.push({
                      id: `alt_${inv.id}_long`,
@@ -214,7 +215,7 @@ export const useDebtManagement = () => {
                       invoiceId: inv.id,
                       invoiceNumber: inv.invoice_number,
                       type: 'after_due',
-                      message: generateReminderMessage(party.name, inv.invoice_number, dueDate.toLocaleDateString('ar-SA'), 'after_due')
+                      message: generateReminderMessage(party.name, inv.invoice_number, formatDate(dueDate, 'ar-SA'), 'after_due')
                   });
               }
             } else if (diffDays === 0) {
@@ -225,7 +226,7 @@ export const useDebtManagement = () => {
                       invoiceId: inv.id,
                       invoiceNumber: inv.invoice_number,
                       type: 'on_due',
-                      message: generateReminderMessage(party.name, inv.invoice_number, dueDate.toLocaleDateString('ar-SA'), 'on_due')
+                      message: generateReminderMessage(party.name, inv.invoice_number, formatDate(dueDate, 'ar-SA'), 'on_due')
                   });
             } else if (diffDays >= -3) {
                  // Due within 3 days
@@ -236,7 +237,7 @@ export const useDebtManagement = () => {
                       invoiceId: inv.id,
                       invoiceNumber: inv.invoice_number,
                       type: 'before_due',
-                      message: generateReminderMessage(party.name, inv.invoice_number, dueDate.toLocaleDateString('ar-SA'), 'before_due')
+                      message: generateReminderMessage(party.name, inv.invoice_number, formatDate(dueDate, 'ar-SA'), 'before_due')
                   });
                   newAlerts.push({
                       id: `alt_${inv.id}_soon`,
@@ -361,9 +362,10 @@ export const useDebtManagement = () => {
       setAlerts(newAlerts);
       setReminders(newReminders);
 
-    } catch (err: any) {
-      console.error('Error fetching debt data:', err);
-      setError(err.message || 'حدث خطأ أثناء تحميل بيانات الديون');
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.error('Error fetching debt data:', error);
+      setError(error.message || 'حدث خطأ أثناء تحميل بيانات الديون');
     } finally {
       setLoading(false);
     }

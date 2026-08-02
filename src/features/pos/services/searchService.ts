@@ -230,8 +230,9 @@ export const posSearchService = {
                     match_type: 'exact' as const,
                 };
             });
-        } catch (err: any) {
-            console.warn('POS Search failed, using fallback:', err.message);
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            console.warn('POS Search failed, using fallback:', error.message);
             return this.searchDatabaseFallback(companyId, query, filters, limit);
         }
     },

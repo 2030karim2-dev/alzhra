@@ -96,9 +96,10 @@ export function useWarehouseStock(productId: string | null) {
             }
 
             setBranchGroups(Array.from(branchMap.values()));
-        } catch (err: any) {
-            console.error('useWarehouseStock error:', err);
-            setError(err.message || 'فشل في تحميل بيانات المخزون');
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            console.error('useWarehouseStock error:', error);
+            setError(error.message || 'فشل في تحميل بيانات المخزون');
         } finally {
             setIsLoading(false);
         }

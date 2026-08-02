@@ -6,6 +6,7 @@ import { messagingService } from '../notifications/messagingService';
 import { toBaseCurrency } from '../../core/utils/currencyUtils';
 import { validatePurchasePayload, assertValid } from '../../core/utils/validationUtils';
 import { logger } from '../../core/utils/logger';
+import { formatDate } from '../../core/utils/dateUtils';
 import { supabase } from '../../lib/supabaseClient';
 
 export { purchasesApi };
@@ -59,7 +60,7 @@ export const purchasesService = {
         supplierName: 'مورد',
         amount: totalAmount,
         currency: data.currency || 'YER',
-        date: new Date().toLocaleDateString('en-GB'),
+        date: formatDate(new Date(), 'en-US'),
         paymentMethod: data.paymentMethod || 'credit',
         itemCount: data.items?.length || 0,
       }, typedResult.id);

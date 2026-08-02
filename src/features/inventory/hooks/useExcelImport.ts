@@ -49,9 +49,10 @@ export const useExcelImport = () => {
             await inventoryService.processImportFile(file, user.company_id, user.id);
             setStatus('success');
             queryClient.invalidateQueries({ queryKey: ['products'] });
-        } catch (err: any) {
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
             setStatus('error');
-            setErrorMsg(err.message || "حدث خطأ غير متوقع أثناء معالجة الملف");
+            setErrorMsg(error.message || "حدث خطأ غير متوقع أثناء معالجة الملف");
         }
     };
 

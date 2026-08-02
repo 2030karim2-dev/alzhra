@@ -51,8 +51,9 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
             setExtractedItems(items);
             setStep('review');
             showToast(`تم استخراج ${items.length} صنف بنجاح`, 'success');
-        } catch (err: any) {
-            showToast(err.message, 'error');
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            showToast(error.message, 'error');
         } finally {
             setIsProcessing(false);
         }

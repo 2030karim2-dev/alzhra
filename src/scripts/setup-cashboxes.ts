@@ -32,7 +32,7 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
     for (let i = 0; i <= MAX_RETRIES; i++) {
         const timeoutController = new AbortController();
         const timeoutId = setTimeout(() => {
-            try { timeoutController.abort('timeout'); } catch (_) { }
+            try { timeoutController.abort('timeout'); } catch { /* Intentionally silent - controller may already be aborted */ }
         }, 45000);
 
         try {

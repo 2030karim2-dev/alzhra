@@ -35,7 +35,7 @@ const TeamManager: React.FC = () => {
                 branchId
             });
             reset();
-        } catch (err: any) {
+        } catch (err) {
             // Error is handled by mutation
         }
     };

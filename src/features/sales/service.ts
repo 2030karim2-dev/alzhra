@@ -6,6 +6,7 @@ import { toBaseCurrency } from '../../core/utils/currencyUtils';
 import { validateSalePayload, assertValid } from '../../core/utils/validationUtils';
 import { routeToChildByCurrency } from '../../core/utils/accountRouting';
 import { logger } from '../../core/utils/logger';
+import { formatDate } from '../../core/utils/dateUtils';
 import { accountsService } from '../accounting/services/accountsService';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -38,7 +39,7 @@ export const salesService = {
           id: _inv.id,
           invoiceNumber: _inv.invoice_number,
           customerName: _inv.party?.name || CASH_CUSTOMER_LABEL,
-          date: new Date(_inv.issue_date).toLocaleDateString('en-GB'),
+          date: formatDate(new Date(_inv.issue_date), 'en-US'),
           total: Number(_inv.total_amount) || 0,
           baseTotal: toBaseCurrency({
             amount: Number(_inv.total_amount) || 0,
@@ -115,7 +116,7 @@ export const salesService = {
         customerName: CASH_CUSTOMER_LABEL, // Target refactoring to extract party name from DB result later
         amount: itemsTotal,
         currency: payload.currency || 'SAR',
-        date: new Date().toLocaleDateString('en-GB'),
+        date: formatDate(new Date(), 'en-US'),
         paymentMethod: payload.paymentMethod || 'cash',
         itemCount: payload.items?.length || 0,
       }, typedResult.id);

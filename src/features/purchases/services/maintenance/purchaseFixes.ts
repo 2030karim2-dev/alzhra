@@ -1,5 +1,6 @@
 import { supabase } from '../../../../lib/supabaseClient';
 import { accountsService } from '../../../accounting/services/accountsService';
+import { logger } from '../../../../core/utils/logger';
 
 export const purchaseFixesService = {
     /**
@@ -10,7 +11,7 @@ export const purchaseFixesService = {
      */
     fixMissingCashPayments: async (companyId: string, userId: string) => {
         try {
-            console.info('Starting Fix for Incorrect Cash Purchase Entries...');
+            logger.info('PurchaseFixes', 'Starting Fix for Incorrect Cash Purchase Entries...');
 
             // 1. Get all Cash Purchases
             const { data: invoices, error } = await (supabase.from('invoices') as any)
@@ -21,11 +22,11 @@ export const purchaseFixesService = {
 
             if (error) throw error;
             if (!invoices || invoices.length === 0) {
-                console.info('No cash invoices found.');
+                logger.info('PurchaseFixes', 'No cash invoices found.');
                 return { count: 0, message: 'No cash invoices found' };
             }
 
-            console.info(`Found ${invoices.length} cash invoices. Checking for incorrect supplier entries...`);
+            logger.info('PurchaseFixes', `Found ${invoices.length} cash invoices. Checking for incorrect supplier entries...`);
 
             // 2. Get necessary accounts
             const accounts = await accountsService.getAccounts(companyId);
@@ -55,7 +56,7 @@ export const purchaseFixesService = {
                     .like('description', `%${invoice.invoice_number}%`);
 
                 if (!supplierCredits || supplierCredits.length === 0) {
-                    console.info(`Invoice #${invoice.invoice_number} — no supplier credit found (already correct)`);
+                    logger.info('PurchaseFixes', `Invoice #${invoice.invoice_number} — no supplier credit found (already correct)`);
                     continue;
                 }
 
@@ -67,12 +68,12 @@ export const purchaseFixesService = {
                     .like('description', `%تصحيح%${invoice.invoice_number}%`);
 
                 if (existingCorrection && existingCorrection.length > 0) {
-                    console.info(`Invoice #${invoice.invoice_number} — corrective entry already exists, skipping`);
+                    logger.info('PurchaseFixes', `Invoice #${invoice.invoice_number} — corrective entry already exists, skipping`);
                     continue;
                 }
 
                 const creditAmount = supplierCredits[0].credit_amount;
-                console.info(`Invoice #${invoice.invoice_number} — creating corrective entry for SAR ${creditAmount}`);
+                logger.info('PurchaseFixes', `Invoice #${invoice.invoice_number} — creating corrective entry for SAR ${creditAmount}`);
 
                 // Create corrective journal entry: Dr Supplier / Cr Cash
                 const { data: journal, error: jError } = await (supabase.from('journal_entries') as any)
@@ -88,7 +89,7 @@ export const purchaseFixesService = {
                     .single();
 
                 if (jError) {
-                    console.error(`Error creating corrective journal for #${invoice.invoice_number}:`, jError);
+                    logger.error('PurchaseFixes', `Error creating corrective journal for #${invoice.invoice_number}`, jError);
                     continue;
                 }
 
@@ -111,21 +112,21 @@ export const purchaseFixesService = {
                     ]);
 
                 if (lError) {
-                    console.error(`Error creating corrective lines for #${invoice.invoice_number}:`, lError);
+                    logger.error('PurchaseFixes', `Error creating corrective lines for #${invoice.invoice_number}`, lError);
                     // Rollback header
                     await (supabase.from('journal_entries') as any).delete().eq('id', journal.id);
                     continue;
                 }
 
-                console.info(`Corrective entry created for Invoice #${invoice.invoice_number}`);
+                logger.info('PurchaseFixes', `Corrective entry created for Invoice #${invoice.invoice_number}`);
                 fixedCount++;
             }
 
-            console.info(`Fix Complete. Created ${fixedCount} corrective entries.`);
+            logger.info('PurchaseFixes', `Fix Complete. Created ${fixedCount} corrective entries.`);
             return { count: fixedCount, message: `تم تصحيح ${fixedCount} فاتورة مشتريات نقدية` };
 
         } catch (error) {
-            console.error('Error in fixMissingCashPayments:', error);
+            logger.error('PurchaseFixes', 'Error in fixMissingCashPayments', error);
             throw error;
         }
     },
@@ -137,7 +138,7 @@ export const purchaseFixesService = {
      */
     removeDuplicatePurchaseEntries: async (companyId: string) => {
         try {
-            console.info('Starting Duplicate Cleanup...');
+            logger.info('PurchaseFixes', 'Starting Duplicate Cleanup...');
             let deletedCount = 0;
 
             // 1. Get all invoices to check against
@@ -160,13 +161,13 @@ export const purchaseFixesService = {
                     .order('created_at', { ascending: true }); // Oldest first
 
                 if (journals && journals.length > 1) {
-                    console.info(`Found ${journals.length} entries for Invoice #${inv.invoice_number}`);
+                    logger.info('PurchaseFixes', `Found ${journals.length} entries for Invoice #${inv.invoice_number}`);
 
                     // Keep the first one (index 0), delete the rest
                     const toDelete = journals.slice(1);
 
                     for (const dup of toDelete) {
-                        console.info(`Deleting Duplicate Journal: ${dup.id} - ${dup.description}`);
+                        logger.info('PurchaseFixes', `Deleting Duplicate Journal: ${dup.id} - ${dup.description}`);
                         // Delete lines first (cascade usually handles this, but being safe)
                         await (supabase.from('journal_entry_lines') as any).delete().eq('journal_entry_id', dup.id);
                         // Delete header
@@ -176,11 +177,11 @@ export const purchaseFixesService = {
                 }
             }
 
-            console.info(`Cleanup Complete. Removed ${deletedCount} duplicate entries.`);
+            logger.info('PurchaseFixes', `Cleanup Complete. Removed ${deletedCount} duplicate entries.`);
             return { count: deletedCount, message: `تم حذف ${deletedCount} قيد مكرر بنجاح` };
 
         } catch (error) {
-            console.error('Error in removeDuplicatePurchaseEntries:', error);
+            logger.error('PurchaseFixes', 'Error in removeDuplicatePurchaseEntries', error);
             throw error;
         }
     }

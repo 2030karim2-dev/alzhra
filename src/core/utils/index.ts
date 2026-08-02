@@ -52,3 +52,13 @@ export { shareExcelFile } from './shareUtils';
 
 // ZATCA compliance
 export { generateZatcaBase64 } from './zatca';
+
+// Date formatting utilities
+export {
+  formatDate,
+  formatDateTime,
+  formatRelative,
+  toISODate,
+  getDateRange,
+  parseFlexibleDate,
+} from './dateUtils';

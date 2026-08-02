@@ -26,7 +26,8 @@ ${userMessage}
 
         const assistantResponse = await generateAIContent(fullPrompt, undefined, { jsonMode: false, temperature: 0.1 });
         return assistantResponse;
-    } catch (error: any) {
+    } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
         throw new Error(error.message || 'حدث خطأ غير متوقع أثناء معالجة الطلب بـ AI');
     }
 }

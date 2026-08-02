@@ -270,9 +270,10 @@ export const productService = {
             }
 
             return product;
-        } catch (err: any) {
-            logger.error('ProductService', `Critical failure in updateProduct`, err);
-            throw err;
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            logger.error('ProductService', `Critical failure in updateProduct`, error);
+            throw error;
         }
     },
 

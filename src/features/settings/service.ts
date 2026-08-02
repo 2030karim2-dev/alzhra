@@ -1,6 +1,7 @@
 import { settingsApi } from './api';
 import { CompanyFormData, WarehouseFormData, FiscalYearFormData, ExchangeRateFormData, AutoBackupConfig, BranchFormData } from './types.ts';
 import { supabase } from '../../lib/supabaseClient';
+import { logger } from '../../core/utils/logger';
 
 export const settingsService = {
     fetchCompany: async (companyId: string) => {
@@ -201,7 +202,7 @@ export const settingsService = {
                     (exportData.data as Record<string, unknown>)[table] = data;
                 }
             } catch (err) {
-                console.warn(`Failed to export table ${table}:`, err);
+                logger.warn('Settings', `Failed to export table ${table}`, err);
             }
         }
 
@@ -237,7 +238,7 @@ export const settingsService = {
                 if (tableData && Array.isArray(tableData) && tableData.length > 0) {
                     const tableName = table as keyof import('../../core/database.types').Database['public']['Tables'];
                     const { error } = await (supabase.from(tableName) as unknown as { upsert: (data: unknown[], opts: { onConflict: string }) => Promise<{ error: unknown }> }).upsert(tableData, { onConflict: 'id' });
-                    if (error) console.error(`Error importing ${table}:`, error);
+                    if (error) logger.error('Settings', `Error importing ${table}`, error);
                 }
             }
 
@@ -256,7 +257,7 @@ export const settingsService = {
         try {
             return await settingsApi.fetchMarketRates(companyId);
         } catch (error) {
-            console.error('[Settings] Failed to refresh market rates:', error);
+            logger.error('Settings', 'Failed to refresh market rates', error);
             throw error;
         }
     }

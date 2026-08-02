@@ -123,8 +123,9 @@ export const partiesService = {
         .single();
       if (error) throw error;
       return result;
-    } catch (error: any) {
-      if (error.code === '23505') {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      if ((err as { code?: string }).code === '23505') {
         throw new Error("عذراً، هذا الاسم موجود مسبقاً في قائمة الفئات");
       }
       throw error;

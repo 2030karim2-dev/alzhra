@@ -204,8 +204,9 @@ export const useBackupActions = () => {
       await settingsService.importSystemData(file);
       showToast("تم استيراد البيانات بنجاح، سيتم إعادة التحميل", 'success');
       setTimeout(() => window.location.reload(), 1500);
-    } catch (err: any) {
-      showToast(err.message, 'error');
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      showToast(error.message, 'error');
     }
   };
 

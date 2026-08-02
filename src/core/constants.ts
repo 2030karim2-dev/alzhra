@@ -40,7 +40,7 @@ export const APP_VERSION = '1.0.0';
 export const APP_DESCRIPTION = 'نظام متكامل لإدارة الأعمال';
 
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'auth_token',
+  AUTH_TOKEN: 'auth_token_encrypted',
   USER_DATA: 'user_data',
   COMPANY_DATA: 'company_data',
   THEME: 'theme',

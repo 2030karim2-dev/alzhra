@@ -61,8 +61,9 @@ export const useDebtChat = () => {
             };
 
             setMessages(prev => [...prev, aiMsg]);
-        } catch (e: any) {
-            setError(e.message || 'حدث خطأ في الاتصال بالمساعد الذكي.');
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            setError(error.message || 'حدث خطأ في الاتصال بالمساعد الذكي.');
         } finally {
             setIsLoading(false);
         }

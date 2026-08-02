@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { exportReturnsToExcel } from '../../../core/utils/returnsExcelExporter';
+import { formatDate } from '../../../core/utils/dateUtils';
 
 export type SortField = 'issue_date' | 'total_amount' | 'party_name' | 'invoice_number';
 export type SortDirection = 'asc' | 'desc';
@@ -82,7 +83,7 @@ export const useReturnsListView = (returns: any[] | undefined, type: 'sales' | '
             companyName: 'Al-Zahra',
             returns: processedReturns.map((r: any) => ({
                 invoiceNumber: r.invoice_number || '',
-                issueDate: new Date(r.issue_date || r.created_at).toLocaleDateString('ar-SA'),
+                issueDate: formatDate(new Date(r.issue_date || r.created_at), 'ar-SA'),
                 customerName: type === 'sales' ? (r.party?.name || 'عميل نقدي') : '',
                 supplierName: type === 'purchase' ? (r.party?.name || 'مورد نقدي') : '',
                 referenceInvoice: '',

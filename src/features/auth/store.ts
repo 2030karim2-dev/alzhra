@@ -221,7 +221,7 @@ export const useAuthStore = create<AuthState>()(
 
         } catch (err) {
           logger.error('Auth', 'Initialization error', err as Error);
-          try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
+          try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* Intentionally silent - signOut failure during auth init cleanup */ }
           queryClient.clear();
           Promise.resolve(persister.removeClient()).catch(() => { });
           set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });

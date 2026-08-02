@@ -1,4 +1,5 @@
 import { formatCurrency, toBaseCurrency } from '../../../core/utils/currencyUtils';
+import { toISODate } from '../../../core/utils/dateUtils';
 
 export const calculateDashboardStats = (data: {
     receiptBonds: number;
@@ -21,7 +22,7 @@ export const calculateDashboardStats = (data: {
 
     (invoicesData || []).forEach((inv: any) => {
         const type = inv.type?.trim().toLowerCase();
-        const date = new Date(inv.issue_date).toLocaleDateString('en-CA');
+        const date = toISODate(new Date(inv.issue_date));
         if (!chartDataMap[date]) chartDataMap[date] = { sales: 0, purchases: 0, expenses: 0 };
 
         const amount = toBaseCurrency(inv);
@@ -38,7 +39,7 @@ export const calculateDashboardStats = (data: {
     });
 
     (expensesData || []).forEach((exp: any) => {
-        const date = new Date(exp.expense_date).toLocaleDateString('en-CA');
+        const date = toISODate(new Date(exp.expense_date));
         if (!chartDataMap[date]) chartDataMap[date] = { sales: 0, purchases: 0, expenses: 0 };
         chartDataMap[date].expenses += toBaseCurrency(exp);
     });

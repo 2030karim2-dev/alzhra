@@ -5,6 +5,7 @@
 
 import { STORAGE_KEYS } from '../constants';
 import { logger } from '../utils/logger';
+import { setAuthToken, getAuthToken, removeAuthToken } from '../../lib/storage';
 
 // ------------------------------------------
 // Storage Types
@@ -243,14 +244,15 @@ export const persisterBase = {
 export const persister = {
     // Auth
     auth: {
-        setToken(token: string): void {
-            persisterBase.set(STORAGE_KEYS.AUTH_TOKEN, token, { expires: 7 * 24 * 60 * 60 * 1000 }); // 7 days
+        async setToken(token: string): Promise<void> {
+            await setAuthToken(token);
         },
-        getToken(): string | undefined {
-            return persisterBase.get<string>(STORAGE_KEYS.AUTH_TOKEN);
+        async getToken(): Promise<string | undefined> {
+            const token = await getAuthToken();
+            return token ?? undefined;
         },
         removeToken(): void {
-            persisterBase.remove(STORAGE_KEYS.AUTH_TOKEN);
+            removeAuthToken();
         },
         setUser(user: object): void {
             persisterBase.set(STORAGE_KEYS.USER_DATA, user);
@@ -259,7 +261,7 @@ export const persister = {
             return persisterBase.get<T>(STORAGE_KEYS.USER_DATA);
         },
         clear(): void {
-            persisterBase.remove(STORAGE_KEYS.AUTH_TOKEN);
+            removeAuthToken();
             persisterBase.remove(STORAGE_KEYS.USER_DATA);
         },
     },

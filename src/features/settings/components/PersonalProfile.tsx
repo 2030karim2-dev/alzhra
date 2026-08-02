@@ -34,8 +34,9 @@ const PersonalProfile: React.FC = () => {
                 showToast('تم تحديث البيانات الشخصية بنجاح', 'success');
                 setTimeout(() => setSaved(false), 3000);
             }
-        } catch (err: any) {
-            showToast(err.message || 'فشل تحديث البيانات', 'error');
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            showToast(error.message || 'فشل تحديث البيانات', 'error');
         } finally {
             setIsPending(false);
         }

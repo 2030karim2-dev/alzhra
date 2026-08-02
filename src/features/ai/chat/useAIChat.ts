@@ -188,8 +188,9 @@ export const useAIChat = (_options: { enabled?: boolean } = {}) => {
                 setIsLoading(false);
                 return;
             }
-        } catch (err: any) {
-            setError(err.message || 'حدث خطأ أثناء التوجيه للمعاملة.');
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            setError(error.message || 'حدث خطأ أثناء التوجيه للمعاملة.');
         } finally {
             setIsLoading(false);
             setPendingAction(null);

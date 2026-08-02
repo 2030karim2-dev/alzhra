@@ -74,8 +74,9 @@ const ProductExcelGrid: React.FC<Props> = ({
                 if (onDelete) await onDelete(deleteConfirm.id as string);
             }
             setDeleteConfirm(null);
-        } catch (err: any) {
-            showToast(err?.message || 'تعذر حذف المنتج. تأكد من عدم وجود فواتير مرتبطة به.', 'error');
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            showToast(error.message || 'تعذر حذف المنتج. تأكد من عدم وجود فواتير مرتبطة به.', 'error');
             setDeleteConfirm(null);
         }
     };
