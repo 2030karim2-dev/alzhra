@@ -74,13 +74,25 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
       // Sanitize headers to prevent non-ISO-8859-1 errors
       const safeOptions = { ...options };
       if (safeOptions.headers) {
-        const headers = safeOptions.headers as Record<string, string>;
-        const cleanHeaders: Record<string, string> = {};
-        for (const [key, value] of Object.entries(headers)) {
+        const srcHeaders = safeOptions.headers;
+        const cleanHeaders = new Headers();
+        const sanitize = (key: string, value: string): void => {
           const cleanKey = key.replace(/[^\x00-\xFF]/g, '');
-          const cleanValue = String(value).replace(/[^\x00-\xFF]/g, '');
+          const cleanValue = value.replace(/[^\x00-\xFF]/g, '');
           if (cleanKey && cleanValue) {
-            cleanHeaders[cleanKey] = cleanValue;
+            cleanHeaders.set(cleanKey, cleanValue);
+          }
+        };
+
+        if (srcHeaders instanceof Headers) {
+          srcHeaders.forEach(sanitize);
+        } else if (Array.isArray(srcHeaders)) {
+          for (const [key, value] of srcHeaders as [string, string][]) {
+            sanitize(key, value);
+          }
+        } else {
+          for (const [key, value] of Object.entries(srcHeaders as Record<string, string>)) {
+            sanitize(key, value);
           }
         }
         safeOptions.headers = cleanHeaders;
