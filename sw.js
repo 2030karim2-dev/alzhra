@@ -1,7 +1,8 @@
 
 import { get, set, del, clear } from 'idb-keyval';
 
-const CACHE_NAME = 'alz-erp-v4.1';
+const APP_VERSION = 'alz-erp-v4.1';
+const CACHE_NAME = `app-shell-${APP_VERSION}`;
 const APP_SHELL_URLS = [
   '/',
   '/index.html'
@@ -48,10 +49,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, networkResponse.clone());
-            });
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, networkResponse.clone());
+              })
+            );
         }
         return networkResponse;
       }).catch(() => null); 

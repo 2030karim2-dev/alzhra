@@ -107,8 +107,7 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
         p_limit: pageSize,
         p_offset: from,
         p_sort_key: sortKey,
-        p_sort_dir: sortDir,
-        p_branch_id: branchId || null
+        p_sort_dir: sortDir
       });
       if (error) throw error;
 
@@ -139,8 +138,7 @@ export const useProductsPaginated = (options: UseProductsPaginatedOptions = {}) 
           p_limit: pageSize,
           p_offset: from,
           p_sort_key: sortKey,
-          p_sort_dir: sortDir,
-          p_branch_id: branchId || null
+          p_sort_dir: sortDir
         });
         if (error) throw error;
 

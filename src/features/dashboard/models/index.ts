@@ -42,6 +42,7 @@ export interface CashFlowData {
 export interface TargetProgress {
     salesProgress: number;
     collectionRate: number;
+    salesTarget: number;
 }
 
 export interface DashboardAlert {

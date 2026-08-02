@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, Zap, ShieldCheck, Package, DollarSign, Box } from 'lucide-react';
-import { ProductFormData, Product } from '../types';
-import { productFormSchema } from '../schema';
+import { Product } from '../types';
+import { productFormSchema, ProductFormInput } from '../schema';
 import Modal from '../../../ui/base/Modal';
 import Button from '../../../ui/base/Button';
 import { useTranslation } from '../../../lib/hooks/useTranslation';
@@ -23,7 +23,7 @@ import ProductFitment from './product_form/ProductFitment';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: ProductFormData) => void | Promise<void>;
+  onSubmit: (data: ProductFormInput) => void | Promise<void>;
   isSubmitting: boolean;
   initialData?: Product | null;
 }
@@ -32,12 +32,23 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, isSubmitt
   const { t } = useTranslation();
   const { user } = useAuthStore();
 
-  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<ProductFormData>({
-    resolver: zodResolver(productFormSchema) as any,
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<ProductFormInput>({
+    resolver: zodResolver(productFormSchema),
     defaultValues: {
+      name: '',
+      sku: '',
+      part_number: null,
+      brand: null,
+      size: null,
+      specifications: null,
+      alternative_numbers: null,
+      image_url: null,
+      barcode: null,
+      cost_price: 0,
+      selling_price: 0,
+      min_stock_level: 5,
       unit: 'piece',
       category: 'عام',
-      min_stock_level: 5
     }
   });
 
@@ -56,11 +67,11 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, isSubmitt
           specifications: initialData.specifications,
           alternative_numbers: initialData.alternatives?.join(', '),
           image_url: initialData.image_url,
-          cost_price: initialData.cost_price,
-          selling_price: initialData.selling_price,
-          min_stock_level: initialData.min_stock_level,
+          cost_price: initialData.cost_price ?? 0,
+          selling_price: initialData.selling_price ?? 0,
+          min_stock_level: initialData.min_stock_level ?? 5,
           stock_quantity: initialData.stock_quantity,
-          unit: (initialData.unit as ProductFormData['unit']) || 'piece',
+          unit: (initialData.unit as ProductFormInput['unit']) || 'piece',
           category: initialData.category_id || '',
           location: initialData.location
         });
@@ -69,14 +80,14 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, isSubmitt
         reset({
           name: '',
           sku: autoSku,
-          part_number: '',
-          brand: '',
-          size: '',
-          specifications: '',
-          alternative_numbers: '',
+          part_number: null,
+          brand: null,
+          size: null,
+          specifications: null,
+          alternative_numbers: null,
           image_url: null,
-          cost_price: '',
-          selling_price: '',
+          cost_price: 0,
+          selling_price: 0,
           min_stock_level: 5,
           stock_quantity: 0,
           unit: 'piece',
@@ -96,7 +107,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, isSubmitt
         {t('cancel')}
       </button>
       <Button
-        onClick={handleSubmit(onSubmit as any)}
+        onClick={handleSubmit(onSubmit)}
         isLoading={isSubmitting}
         className="flex-[2] rounded-none text-[11px] font-bold bg-blue-600 border-blue-700 shadow-xl uppercase tracking-widest"
         leftIcon={<Save size={16} />}

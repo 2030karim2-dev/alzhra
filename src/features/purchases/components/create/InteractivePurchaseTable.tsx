@@ -76,7 +76,7 @@ const InteractivePurchaseTable: React.FC = () => {
 
         const moveFocus = (row: number, colField: keyof PurchaseInvoiceItem) => {
             const nextCell = tableRef.current?.querySelector(
-                `[data-row-index="${row}"][data-col-field="${colField}"]`
+                `[data-row-index="${row}"][data-col-field="${String(colField)}"]`
             ) as HTMLInputElement;
             nextCell?.focus();
             if (nextCell instanceof HTMLInputElement) nextCell.select();
@@ -171,7 +171,7 @@ const InteractivePurchaseTable: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y dark:divide-slate-800">
-                        {items.map((item, index) => (
+                        {items.map((item: PurchaseInvoiceItem, index: number) => (
                             <tr key={item.id} className="group hover:bg-blue-50 dark:hover:bg-blue-900/5 transition-colors">
                                 <td className="p-2 text-center text-[10px] font-mono font-bold text-blue-300 border-l dark:border-slate-800">{index + 1}</td>
                                 <td className="p-0 border-l dark:border-slate-800">

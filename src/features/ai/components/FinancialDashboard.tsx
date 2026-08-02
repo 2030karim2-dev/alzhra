@@ -1,9 +1,9 @@
 import React from 'react';
 import { useDashboardMetrics } from '../../dashboard/hooks/useDashboardMetrics';
-import { TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react';
+import { TrendingDown, DollarSign, Activity } from 'lucide-react';
 
 const FinancialDashboard: React.FC = () => {
-  const { stats, revenueExpensesData, growthRate, salesValue } = useDashboardMetrics();
+  const { stats, growthRate } = useDashboardMetrics();
 
   const parseNumeric = (v?: string) => parseFloat((v || '0').replace(/[^0-9.-]/g, '')) || 0;
 

@@ -192,7 +192,7 @@ export const useDashboardData = (): UseDashboardDataResult => {
         debts: formatCurrency(
           toNumber(summary.total_debts) + toNumber(summary.total_supplier_debts),
         ),
-        invoices: String(toNumber(summary.invoice_count) || invoiceCount || '0'),
+        invoices: String(toNumber(summary.invoice_count) || '0'),
         profit: formatCurrency(netProfit),
         netCash: formatCurrency(netCashPosition),
         salesTrend: Math.round(insightsResult.salesTrend * 10) / 10,
@@ -245,7 +245,7 @@ export const useDashboardData = (): UseDashboardDataResult => {
     customers: [],
     topProducts: [],
     topCustomers: [],
-    targets: { salesProgress: 0, collectionRate: 0 },
+    targets: { salesProgress: 0, collectionRate: 0, salesTarget: 100000 },
     cashFlow: { inflow: 0, outflow: 0, net: 0 },
     alerts: [],
     insights: [],

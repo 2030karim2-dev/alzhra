@@ -45,9 +45,11 @@ export interface ApiResponse<T> {
 export class AppError extends Error {
     constructor(
         message: string,
-        public code: ErrorCode,
+        public code: string = ErrorCode.UNKNOWN,
         public statusCode: number = 500,
-        public details?: UnknownRecord
+        public details?: UnknownRecord,
+        public severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
+        public actionLabel?: string
     ) {
         super(message);
         this.name = 'AppError';

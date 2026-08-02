@@ -119,7 +119,6 @@ export const kitService = {
         quantity: number,
         userId: string
     ): Promise<KitAssemblyResult> => {
-        const errors: string[] = [];
 
         // 1. Check kit stock availability
         const { data: kitStock } = await supabase
@@ -188,7 +187,7 @@ export const kitService = {
 
         // Enrich with stock info
         const enriched = await Promise.all(
-            data.map(async (item) => {
+            data.map(async (item: ProductKitItem) => {
                 let availableStock = 0;
                 if (warehouseId) {
                     const { data: stock } = await supabase

@@ -499,7 +499,7 @@ export const isValidDecimal = (value: NumericInput): boolean => {
 
 export const isPositiveDecimal = (value: NumericInput): boolean => {
     const d = tryDecimal(value);
-    return d !== null && d.isPositive();
+    return d !== null && d.greaterThan(0);
 };
 
 export const isNonNegativeDecimal = (value: NumericInput): boolean => {

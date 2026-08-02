@@ -82,7 +82,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item) => this._mapCustomerActivity(item as CustomerActivityRow));
+        return (data || []).map((item: any) => this._mapCustomerActivity(item as CustomerActivityRow));
     },
 
     async getCompanyActivities(companyId: string, filters?: CustomerActivityFilters): Promise<CustomerActivity[]> {
@@ -119,7 +119,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item) => this._mapCustomerActivity(item as CustomerActivityRow));
+        return (data || []).map((item: any) => this._mapCustomerActivity(item as CustomerActivityRow));
     },
 
     async createActivity(activity: CustomerActivityFormData & { customerId: string; companyId: string }): Promise<CustomerActivity> {
@@ -264,7 +264,6 @@ export const customerApi = {
             content: data.content,
             isImportant: data.is_important || false,
             createdBy: data.created_by || '',
-            createdByName: undefined,
             createdAt: data.created_at || ''
         };
     },
@@ -334,7 +333,7 @@ export const customerApi = {
     },
 
     async updateTag(tagId: string, updates: Partial<CustomerTagFormData>): Promise<void> {
-        const updateData: CustomerTagInsert = {};
+        const updateData: Record<string, unknown> = {};
         if (updates.name !== undefined) updateData.name = updates.name;
         if (updates.color !== undefined) updateData.color = updates.color;
 
@@ -454,7 +453,7 @@ export const customerApi = {
 
         if (error) throw error;
 
-        return (data || []).map((item) => this._mapCustomerActivity(item as CustomerActivityRow));
+        return (data || []).map((item: any) => this._mapCustomerActivity(item as CustomerActivityRow));
     },
 
     async getOverdueActivities(companyId: string): Promise<CustomerActivity[]> {
@@ -483,7 +482,7 @@ export const customerApi = {
                 .lt('scheduled_at', now);
         }
 
-        return (data || []).map((item) => {
+        return (data || []).map((item: any) => {
             const activity = this._mapCustomerActivity(item as CustomerActivityRow);
             activity.status = 'overdue';
             return activity;

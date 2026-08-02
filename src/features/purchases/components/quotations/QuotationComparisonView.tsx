@@ -54,11 +54,11 @@ const QuotationComparisonView: React.FC<Props> = ({ rfqGroupId, onClose, onConve
       }
       
       if (quot.quotation_items && quot.quotation_items.length > 0) {
-        bulkLoadItems(quot.quotation_items.map(item => ({
+        bulkLoadItems(quot.quotation_items.map((item: any) => ({
           productId: item.product_id || '',
           name: item.description,
+          sku: '',
           quantity: item.quantity,
-          unitPrice: item.unit_price,
           costPrice: item.unit_price,
         })));
       }

@@ -136,7 +136,7 @@ export const settingsService = {
         if (companyId) {
             try {
                 const { data } = await supabase.from('backup_logs').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(20);
-                if (data) return data.map(log => ({
+                if (data) return data.map((log: any) => ({
                     id: log.id, action: log.backup_type === 'google_drive' ? 'نسخ سحابي' : 'نسخ محلي',
                     size: log.file_size_bytes ? `${(log.file_size_bytes / 1024).toFixed(1)} KB` : '--',
                     time: new Date(log.created_at).toLocaleString('ar-SA'),

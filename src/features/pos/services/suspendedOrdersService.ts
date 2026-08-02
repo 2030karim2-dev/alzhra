@@ -18,7 +18,7 @@ export const suspendedOrdersService = {
       .order('suspended_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(order => ({
+    return (data || []).map((order: any) => ({
       id: order.id,
       items: order.items,
       customer: order.customer,

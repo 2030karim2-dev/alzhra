@@ -142,6 +142,7 @@ const InvoiceDetailsModal: React.FC<Props> = ({ invoiceId, onClose, onReturn }) 
   // Prepare full data for PrintableInvoice
   const fullInvoiceData = invoice && company ? {
     ...invoice,
+    invoice_number: invoice.invoice_number || '',
     company,
     party_name: invoice.parties?.name,
     issuedBy: issuedByName,
@@ -254,7 +255,7 @@ const InvoiceDetailsModal: React.FC<Props> = ({ invoiceId, onClose, onReturn }) 
 
             <div style={{ display: 'none' }}>
               <div ref={printRef} className="print-only">
-                <PrintableInvoice invoice={fullInvoiceData} />
+                <PrintableInvoice invoice={fullInvoiceData!} />
               </div>
             </div>
           </div>

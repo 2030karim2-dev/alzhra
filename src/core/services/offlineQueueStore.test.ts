@@ -1,4 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('idb-keyval', () => ({
+    get: vi.fn(() => null),
+    set: vi.fn(),
+    del: vi.fn(),
+}));
+
 import { useOfflineQueueStore } from './offlineQueueStore';
 
 describe('OfflineQueueStore', () => {

@@ -18,7 +18,7 @@ interface Props {
 
 interface ColumnDef {
     header: string;
-    accessor: (row: ExtractedItem) => unknown;
+    accessor: (row: ExtractedItem) => any;
     isEditable?: boolean;
     accessorKey?: string;
     width?: string;
@@ -79,13 +79,13 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
     };
 
     const downloadTemplate = () => {
-        import('xlsx-js-style').then((XLSX) => {
-            const ws = XLSX.utils.json_to_sheet([
+        import('xlsx-js-style').then((XLSX: any) => {
+            const ws = XLSX.utils?.json_to_sheet([
                 { "اسم المنتج": "فحمات فرامل", "رقم الصنف": "BP-001", "الشركة": "Toyota", "سعر البيع": 150, "التكلفة": 100, "الكمية": 50 }
             ]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Template");
-            XLSX.writeFile(wb, "Inventory_Template.xlsx");
+            const wb = XLSX.utils?.book_new();
+            XLSX.utils?.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile?.(wb, "Inventory_Template.xlsx");
         });
     };
 
@@ -230,9 +230,9 @@ const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, mode })
 
                         <div className="flex-1 border-2 border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
                             <ExcelTable
-                                columns={columns}
+                                columns={columns as any}
                                 data={extractedItems}
-                                onCellUpdate={(rowIndex, key, val) => handleUpdateCell(rowIndex, key as string, val)}
+                                onCellUpdate={(rowIndex: number, key: string, val: any) => handleUpdateCell(rowIndex, key as string, val)}
                                 onRowClick={handleRemoveRow}
                                 title={`تم استخراج ${extractedItems.length} سجل`}
                             />

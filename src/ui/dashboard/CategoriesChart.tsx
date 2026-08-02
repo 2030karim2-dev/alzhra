@@ -130,7 +130,7 @@ const CategoriesChart: React.FC<CategoriesChartProps> = React.memo(({ data }) =>
       )}
     </div>
   );
-};
+});
 
 export { CategoriesChart };
 export default CategoriesChart;

@@ -1,16 +1,21 @@
 
+import { AppError } from '../types/common';
+
+export { AppError };
+
 /**
  * محرك معالجة الأخطاء الذكي لنظام الزهراء
  */
-export interface AppError {
-  message: string;
-  code: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  actionLabel?: string;
-}
-
 export const parseError = (error: any): AppError => {
-  const errorObj = error instanceof Error ? error : (typeof error === 'object' && error !== null ? error : new Error(String(error)));
+  if (error === null || error === undefined) {
+    return new AppError('حدث خطأ غير متوقع', 'UNKNOWN', 500);
+  }
+
+  if (typeof error === 'string') {
+    return new AppError(error, 'UNKNOWN', 500);
+  }
+
+  const errorObj = error instanceof Error ? error : error;
   
   const code = errorObj?.code || 'UNKNOWN';
   const rawMessage = errorObj?.message || String(errorObj);
@@ -24,55 +29,69 @@ export const parseError = (error: any): AppError => {
     lowerMsg.includes('network request failed') ||
     lowerMsg.includes('connection refused')
   ) {
-    return {
-      code: 'NETWORK_ERROR',
-      message: 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.',
-      severity: 'high',
-      actionLabel: 'تحديث'
-    };
+    return new AppError(
+      'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.',
+      'NETWORK_ERROR',
+      0,
+      undefined,
+      'high',
+      'تحديث'
+    );
   }
 
   // خوارزمية تحديد الرسالة بناءً على الكود
   switch (code) {
     case '23505': // Unique violation
-      return {
+      return new AppError(
+        'هذا السجل (رقم SKU أو الاسم) موجود مسبقاً في النظام.',
         code,
-        message: 'هذا السجل (رقم SKU أو الاسم) موجود مسبقاً في النظام.',
-        severity: 'medium',
-        actionLabel: 'تغيير القيمة'
-      };
+        409,
+        undefined,
+        'medium',
+        'تغيير القيمة'
+      );
     case 'PGRST116':
-      return {
+      return new AppError(
+        'الجداول المطلوبة غير موجودة في قاعدة البيانات.',
         code,
-        message: 'الجداول المطلوبة غير موجودة في قاعدة البيانات.',
-        severity: 'critical',
-        actionLabel: 'تحديث الهيكل'
-      };
+        500,
+        undefined,
+        'critical',
+        'تحديث الهيكل'
+      );
     case '42501':
-      return {
+      return new AppError(
+        'عذراً، لا تمتلك الصلاحيات الكافية لتنفيذ هذه العملية.',
         code,
-        message: 'عذراً، لا تمتلك الصلاحيات الكافية لتنفيذ هذه العملية.',
-        severity: 'high',
-        actionLabel: 'طلب إذن'
-      };
+        403,
+        undefined,
+        'high',
+        'طلب إذن'
+      );
     case 'AuthApiError':
     case 'invalid_credentials':
-      return {
+      return new AppError(
+        'بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.',
         code,
-        message: 'بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.',
-        severity: 'medium'
-      };
+        401,
+        undefined,
+        'medium'
+      );
     case 'user_already_exists':
-      return {
+      return new AppError(
+        'البريد الإلكتروني مسجل مسبقاً.',
         code,
-        message: 'البريد الإلكتروني مسجل مسبقاً.',
-        severity: 'medium'
-      };
+        409,
+        undefined,
+        'medium'
+      );
     default:
-      return {
+      return new AppError(
+        'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً.',
         code,
-        message: rawMessage || 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً.',
-        severity: 'medium'
-      };
+        500,
+        undefined,
+        'medium'
+      );
   }
 };

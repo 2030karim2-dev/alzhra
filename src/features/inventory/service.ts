@@ -14,7 +14,8 @@
  * @see ./services/ for individual service modules
  */
 
-import { Product, ProductFormData, CreateTransferDTO } from './types';
+import { Product, CreateTransferDTO } from './types';
+import { ProductFormInput } from './schema';
 // Import specialized services
 import { productService } from './services/productService';
 import { warehouseService } from './services/warehouseService';
@@ -44,11 +45,11 @@ export const inventoryService = {
     return productService.getProductById(id);
   },
 
-  createProduct: async (data: ProductFormData, companyId: string, userId: string) => {
+  createProduct: async (data: ProductFormInput, companyId: string, userId: string) => {
     return productService.createProduct(data, companyId, userId);
   },
 
-  updateProduct: async (id: string, data: ProductFormData, companyId: string) => {
+  updateProduct: async (id: string, data: ProductFormInput, companyId: string) => {
     return productService.updateProduct(id, data, companyId);
   },
 

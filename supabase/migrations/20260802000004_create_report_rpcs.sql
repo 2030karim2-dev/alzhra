@@ -16,7 +16,17 @@ CREATE OR REPLACE FUNCTION public.report_trial_balance(
   total_debit numeric,
   total_credit numeric
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   RETURN QUERY
   SELECT 
     a.code,
@@ -58,7 +68,16 @@ DECLARE
   v_expense numeric;
   v_gross_profit numeric;
   v_net_profit numeric;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Revenue (accounts starting with 4)
   SELECT COALESCE(SUM(jel.credit_amount) - SUM(jel.debit_amount), 0) INTO v_revenue
   FROM public.journal_entry_lines jel
@@ -110,7 +129,16 @@ DECLARE
   v_receivables numeric;
   v_inventory_value numeric;
   v_payables numeric;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Assets (accounts starting with 1)
   SELECT COALESCE(SUM(jel.debit_amount) - SUM(jel.credit_amount), 0) INTO v_assets
   FROM public.journal_entry_lines jel
@@ -169,7 +197,16 @@ DECLARE
   v_investing_out numeric;
   v_financing_in numeric;
   v_financing_out numeric;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Operating inflow (sales cash receipts)
   SELECT COALESCE(SUM(i.total_amount), 0) INTO v_operating_in
   FROM public.invoices i
@@ -225,7 +262,17 @@ CREATE OR REPLACE FUNCTION public.report_debt_aging(
   days_61_90 numeric,
   days_90_plus numeric
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   RETURN QUERY
   SELECT 
     COALESCE(pr.name, 'نقدي') as customer_name,

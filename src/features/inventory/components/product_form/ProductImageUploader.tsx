@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { Camera, X } from 'lucide-react';
 import { cn } from '../../../../core/utils';
-import { ProductFormData } from '../../types';
+import { ProductFormInput } from '../../schema';
 import { useTranslation } from '../../../../lib/hooks/useTranslation';
 
 interface Props {
-  setValue: UseFormSetValue<ProductFormData>;
-  watch: UseFormWatch<ProductFormData>;
+  setValue: UseFormSetValue<ProductFormInput>;
+  watch: UseFormWatch<ProductFormInput>;
 }
 
 const ProductImageUploader: React.FC<Props> = ({ setValue, watch }) => {

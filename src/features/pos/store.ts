@@ -69,7 +69,7 @@ export const usePOSStore = create<POSState>()(
           // Merge with local, avoid duplicates by id
           const local = get().suspendedOrders;
           const localIds = new Set(local.map(o => o.id));
-          const newOrders = cloudOrders.filter(o => !localIds.has(o.id));
+          const newOrders = cloudOrders.filter((o: SuspendedOrder) => !localIds.has(o.id));
           if (newOrders.length > 0) {
             set({ suspendedOrders: [...local, ...newOrders] });
           }

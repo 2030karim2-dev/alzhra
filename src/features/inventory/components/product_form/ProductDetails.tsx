@@ -1,11 +1,11 @@
 import React from 'react';
 import { UseFormRegister } from 'react-hook-form';
-import { ProductFormData } from '../../types';
+import { ProductFormInput } from '../../schema';
 import Input from '../../../../ui/base/Input';
 import { Maximize2, MapPin, AlignRight } from 'lucide-react';
 import { useTranslation } from '../../../../lib/hooks/useTranslation';
 
-interface Props { register: UseFormRegister<ProductFormData>; }
+interface Props { register: UseFormRegister<ProductFormInput>; }
 
 const ProductDetails: React.FC<Props> = ({ register }) => {
   const { t } = useTranslation();

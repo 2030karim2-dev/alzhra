@@ -23,7 +23,7 @@ interface AISmartNotificationsProps {
 }
 
 const AISmartNotifications: React.FC<AISmartNotificationsProps> = ({ 
-    stats, lowStockProducts, alerts: dashAlerts,
+    stats, lowStockProducts,
     debtThresholdPercent = 20,
     marginThresholdPercent = 15
 }) => {

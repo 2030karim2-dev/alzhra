@@ -1,13 +1,13 @@
 import React from 'react';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import Input from '../../../../ui/base/Input';
-import { ProductFormData } from '../../types';
+import { ProductFormInput } from '../../schema';
 import { Box, BellRing } from 'lucide-react';
 import { useTranslation } from '../../../../lib/hooks/useTranslation';
 
 interface Props {
-  register: UseFormRegister<ProductFormData>;
-  errors: FieldErrors<ProductFormData>;
+  register: UseFormRegister<ProductFormInput>;
+  errors: FieldErrors<ProductFormInput>;
 }
 
 const ProductStockInfo: React.FC<Props> = ({ register, errors }) => {

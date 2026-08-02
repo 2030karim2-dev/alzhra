@@ -79,7 +79,7 @@ export const convertFromBaseCurrency = (params: CurrencyConversionParams): numbe
     }
 
     if (!Number.isFinite(amount)) {
-        throw new CurrencyError(`Invalid amount: ${amount}. Must be a finite number.`);
+        return 0;
     }
 
     if (exchangeOperator === 'divide' && exchangeRate === 0) {

@@ -200,7 +200,7 @@ const SearchableAccountSelector: React.FC<SearchableAccountSelectorProps> = Reac
       </AnimatePresence>
     </div>
   );
-};
+});
 
 export { SearchableAccountSelector };
 export default SearchableAccountSelector;

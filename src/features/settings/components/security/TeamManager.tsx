@@ -1,20 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Users, Mail, Plus, Clock, CheckCircle, XCircle, Trash2, GitBranch } from 'lucide-react';
 import Button from '../../../../ui/base/Button';
 import Input from '../../../../ui/base/Input';
 import { useForm } from 'react-hook-form';
 import MicroListItem from '../../../../ui/common/MicroListItem';
-import { settingsApi } from '../../api';
-import { useAuthStore } from '../../../auth/store';
-import { useFeedbackStore } from '../../../feedback/store';
 import { useI18nStore } from '@/lib/i18nStore';
 import { useBranches, useInvitations, useInvitationMutations } from '../../hooks';
 
 const TeamManager: React.FC = () => {
     const { dictionary: t } = useI18nStore();
-    const { user } = useAuthStore();
-    const { showToast } = useFeedbackStore();
     const { register, handleSubmit, reset } = useForm();
     const { data: branches } = useBranches();
     const { data: invitations = [] } = useInvitations();
@@ -129,7 +124,7 @@ const TeamManager: React.FC = () => {
                         {t.sent_invitations || 'الدعوات المرسلة'}
                     </h4>
                     <div className="space-y-2">
-                        {invitations.map(inv => (
+                        {invitations.map((inv: any) => (
                             <MicroListItem
                                 key={inv.id}
                                 icon={inv.status === 'pending' ? Clock : (inv.status === 'accepted' ? CheckCircle : XCircle)}
@@ -138,7 +133,7 @@ const TeamManager: React.FC = () => {
                                 subtitle={`${t.job_role || 'الدور'}: ${inv.role}${inv.branches?.name ? ` | الفرع: ${inv.branches.name}` : ' | مدير عام'} | إضافة: ${new Date(inv.created_at).toLocaleDateString('ar-SA')}`}
                                 tags={[
                                     { label: inv.status === 'pending' ? (t.waiting_for_acceptance || 'بانتظار القبول') : (t.accepted || 'مقبولة'), color: inv.status === 'pending' ? 'amber' : 'emerald' },
-                                    ...(inv.branches?.name ? [{ label: `📍 ${inv.branches.name}`, color: 'indigo' as const }] : [{ label: '🌐 مدير عام', color: 'gray' as const }])
+                                    ...(inv.branches?.name ? [{ label: `📍 ${inv.branches.name}`, color: 'blue' as const }] : [{ label: '🌐 مدير عام', color: 'slate' as const }])
                                 ]}
                                 actions={
                                     inv.status === 'pending' && (

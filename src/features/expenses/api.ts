@@ -44,15 +44,17 @@ export const expensesApi = {
     return await supabase.rpc('commit_expense_v2', {
       p_company_id: companyId,
       p_user_id: userId,
-      p_category_id: data.category_id,
-      p_amount: data.amount,
-      p_description: data.description,
-      p_date: data.expense_date,
-      p_payment_method: data.payment_method,
-      ...(data.voucher_number ? { p_voucher_number: data.voucher_number } : {}),
-      p_currency: data.currency_code || 'SAR',
-      p_exchange_rate: data.exchange_rate || 1,
-      ...(data.branch_id ? { p_branch_id: data.branch_id } : {})
+      p_data: {
+        category_id: data.category_id,
+        amount: data.amount,
+        description: data.description,
+        expense_date: data.expense_date,
+        payment_method: data.payment_method,
+        ...(data.voucher_number ? { voucher_number: data.voucher_number } : {}),
+        currency_code: data.currency_code || 'SAR',
+        exchange_rate: data.exchange_rate || 1,
+        ...(data.branch_id ? { branch_id: data.branch_id } : {})
+      }
     });
   },
 

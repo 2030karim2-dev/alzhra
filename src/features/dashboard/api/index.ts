@@ -114,8 +114,8 @@ export const dashboardApi = {
             lowStockProducts: (lowStockRes.data || []).map((p: any) => ({
                 id: p.id,
                 name: p.name_ar,
-                quantity: Number(p.total_stock),
-                min_quantity: Number(p.min_stock_level)
+                quantity: Number(p.quantity),
+                min_quantity: Number(p.min_quantity)
             })),
             categoryData: (categoryRes.data || []).map((c: any, i: number) => ({
                 name: c.name,

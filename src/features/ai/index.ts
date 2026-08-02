@@ -33,3 +33,6 @@ export { useSpeechRecognition } from './chat/useSpeechRecognition';
 // Product Lookup
 export { lookupProducts } from './product-lookup/productLookupService';
 export { ProductPickerCard } from './product-lookup/ProductPickerCard';
+
+// Document Service
+export { documentAiService } from './documentService';

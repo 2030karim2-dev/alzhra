@@ -20,7 +20,16 @@ CREATE OR REPLACE FUNCTION public.get_dashboard_summary(
 DECLARE
   v_from date := COALESCE(p_date_from, (CURRENT_DATE - INTERVAL '30 days'));
   v_to date := COALESCE(p_date_to, CURRENT_DATE);
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Total Sales (from invoices)
   SELECT COALESCE(SUM(
     CASE WHEN currency_code != 'SAR' AND exchange_rate > 0 THEN total_amount * exchange_rate
@@ -139,7 +148,16 @@ DECLARE
   v_from date := COALESCE(p_date_from, (CURRENT_DATE - INTERVAL '30 days'));
   v_to date := COALESCE(p_date_to, CURRENT_DATE);
   v_day date;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   v_day := v_from;
   WHILE v_day <= v_to LOOP
     name := to_char(v_day, 'YYYY-MM-DD');
@@ -173,7 +191,17 @@ CREATE OR REPLACE FUNCTION public.get_top_products_and_customers(
   top_products jsonb,
   top_customers jsonb
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Top Products by quantity sold
   SELECT jsonb_agg(result) INTO top_products
   FROM (
@@ -224,6 +252,7 @@ $$;
 
 
 -- 4. Expense Categories Summary
+DROP FUNCTION IF EXISTS get_expense_categories_summary(UUID, DATE, DATE, UUID);
 CREATE OR REPLACE FUNCTION public.get_expense_categories_summary(
   p_company_id uuid,
   p_date_from date DEFAULT NULL,
@@ -237,7 +266,16 @@ CREATE OR REPLACE FUNCTION public.get_expense_categories_summary(
 DECLARE
   v_from date := COALESCE(p_date_from, (CURRENT_DATE - INTERVAL '30 days'));
   v_to date := COALESCE(p_date_to, CURRENT_DATE);
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   RETURN QUERY
   SELECT 
     ec.name,

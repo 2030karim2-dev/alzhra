@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useCurrencies, useCurrencyMutation } from '../hooks';
 import { useAuthStore } from '../../auth/store';
+import { logger } from '../../../core/utils/logger';
 
 /**
  * أسعار الصرف الحقيقية مقابل الريال السعودي (SAR)
@@ -44,7 +45,7 @@ export function useDefaultExchangeRates() {
 
         // If no rates exist at all, trigger an initial market fetch
         if (rates.data.length === 0) {
-            console.log("[Currency] No rates found, triggering initial market sync...");
+            logger.info('Currency', 'No rates found, triggering initial market sync...');
             refreshRates();
             // Do not return here so fallback rates can be immediately inserted to unblock UI
         }

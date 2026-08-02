@@ -64,8 +64,14 @@ export const reportsService = {
     totalExpenses: number;
     netProfit: number;
   }> => {
+    const now = new Date();
+    const fromDate = `${now.getFullYear()}-01-01`;
+    const toDate = now.toISOString().split('T')[0];
+
     const { data, error } = await supabase.rpc('report_profit_loss', {
-      p_company_id: companyId
+      p_company_id: companyId,
+      p_from: fromDate,
+      p_to: toDate
     });
     if (error) throw error;
 
@@ -102,7 +108,8 @@ export const reportsService = {
     totalLiabEquity: number;
   }> => {
     const { data, error } = await supabase.rpc('report_balance_sheet', {
-      p_company_id: companyId
+      p_company_id: companyId,
+      p_as_of_date: new Date().toISOString().split('T')[0]
     });
     if (error) throw error;
 
@@ -186,9 +193,14 @@ export const reportsService = {
     currentLiquidity: number;
     monthlyTrend: MonthlyCashFlow[];
   }> => {
-    // 1. Get monthly cash flow from RPC (server-side aggregation)
+    const now = new Date();
+    const fromDate = `${now.getFullYear()}-01-01`;
+    const toDate = now.toISOString().split('T')[0];
+
     const { data: monthlyData, error } = await supabase.rpc('report_cash_flow', {
-      p_company_id: companyId
+      p_company_id: companyId,
+      p_from: fromDate,
+      p_to: toDate
     });
     if (error) throw error;
 

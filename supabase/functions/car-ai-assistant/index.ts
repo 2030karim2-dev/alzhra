@@ -1,9 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { OpenAI } from "https://esm.sh/openai@4.26.0"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin');
+  let allowedOrigin = 'https://alzhra-smart.vercel.app';
+
+  if (origin) {
+    if (origin.startsWith('http://localhost') || origin.endsWith('.vercel.app') || origin.endsWith('.netlify.app')) {
+      allowedOrigin = origin;
+    }
+  }
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
 }
 
 interface VehicleInfoArgs {
@@ -101,12 +114,63 @@ const systemPrompt = `
 `;
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { messages } = await req.json()
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { messages } = body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: 'Missing required field: messages (array)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const apiKey = Deno.env.get("CAR_AI_API_KEY") || Deno.env.get("OPENROUTER_API_KEY") || "sk-or-v1-placeholder";
 
     const openai = new OpenAI({
@@ -136,7 +200,16 @@ serve(async (req) => {
 
       for (const toolCall of toolCalls) {
         if (toolCall.function.name === "get_vehicle_info") {
-          const args = JSON.parse(toolCall.function.arguments)
+          let args;
+          try {
+            args = JSON.parse(toolCall.function.arguments);
+          } catch {
+            console.error('Failed to parse tool call arguments:', toolCall.function.arguments);
+            return new Response(JSON.stringify({ error: 'Invalid tool call arguments from AI' }), {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
           const result = await get_vehicle_info(args as VehicleInfoArgs)
           
           updatedMessages.push({
@@ -165,9 +238,10 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Car AI Assistant Error:', error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

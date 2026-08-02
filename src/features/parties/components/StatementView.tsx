@@ -7,7 +7,6 @@ import { tafqeet } from '../../../core/utils/tafqeet';
 import { Printer, TrendingUp, TrendingDown, Wallet, Share2 } from 'lucide-react';
 import type { PartyType } from '../types';
 import Button from '../../../ui/base/Button';
-import ShareButton from '../../../ui/common/ShareButton';
 import { exportStatementToExcel } from '../utils/statementExcelExporter';
 import { partiesService, type StatementMovement } from '../service';
 import { useAuthStore } from '../../auth/store';

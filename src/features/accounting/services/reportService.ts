@@ -58,10 +58,9 @@ export const reportService = {
     },
 
     // ⚡ Server-side financials via RPCs
-    getFinancials: async (companyId: string, branchId?: string | null, fromDate?: string, toDate?: string) => {
+    getFinancials: async (companyId: string, _branchId?: string | null, fromDate?: string, toDate?: string) => {
         const { data: plData, error: plError } = await supabase.rpc('report_profit_loss', {
             p_company_id: companyId,
-            p_branch_id: branchId || null,
             ...(fromDate ? { p_from: fromDate } : {}),
             ...(toDate ? { p_to: toDate } : {})
         });
@@ -70,9 +69,7 @@ export const reportService = {
 
         const { data: bsData, error: bsError } = await supabase.rpc('report_balance_sheet', {
             p_company_id: companyId,
-            p_branch_id: branchId || null,
-            ...(fromDate ? { p_from: fromDate } : {}),
-            ...(toDate ? { p_to: toDate } : {})
+            p_as_of_date: toDate || new Date().toISOString().split('T')[0]
         });
         if (bsError) throw bsError;
         const bs = bsData as any;
@@ -108,11 +105,10 @@ export const reportService = {
         };
     },
 
-    getMonthlyPerformance: async (companyId: string, year: number, branchId?: string | null) => {
+    getMonthlyPerformance: async (companyId: string, year: number, _branchId?: string | null) => {
         const { data, error } = await supabase.rpc('get_monthly_performance', {
             p_company_id: companyId,
-            p_year: year,
-            p_branch_id: branchId || null
+            p_year: year
         });
 
         if (error) throw error;

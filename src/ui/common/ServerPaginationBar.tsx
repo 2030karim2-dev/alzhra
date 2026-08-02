@@ -172,8 +172,8 @@ const ServerPaginationBar: React.FC<ServerPaginationBarProps> = React.memo(({
         </div>
       )}
     </div>
-  );
-};
+      );
+});
 
 // ── Sub-component: Page Button ────────────────────────────────────────────────
 

@@ -24,7 +24,16 @@ AS $$
 DECLARE
     v_component RECORD;
     v_available_qty NUMERIC;
+    v_actual_company_id uuid;
 BEGIN
+    v_actual_company_id := (SELECT get_user_company_id());
+    IF v_actual_company_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+    IF v_actual_company_id != p_company_id THEN
+        RAISE EXCEPTION 'Company ID mismatch: access denied';
+    END IF;
+
     -- Validate inputs
     IF p_quantity <= 0 THEN
         RAISE EXCEPTION 'Quantity must be positive, got %', p_quantity;
@@ -107,7 +116,16 @@ AS $$
 DECLARE
     v_component RECORD;
     v_kit_qty NUMERIC;
+    v_actual_company_id uuid;
 BEGIN
+    v_actual_company_id := (SELECT get_user_company_id());
+    IF v_actual_company_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+    IF v_actual_company_id != p_company_id THEN
+        RAISE EXCEPTION 'Company ID mismatch: access denied';
+    END IF;
+
     -- Validate inputs
     IF p_quantity <= 0 THEN
         RAISE EXCEPTION 'Quantity must be positive, got %', p_quantity;

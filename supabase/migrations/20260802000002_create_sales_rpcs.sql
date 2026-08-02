@@ -36,7 +36,16 @@ DECLARE
   v_cogs_code text := '5100';
   v_inventory_code text := '1100';
   v_entry_id uuid;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Extract data from JSON
   v_party_id := (p_data->>'party_id')::uuid;
   v_items := p_data->'items';
@@ -170,7 +179,16 @@ CREATE OR REPLACE FUNCTION public.get_next_invoice_number(
 ) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
   v_next bigint;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   SELECT COALESCE(MAX(NULLIF(invoice_number, '')::bigint), 0) + 1
   INTO v_next
   FROM public.invoices
@@ -234,7 +252,16 @@ DECLARE
   v_top_customers jsonb;
   v_sales_by_day jsonb;
   v_sales_by_payment jsonb;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Total Sales
   SELECT COALESCE(SUM(total_amount), 0) INTO v_total_sales
   FROM public.invoices
@@ -333,7 +360,16 @@ CREATE OR REPLACE FUNCTION public.get_sales_stats(
 DECLARE
   v_from date := COALESCE(p_start_date, (CURRENT_DATE - INTERVAL '30 days'));
   v_to date := COALESCE(p_end_date, CURRENT_DATE);
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   SELECT 
     COALESCE(SUM(total_amount), 0),
     COUNT(*),

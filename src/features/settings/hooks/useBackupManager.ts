@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackupActions } from '../hooks';
 import { settingsService } from '../service';
 import { AutoBackupConfig } from '../types.ts';
@@ -12,11 +12,16 @@ export const useBackupManager = () => {
 
     const [isExporting, setIsExporting] = useState(false);
     const [isExportingToDrive, setIsExportingToDrive] = useState(false);
-    const [autoConfig, setAutoConfig] = useState<AutoBackupConfig>(settingsService.getAutoBackupConfig());
+    const [autoConfig, setAutoConfig] = useState<AutoBackupConfig>({} as AutoBackupConfig);
     const [isSavingConfig, setIsSavingConfig] = useState(false);
+    const [stats, setStats] = useState<any>(null);
+    const [logs, setLogs] = useState<any[]>([]);
 
-    const stats = settingsService.getStorageStats();
-    const logs = settingsService.getBackupLogs();
+    useEffect(() => {
+        settingsService.getAutoBackupConfig().then(setAutoConfig);
+        settingsService.getStorageStats().then(setStats);
+        settingsService.getBackupLogs().then(setLogs);
+    }, []);
 
     const handleExport = async () => {
         setIsExporting(true);

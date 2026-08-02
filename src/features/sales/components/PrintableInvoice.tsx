@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '@/core/utils';
-import { useInvoiceSettings } from '@/features/settings';
+import { useInvoiceSettings } from '@/features/settings/settingsStore';
 import { useCompany } from '@/features/settings';
 
 interface InvoiceItemEntry {
@@ -327,7 +327,7 @@ const PrintableInvoice = ({ invoice }: PrintableInvoiceProps) => {
                                 <td>{item.name ? i + 1 : ''}</td>
                                 <td className="desc">{item.name}</td>
                                 <td dir="ltr">{item.quantity}</td>
-                                <td dir="ltr">{item.price ? formatCurrency(item.price, invoice.currency_code || 'SAR') : ''}</td>
+                                <td dir="ltr">{item.price ? formatCurrency(Number(item.price), invoice.currency_code || 'SAR') : ''}</td>
                                 <td dir="ltr" className="font-bold">{item.price ? formatCurrency(Number(item.price) * Number(item.quantity), invoice.currency_code || 'SAR') : ''}</td>
                             </tr>
                         ))}

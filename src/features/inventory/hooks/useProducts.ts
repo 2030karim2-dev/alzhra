@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '../service';
 import { useAuthStore } from '../../auth/store';
 import { useFeedbackStore } from '../../feedback/store';
-import { ProductFormData } from '../types';
+import { ProductFormInput } from '../schema';
 import { useMemo, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { logger } from '../../../core/utils/logger';
@@ -139,7 +139,7 @@ export const useProductMutations = () => {
     // const { enqueue } = useOfflineQueueStore(); // LEGACY - REMOVING
 
     const saveProduct = useMutation({
-        mutationFn: async ({ data, id }: { data: ProductFormData, id?: string }) => {
+        mutationFn: async ({ data, id }: { data: ProductFormInput, id?: string }) => {
             if (!user?.company_id || !user.id) throw new Error("جلسة العمل منتهية");
             if (id) {
                 return inventoryService.updateProduct(id, data, user.company_id);

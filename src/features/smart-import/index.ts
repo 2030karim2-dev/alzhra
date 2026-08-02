@@ -1,3 +1,4 @@
 
 export { default as SmartImportModal } from './components/SmartImportModal';
-export { default as SmartImportView, ExtractedItem } from './components/SmartImportView';
+export { default as SmartImportView } from './components/SmartImportView';
+export type { ExtractedItem } from './components/SmartImportView';

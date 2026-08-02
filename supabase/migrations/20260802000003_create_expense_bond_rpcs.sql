@@ -22,7 +22,16 @@ DECLARE
   v_cash_account_id uuid;
   v_expense_account_id uuid;
   v_entry_id uuid;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   v_category_id := (p_data->>'category_id')::uuid;
   v_amount := COALESCE((p_data->>'amount')::numeric, 0);
   v_currency_code := COALESCE(p_data->>'currency_code', 'SAR');
@@ -114,7 +123,16 @@ CREATE OR REPLACE FUNCTION public.get_expense_stats(
 DECLARE
   v_from date := COALESCE(p_start_date, (CURRENT_DATE - INTERVAL '30 days'));
   v_to date := COALESCE(p_end_date, CURRENT_DATE);
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   SELECT 
     COALESCE(SUM(amount), 0),
     COUNT(*),
@@ -166,7 +184,16 @@ DECLARE
   v_fiscal_year_id uuid;
   v_counter_account_id uuid;
   v_entry_id uuid;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   -- Get fiscal year
   SELECT id INTO v_fiscal_year_id FROM public.fiscal_years
   WHERE company_id = p_company_id AND is_closed = false
@@ -246,9 +273,19 @@ CREATE OR REPLACE FUNCTION public.void_bond(
 DECLARE
   v_payment record;
   v_entry_id uuid;
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
   SELECT * INTO v_payment FROM public.payments WHERE id = p_payment_id;
-  
+
+  IF v_actual_company_id != v_payment.company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   IF v_payment IS NULL OR v_payment.status = 'void' THEN
     RAISE EXCEPTION 'Payment not found or already voided';
   END IF;

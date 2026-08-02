@@ -4,7 +4,7 @@
 // ============================================
 
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createIndexedDBPersister } from './persistence';
 import { useNetworkStatus } from '../../lib/hooks/useNetworkStatus';
@@ -258,14 +258,16 @@ export interface UseMutationOptions<TData, TError, TVariables, TContext> {
 // Utility Hooks
 // ------------------------------------------
 export const useInvalidateQueries = () => {
+    const queryClient = useQueryClient();
+
     return {
-        invalidateAll: () => { },
-        invalidateInventory: () => { },
-        invalidateSales: () => { },
-        invalidatePurchases: () => { },
-        invalidateAccounting: () => { },
-        invalidateParties: () => { },
-        invalidateDashboard: () => { },
+        invalidateAll: () => queryClient.invalidateQueries(),
+        invalidateInventory: () => queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
+        invalidateSales: () => queryClient.invalidateQueries({ queryKey: queryKeys.sales.all }),
+        invalidatePurchases: () => queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all }),
+        invalidateAccounting: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
+        invalidateParties: () => queryClient.invalidateQueries({ queryKey: queryKeys.parties.all }),
+        invalidateDashboard: () => queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats }),
     };
 };
 

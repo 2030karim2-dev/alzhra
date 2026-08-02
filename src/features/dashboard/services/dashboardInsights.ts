@@ -13,6 +13,7 @@ export const calculateDashboardInsights = (data: {
     expensesData: any[];
     lowStockProducts: any[];
     overdueInvoices: any[];
+    salesTarget?: number;
 }) => {
     const { 
         totalSales = 0, 
@@ -137,7 +138,8 @@ export const calculateDashboardInsights = (data: {
         insights,
         targets: {
             salesProgress: Math.round(salesProgress),
-            collectionRate: Math.round(collectionRate)
+            collectionRate: Math.round(collectionRate),
+            salesTarget,
         },
         olderSales,
         olderPurchases,

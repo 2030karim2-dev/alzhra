@@ -43,7 +43,13 @@ DECLARE
     v_diff          NUMERIC;
     v_adj_count     INT := 0;
     v_total_value   NUMERIC := 0;
+    v_actual_company_id uuid;
 BEGIN
+    v_actual_company_id := (SELECT get_user_company_id());
+    IF v_actual_company_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
     -- ── 0. Lock & validate the session ──────────────────────
     SELECT * INTO v_session
     FROM public.audit_sessions
@@ -52,6 +58,10 @@ BEGIN
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Audit session % not found', p_session_id;
+    END IF;
+
+    IF v_actual_company_id != v_session.company_id THEN
+        RAISE EXCEPTION 'Company ID mismatch: access denied';
     END IF;
 
     IF v_session.status = 'completed' THEN

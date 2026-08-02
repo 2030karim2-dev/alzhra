@@ -35,9 +35,16 @@ export const productFormSchema = z.object({
     unit: z.enum(['piece', 'set']).optional(),
     category: z.string().optional(),
     is_core: z.boolean().optional(),
+    uoms: z.array(z.object({
+        uom_name: z.string(),
+        conversion_factor: z.number(),
+        barcode: z.string().optional(),
+        sale_price: z.number().optional(),
+    })).optional(),
 }).refine(data => data.selling_price >= data.cost_price, {
     message: 'سعر البيع يجب أن يكون أكبر من أو يساوي سعر التكلفة',
     path: ['selling_price'] // Point error to selling price
 });
 
 export type ProductFormSchemaContext = z.infer<typeof productFormSchema>;
+export type ProductFormInput = z.input<typeof productFormSchema>;

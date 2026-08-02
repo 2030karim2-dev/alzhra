@@ -1,15 +1,15 @@
 import React from 'react';
 import { UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form';
-import { ProductFormData } from '../../types';
+import { ProductFormInput } from '../../schema';
 import { Layers } from 'lucide-react';
 import { cn } from '../../../../core/utils';
 import { useInventoryCategories } from '../../hooks/index';
 import { useTranslation } from '../../../../lib/hooks/useTranslation';
 
 interface Props {
-  register: UseFormRegister<ProductFormData>;
-  watch: UseFormWatch<ProductFormData>;
-  setValue: UseFormSetValue<ProductFormData>;
+  register: UseFormRegister<ProductFormInput>;
+  watch: UseFormWatch<ProductFormInput>;
+  setValue: UseFormSetValue<ProductFormInput>;
 }
 
 const ProductCategory: React.FC<Props> = ({ register, watch, setValue }) => {

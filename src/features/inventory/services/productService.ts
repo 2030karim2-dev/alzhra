@@ -1,4 +1,5 @@
-import { Product, ProductFormData } from '../types';
+import { Product } from '../types';
+import { ProductFormInput } from '../schema';
 import { inventoryApi } from '../api';
 import { supabase } from '../../../lib/supabaseClient';
 import { InsertDto } from '../../../core/database.helpers';
@@ -141,7 +142,7 @@ export const productService = {
     /**
      * Create a new product
      */
-    createProduct: async (data: ProductFormData, companyId: string, _userId: string) => {
+    createProduct: async (data: ProductFormInput, companyId: string, _userId: string) => {
         // Prevent duplicate names
         const { data: existing } = await supabase
             .from('products')
@@ -206,7 +207,7 @@ export const productService = {
     /**
      * Update an existing product
      */
-    updateProduct: async (id: string, data: ProductFormData, companyId: string) => {
+    updateProduct: async (id: string, data: ProductFormInput, companyId: string) => {
         logger.debug('ProductService', `Updating product ${id}`, data);
 
         try {

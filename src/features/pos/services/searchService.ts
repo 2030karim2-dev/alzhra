@@ -155,9 +155,9 @@ function mapSearchResultRow(row: SearchResultRow, query: string, salesCounts?: M
             warehouse_name: s.warehouses?.name_ar || '',
             quantity: Number(s.quantity) || 0,
         })),
-        score: scoreSearchResult(query, row, salesInfo?.count, salesInfo?.last_date),
-        sales_count: salesInfo?.count,
-        last_sale_date: salesInfo?.last_date,
+        score: scoreSearchResult(query, row as any, salesInfo?.count, salesInfo?.last_date),
+        sales_count: salesInfo?.count || 0,
+        last_sale_date: salesInfo?.last_date || '',
         match_type: 'exact' as const,
     };
 }
@@ -191,7 +191,7 @@ function mapFallbackResultRow(row: SearchResultRow, query: string): POSSearchRes
             warehouse_name: s.warehouses?.name_ar || '',
             quantity: Number(s.quantity) || 0,
         })),
-        score: scoreSearchResult(query, row),
+        score: scoreSearchResult(query, row as any),
         match_type: 'exact' as const,
     };
 }
@@ -294,7 +294,7 @@ export const posSearchService = {
                 p_limit: limit,
                 p_offset: 0,
                 p_sort_key: 'updated_at',
-                p_sort_dir: 'desc',
+                p_sort_dir: 'desc'
             });
 
             if (error) {
@@ -484,7 +484,7 @@ export const posSearchService = {
                         existing.last_date = createdAt;
                     }
                 } else {
-                    map.set(row.product_id, { count: 1, last_date: createdAt });
+                    map.set(row.product_id, { count: 1, last_date: createdAt || '' });
                 }
             }
 

@@ -2,9 +2,21 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin');
+  let allowedOrigin = 'https://alzhra-smart.vercel.app';
+
+  if (origin) {
+    if (origin.startsWith('http://localhost') || origin.endsWith('.vercel.app') || origin.endsWith('.netlify.app')) {
+      allowedOrigin = origin;
+    }
+  }
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
 }
 
 // ZATCA Fatoora API URLs (Sandbox)
@@ -64,25 +76,87 @@ function generateUBLXML(invoice: any): string {
 }
 
 serve(async (req) => {
+    const corsHeaders = getCorsHeaders(req);
+
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
-        const { invoiceData } = await req.json()
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+            global: { headers: { Authorization: authHeader } }
+        });
+
+        const { data: { user }, error: authError } = await userSupabase.auth.getUser();
+
+        if (authError || !user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        let body;
+        try {
+            body = await req.json();
+        } catch {
+            return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        const { invoiceData } = body;
 
         if (!invoiceData || !invoiceData.id) {
-            throw new Error('Valid invoiceData object with an ID is required.');
+            return new Response(JSON.stringify({ error: 'Valid invoiceData object with an ID is required.' }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        if (invoiceData.company_id) {
+            const { data: roleCheck, error: roleError } = await userSupabase
+                .from('user_company_roles')
+                .select('id')
+                .eq('company_id', invoiceData.company_id)
+                .limit(1)
+                .single();
+
+            if (roleError || !roleCheck) {
+                return new Response(JSON.stringify({ error: 'Forbidden: User does not belong to this company' }), {
+                    status: 403,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
         }
 
         const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            supabaseUrl,
+            supabaseServiceKey ?? ''
         )
 
         console.log(`Submitting Invoice ${invoiceData.id} to ZATCA Fatoora API...`)
 
-        // 1. Generate TLV QR Code Data
         const qrCodeData = generateTLVQRCodeData(
             invoiceData.company_name || 'Al-Zahra Auto Parts',
             invoiceData.vat_number || '300000000000003',
@@ -91,29 +165,24 @@ serve(async (req) => {
             (invoiceData.total_tax || 0).toFixed(2)
         );
 
-        // 2. Generate XML
         const xmlContent = generateUBLXML(invoiceData);
         const base64XML = base64Encode(new TextEncoder().encode(xmlContent));
         const invoiceHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(xmlContent));
         const base64Hash = base64Encode(new Uint8Array(invoiceHash));
 
-        // 3. Prepare Payload for ZATCA API
         const zatcaPayload = {
             invoiceHash: base64Hash,
             uuid: invoiceData.id,
             invoice: base64XML
         };
 
-        // 4. API Submission to Developer Portal
-        // (In production, certs/keys are securely fetched from Deno.env)
         const zatcaAuthToken = Deno.env.get('ZATCA_AUTH_TOKEN');
         const zatcaSubmitType = invoiceData.type === 'b2c' ? 'invoices/reporting/single' : 'invoices/clearance/single';
         
-        // Mock the exact response format if Token is missing (for local testing without valid certs)
         let zatcaResponse;
         if (!zatcaAuthToken) {
             console.log("No ZATCA Auth Token found, simulating successful clearance response.");
-            await new Promise((r) => setTimeout(r, 800)); // Simulate latency
+            await new Promise((r) => setTimeout(r, 800));
             zatcaResponse = {
                 validationResults: { infoMessages: [], warningMessages: [], errorMessages: [], status: "PASS" },
                 reportingStatus: "REPORTED",
@@ -140,7 +209,6 @@ serve(async (req) => {
             submissionTime: new Date().toISOString()
         };
 
-        // 5. Log the audit event in DB
         const { error: logError } = await supabaseClient
             .from('audit_logs')
             .insert({
@@ -152,7 +220,6 @@ serve(async (req) => {
             
         if (logError) console.warn('Failed to insert ZATCA audit log:', logError);
 
-        // 6. Return response to client
         return new Response(
             JSON.stringify(finalResult),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -161,8 +228,8 @@ serve(async (req) => {
     } catch (error) {
         console.error('ZATCA Integration Error:', error)
         return new Response(
-            JSON.stringify({ error: error.message }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+            { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }, status: 500 }
         )
     }
 })

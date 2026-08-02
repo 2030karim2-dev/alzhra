@@ -144,7 +144,7 @@ const ExcelTableToolbar: React.FC<ExcelTableToolbarProps> = React.memo(({
             )}
         </>
     );
-};
+});
 
 export { ExcelTableToolbar };
 export default ExcelTableToolbar;

@@ -224,7 +224,7 @@ const SalesChart: React.FC<SalesChartProps> = React.memo(({
       </div>
     </div>
   );
-};
+});
 
 export { SalesChart };
 export default SalesChart;

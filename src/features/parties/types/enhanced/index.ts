@@ -31,19 +31,20 @@ export interface CustomerActivity {
     id: string;
     companyId: string;
     customerId: string;
+    customerName?: string | undefined;
     activityType: ActivityType;
     subject: string;
-    description?: string;
-    scheduledAt?: string;
-    completedAt?: string;
+    description?: string | undefined;
+    scheduledAt?: string | undefined;
+    completedAt?: string | undefined;
     status: ActivityStatus;
     priority: Priority;
-    assignedTo?: string;
-    assignedToName?: string;
-    outcome?: string;
-    durationMinutes?: number;
+    assignedTo?: string | undefined;
+    assignedToName?: string | undefined;
+    outcome?: string | undefined;
+    durationMinutes?: number | undefined;
     createdBy: string;
-    createdByName?: string;
+    createdByName?: string | undefined;
     createdAt: string;
     updatedAt: string;
 }
@@ -56,7 +57,7 @@ export interface CustomerNote {
     content: string;
     isImportant: boolean;
     createdBy: string;
-    createdByName?: string;
+    createdByName?: string | undefined;
     createdAt: string;
 }
 

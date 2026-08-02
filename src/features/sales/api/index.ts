@@ -74,15 +74,17 @@ export const salesApi = {
     const rpcParams = {
       p_company_id: companyId,
       p_user_id: userId,
-      p_party_id: payload.partyId,
-      p_items: payload.items.map(i => ({ product_id: i.productId, quantity: i.quantity, unit_price: i.unitPrice })),
-      ...(payload.paymentMethod ? { p_payment_method: payload.paymentMethod } : {}),
-      ...(payload.notes ? { p_notes: payload.notes } : {}),
-      ...(payload.treasuryAccountId ? { p_treasury_account_id: payload.treasuryAccountId } : {}),
-      ...(payload.currency ? { p_currency: payload.currency } : {}),
-      ...(payload.exchangeRate ? { p_exchange_rate: payload.exchangeRate } : {}),
-      ...(payload.branchId ? { p_branch_id: payload.branchId } : {}),
-      p_discount_amount: payload.discount || 0
+      p_data: {
+        party_id: payload.partyId,
+        items: payload.items.map(i => ({ product_id: i.productId, quantity: i.quantity, price: i.unitPrice })),
+        ...(payload.paymentMethod ? { payment_method: payload.paymentMethod } : {}),
+        ...(payload.notes ? { notes: payload.notes } : {}),
+        ...(payload.treasuryAccountId ? { treasury_account_id: payload.treasuryAccountId } : {}),
+        ...(payload.currency ? { currency_code: payload.currency } : {}),
+        ...(payload.exchangeRate ? { exchange_rate: payload.exchangeRate } : {}),
+        ...(payload.branchId ? { branch_id: payload.branchId } : {}),
+        discount_amount: payload.discount || 0
+      }
     };
 
     const { data: result, error } = await supabase.rpc('commit_sales_invoice', rpcParams);
@@ -137,7 +139,7 @@ export const salesApi = {
   getNextInvoiceNumber: async (companyId: string) => {
     const { data, error } = await supabase.rpc('get_next_invoice_number', {
       p_company_id: companyId,
-      p_prefix: 'INV'
+      p_type: 'sale'
     });
 
     if (error) return { data: null, error };
@@ -147,7 +149,7 @@ export const salesApi = {
   getNextSequence: async (companyId: string, type: string) => {
     const { data, error } = await supabase.rpc('get_next_sequence', {
       p_company_id: companyId,
-      p_type: type
+      p_sequence_name: type
     });
     if (error) return { data: null, error };
     return { data, error: null };

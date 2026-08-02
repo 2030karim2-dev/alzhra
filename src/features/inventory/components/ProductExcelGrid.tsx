@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Product, ProductFormData } from '../types';
+import { Product } from '../types';
+import { ProductFormInput } from '../schema';
 import ExcelTable from '../../../ui/common/ExcelTable';
 import TableSkeleton from '../../../ui/base/TableSkeleton';
 import { useProductMutations, useProductBulkActions } from '../hooks/index';
@@ -59,7 +60,7 @@ const ProductExcelGrid: React.FC<Props> = ({
         const productToUpdate = products[rowIndex];
         if (productToUpdate) {
             const updatedData = { ...productToUpdate, [accessorKey]: Number(value) || 0 };
-            await saveProduct({ data: updatedData as ProductFormData, id: productToUpdate.id });
+            await saveProduct({ data: updatedData as ProductFormInput, id: productToUpdate.id });
         }
     };
 

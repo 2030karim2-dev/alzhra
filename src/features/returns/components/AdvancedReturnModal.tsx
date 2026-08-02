@@ -4,7 +4,7 @@ import { X, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 import * as z from 'zod';
 import { useFeedbackStore } from '../../feedback/store';
-import { zodResolver } from '../../../lib/zodResolver';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ReturnType } from '../types';
 import { ReturnItemsStep } from './ReturnItemsStep';
 import { ReturnDetailsStep } from './ReturnDetailsStep';

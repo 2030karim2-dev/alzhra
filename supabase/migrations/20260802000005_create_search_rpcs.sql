@@ -2,6 +2,7 @@
 -- search_inventory, get_popular_products, get_monthly_performance
 
 -- 1. Search Inventory (advanced product search with ILIKE and normalized Arabic)
+DROP FUNCTION IF EXISTS public.search_inventory(text, uuid);
 CREATE OR REPLACE FUNCTION public.search_inventory(
   p_company_id uuid,
   p_query text DEFAULT '',
@@ -21,7 +22,17 @@ CREATE OR REPLACE FUNCTION public.search_inventory(
   status text,
   image_url text
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   IF p_query = '' OR p_query IS NULL THEN
     RETURN QUERY
     SELECT 
@@ -91,7 +102,17 @@ CREATE OR REPLACE FUNCTION public.get_popular_products(
   image_url text,
   sales_count bigint
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   RETURN QUERY
   SELECT 
     p.id, p.name_ar, p.sku, p.part_number, p.brand,
@@ -118,6 +139,7 @@ $$;
 
 
 -- 3. Monthly Performance
+DROP FUNCTION IF EXISTS get_monthly_performance(UUID, INT, UUID);
 CREATE OR REPLACE FUNCTION public.get_monthly_performance(
   p_company_id uuid,
   p_year integer DEFAULT NULL,
@@ -133,7 +155,16 @@ CREATE OR REPLACE FUNCTION public.get_monthly_performance(
 DECLARE
   v_year integer := COALESCE(p_year, EXTRACT(YEAR FROM CURRENT_DATE)::integer);
   v_month integer := COALESCE(p_month, EXTRACT(MONTH FROM CURRENT_DATE)::integer);
+  v_actual_company_id uuid;
 BEGIN
+  v_actual_company_id := (SELECT get_user_company_id());
+  IF v_actual_company_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF v_actual_company_id != p_company_id THEN
+    RAISE EXCEPTION 'Company ID mismatch: access denied';
+  END IF;
+
   RETURN QUERY
   SELECT 
     EXTRACT(YEAR FROM i.issue_date)::integer,

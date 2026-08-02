@@ -12,25 +12,25 @@ const SALT_SESSION_KEY = 'alzhra_auth_salt';
 const KEY_MATERIAL_SEED = 'alzhra-auth-encryption-key-seed-v1';
 const PBKDF2_ITERATIONS = 100000;
 
-function base64Encode(bytes: Uint8Array): string {
+function base64Encode(bytes: Uint8Array<ArrayBuffer>): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function base64Decode(b64: string): Uint8Array {
-  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+function base64Decode(b64: string): Uint8Array<ArrayBuffer> {
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) as Uint8Array<ArrayBuffer>;
 }
 
-async function getOrCreateSalt(): Promise<Uint8Array> {
+async function getOrCreateSalt(): Promise<Uint8Array<ArrayBuffer>> {
   const existing = sessionStorage.getItem(SALT_SESSION_KEY);
   if (existing) {
     return base64Decode(existing);
   }
-  const salt = crypto.getRandomValues(new Uint8Array(32));
+  const salt = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer>;
   sessionStorage.setItem(SALT_SESSION_KEY, base64Encode(salt));
   return salt;
 }
 
-async function deriveKey(salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(KEY_MATERIAL_SEED),

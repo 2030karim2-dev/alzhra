@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, BarChart3, Globe } from 'lucide-react';
+import { TrendingUp, Globe } from 'lucide-react';
 
 const MarketInsights: React.FC = () => (
   <div className="p-4 space-y-3">

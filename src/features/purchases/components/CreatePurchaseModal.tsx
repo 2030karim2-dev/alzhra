@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { usePurchaseStore } from '../store';
+import { usePurchaseStore, type PurchaseInvoiceItem } from '../store';
 // import { useTaxDiscountStore } from '../../settings/taxDiscountStore';
 import { useCreatePurchase } from '../hooks';
 import { useCompany } from '../../settings/hooks';
@@ -41,7 +41,7 @@ const CreatePurchaseModal: React.FC<Props> = ({ onSuccess }) => {
   }, [initializeItems, invoiceSettings]);
 
   const handleSave = () => {
-    const validItems = items.filter(i => i.productId && i.quantity > 0);
+    const validItems = items.filter((i: PurchaseInvoiceItem) => i.productId && i.quantity > 0);
     if (validItems.length === 0 || !supplier) return;
 
     // Validate: Cash purchases require a real cashbox account
@@ -54,7 +54,7 @@ const CreatePurchaseModal: React.FC<Props> = ({ onSuccess }) => {
       supplierId: supplier.id,
       invoiceNumber: invoiceNumber || `PUR-${Date.now().toString().slice(-6)}`,
       issueDate: issueDate,
-      items: validItems.map(i => ({
+      items: validItems.map((i: PurchaseInvoiceItem) => ({
         productId: i.productId,
         name: i.name,
         sku: i.sku,
@@ -66,7 +66,7 @@ const CreatePurchaseModal: React.FC<Props> = ({ onSuccess }) => {
         total: (i.quantity * i.costPrice) - i.discount
       })),
       status: 'posted',
-      paymentMethod: invoiceType,
+      paymentMethod: invoiceType as 'cash' | 'credit',
       cashAccountId: cashboxId,
       currency: currency,
       exchangeRate: exchangeRate

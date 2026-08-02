@@ -379,7 +379,7 @@ const AuditSessionPage: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                                        {searchResults?.map((p: Product) => (
+                                        {(searchResults as unknown as Product[])?.map((p: Product) => (
                                             <tr
                                                 key={p.id}
                                                 onClick={() => {

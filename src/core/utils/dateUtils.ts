@@ -111,8 +111,8 @@ const ARABIC_NUMERALS: Record<string, string> = {
 };
 
 const ARABIC_MONTH_NAMES: Record<string, number> = {
-  'يناير': 0, 'يناير': 0,
-  'فبراير': 1, 'فبراير': 1,
+  'يناير': 0,
+  'فبراير': 1,
   'مارس': 2,
   'أبريل': 3, 'ابريل': 3,
   'مايو': 4,
@@ -126,7 +126,7 @@ const ARABIC_MONTH_NAMES: Record<string, number> = {
 };
 
 const ARABIC_MONTHS_ORDERED = [
-  'يناير', 'يناير', 'فبراير', 'فبراير', 'مارس', 'أبريل', 'ابريل',
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'ابريل',
   'مايو', 'يونيو', 'يوليو', 'أغسطس', 'اغسطس', 'سبتمبر', 'أكتوبر',
   'اكتوبر', 'نوفمبر', 'ديسمبر',
 ];
@@ -134,7 +134,7 @@ const ARABIC_MONTHS_ORDERED = [
 const MONTH_NAME_TO_INDEX: Record<string, number> = {
   january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
   july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
-  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jan: 0, feb: 1, mar: 2, apr: 3, jun: 5,
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
 };
 
