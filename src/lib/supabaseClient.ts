@@ -43,7 +43,11 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
   const MAX_RETRIES = 1;
   const REQUEST_TIMEOUT = 15000;
   let lastError: Error | unknown;
-  let skipAuth = false;
+  // When the JWT expires, every /rest/v1/ and /rpc/ request returns 401.
+  // Instead of retrying without the Authorization header (which RLS still
+  // rejects — the anon apikey is NOT a service key), we refresh the session
+  // once and retry with the fresh access token.
+  let refreshedAccessToken: string | null = null;
 
   for (let i = 0; i <= MAX_RETRIES; i++) {
     const timeoutController = new AbortController();
@@ -83,9 +87,13 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
         const cleanHeaders = new Headers();
         const sanitize = (key: string, value: string): void => {
           const cleanKey = String(key ?? '').replace(/[^\x21-\x7E]/g, '').trim();
-          const cleanValue = String(value ?? '').replace(/[^\x00-\xFF]/g, '');
+          let cleanValue = String(value ?? '').replace(/[^\x00-\xFF]/g, '');
           if (!cleanKey || !cleanValue) return;
-          if (cleanKey.toLowerCase() === 'authorization' && skipAuth) return;
+          // If we refreshed the session after a 401, replace the stale
+          // Authorization header with the fresh Bearer token.
+          if (cleanKey.toLowerCase() === 'authorization' && refreshedAccessToken !== null) {
+            cleanValue = `Bearer ${refreshedAccessToken}`;
+          }
           try {
             cleanHeaders.set(cleanKey, cleanValue);
           } catch {
@@ -113,15 +121,32 @@ const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}): P
       });
       clearTimeout(timeoutId);
 
-      // For 401 responses on data endpoints, retry once without the Auth header.
-      // The service_role key in apikey header still gives us access.
-      // RLS will block row-level data if the JWT is truly expired, but
-      // at least we get a proper response instead of a hard error.
-      if (response.status === 401 && i === 0 && !skipAuth) {
+      // If the JWT has expired, PostgREST returns 401 on data endpoints.
+      // Refresh the session once and retry with the new token. Retrying
+      // without the Authorization header is NOT a valid fallback: the
+      // apikey header carries the anon key (not a service key), so RLS
+      // policies still block the query and the caller just gets empty data.
+      if (response.status === 401 && i === 0 && refreshedAccessToken === null) {
         const urlStr = String(url);
         if (urlStr.includes('/rest/v1/') || urlStr.includes('/rpc/')) {
-          skipAuth = true;
-          continue;
+          try {
+            const authClient = supabase as unknown as {
+              auth: {
+                refreshSession: () => Promise<{
+                  data: { session: { access_token: string } | null } | null;
+                  error: { message: string } | null;
+                }>;
+              };
+            };
+            const { data: refreshData, error: refreshError } = await authClient.auth.refreshSession();
+            const accessToken = refreshData?.session?.access_token ?? null;
+            if (refreshError === null && accessToken !== null) {
+              refreshedAccessToken = accessToken;
+              continue;
+            }
+          } catch (err) {
+            logger.warn('Supabase', 'Session refresh threw, returning 401 response', err);
+          }
         }
       }
 
