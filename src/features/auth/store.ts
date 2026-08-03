@@ -73,7 +73,13 @@ export const useAuthStore = create<AuthState>()(
         // ⚡ Trust Persisted Data First (Optimistic UI)
         const persistedUser = get().user;
 
-        if (persistedUser) {
+        // If the persisted user has no company_id, DON'T trust it optimistically.
+        // A user without company_id means the profile fetch previously failed
+        // (stale session / migrated user) — treat as unauthenticated so we
+        // re-fetch a fresh profile instead of showing "No Company ID" everywhere.
+        const persistedUserValid = persistedUser && !!persistedUser.company_id;
+
+        if (persistedUserValid) {
           set({ isLoading: false, isReady: true, isAuthenticated: true });
         }
 
@@ -147,7 +153,8 @@ export const useAuthStore = create<AuthState>()(
               profile = ('data' in resolved && resolved.data ? resolved.data : resolved) as Record<string, unknown>;
             }
 
-            if (profile && typeof profile === 'object' && profile.id) {
+            if (profile && typeof profile === 'object' && profile.id && profile.company_id) {
+              // ✅ Full profile with company_id resolved
               set({
                 user: profile as unknown as AuthUser,
                 isAuthenticated: true,
@@ -157,18 +164,27 @@ export const useAuthStore = create<AuthState>()(
               // ⚡ Targeted invalidation — avoid refreshing ALL queries on startup
               queryClient.invalidateQueries({ queryKey: ['auth'] });
               queryClient.invalidateQueries({ queryKey: ['companies'] });
-            } else if (!persistedUser) {
+            } else if (persistedUser && persistedUser.id === session.user.id && persistedUser.company_id) {
+              // Fall back to persisted user ONLY if it has a valid company_id
               set({
-                user: {
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  full_name: session.user.user_metadata?.full_name || '',
-                  role: 'viewer',
-                },
+                user: persistedUser as unknown as AuthUser,
                 isAuthenticated: true,
                 isLoading: false,
                 isReady: true,
               });
+            } else {
+              // ❌ Could NOT resolve company_id — DO NOT create an authenticated
+              //    user without it. That would show "No Company ID" everywhere.
+              //    Instead, clear the stale session and force a fresh login.
+              logger.warn('Auth', 'Could not resolve company_id, clearing session for fresh login', {
+                userId: session.user.id,
+                profileId: (profile as any)?.id,
+                profileCompanyId: (profile as any)?.company_id,
+              });
+              try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* ignore */ }
+              queryClient.clear();
+              Promise.resolve(persister.removeClient()).catch(() => { });
+              set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });
             }
           } else if (!persistedUser) {
             set({ user: null, isAuthenticated: false, isLoading: false, isReady: true });

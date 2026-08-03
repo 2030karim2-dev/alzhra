@@ -124,26 +124,20 @@ export const authApi = {
 
         if (profileRes.error) {
           // 3. Last resort: construct minimal profile from auth session
-          logger.warn('Auth', 'Profile table query failed, constructing from auth session', profileRes.error);
+          logger.warn('Auth', 'Profile table query failed', profileRes.error);
           const { data: authData } = await supabase.auth.getUser();
           const user = authData?.user ?? null;
           if (!user) {
             return { data: null, error: new Error('Authentication session lost. Please log in again.') };
           }
 
-          const sessionProfile = {
-            id: userId,
-            email: user.email || '',
-            full_name: user.user_metadata?.full_name || '',
-            avatar_url: user.user_metadata?.avatar_url || null,
-            role: 'viewer',
-            company_id: null,
-            company_name: null,
-            branch_id: null,
-            branch_name: null,
+          // Even from the auth session we cannot know the user's company —
+          // return an error so the caller forces a fresh login instead of
+          // creating an authenticated user with company_id: null.
+          return {
+            data: null,
+            error: new Error('تعذر تحديد الشركة المرتبطة بالحساب. يرجى تسجيل الخروج ثم تسجيل الدخول مجدداً.'),
           };
-
-          return { data: sessionProfile, error: null };
         }
 
         const profileData = profileRes.data as any;
@@ -152,13 +146,27 @@ export const authApi = {
         const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user ?? null;
 
+        const roleCompanyId = (roleRes.data as any)?.company_id;
+
+        // If we genuinely could not resolve a company_id from ANY source,
+        // return an error instead of a broken profile. This forces the caller
+        // to handle it (clear session / prompt re-login) rather than showing
+        // "No Company ID" errors throughout the app.
+        if (!roleCompanyId) {
+          logger.error('Auth', 'getProfile: no company_id resolvable from user_company_roles', {
+            userId,
+            roleResError: (roleRes.data as any)?.error,
+          });
+          return { data: null, error: new Error('تعذر تحديد الشركة المرتبطة بالحساب. يرجى تسجيل الخروج ثم تسجيل الدخول مجدداً.') };
+        }
+
         const fallbackData = {
           id: userId,
           email: user?.email || '',
           full_name: profileData?.full_name || user?.user_metadata?.full_name || '',
           avatar_url: profileData?.avatar_url || user?.user_metadata?.avatar_url,
           role: (roleRes.data as any)?.role || 'viewer',
-          company_id: (roleRes.data as any)?.company_id,
+          company_id: roleCompanyId,
           company_name: (roleRes.data as any)?.companies?.name_ar || (roleRes.data as any)?.companies,
           branch_id: (roleRes.data as any)?.branch_id ?? null,
           branch_name: (roleRes.data as any)?.branches?.name ?? null,
