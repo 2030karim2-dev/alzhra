@@ -1,7 +1,7 @@
 
 import { get, set, del, clear } from 'idb-keyval';
 
-const APP_VERSION = 'alz-erp-v4.1';
+const APP_VERSION = 'alz-erp-v5.0';
 const CACHE_NAME = `app-shell-${APP_VERSION}`;
 const APP_SHELL_URLS = [
   '/',
@@ -37,10 +37,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Navigation: Network First -> Cache Fallback
+  // Navigation: Network First, no stale cache
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/'))
+      fetch(request).then(response => {
+        const cloned = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, cloned));
+        return response;
+      }).catch(() => caches.match(request))
     );
     return;
   }
